@@ -6,6 +6,7 @@
 //
 
 #import "SceneDelegate.h"
+#import "MainTabBarController.h"
 
 @interface SceneDelegate ()
 
@@ -18,6 +19,19 @@
     // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
     // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
     // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
+    
+    // 创建窗口并设置TabBar控制器
+    if ([scene isKindOfClass:[UIWindowScene class]]) {
+        UIWindowScene *windowScene = (UIWindowScene *)scene;
+        self.window = [[UIWindow alloc] initWithWindowScene:windowScene];
+        
+        // 创建TabBar控制器作为根视图控制器
+        MainTabBarController *tabBarController = [[MainTabBarController alloc] init];
+        self.window.rootViewController = tabBarController;
+        
+        // 显示窗口
+        [self.window makeKeyAndVisible];
+    }
 }
 
 
