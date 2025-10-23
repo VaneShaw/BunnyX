@@ -132,7 +132,7 @@
 
 // MARK: - 网络相关宏
 #define BUNNYX_NETWORK_TIMEOUT 30.0
-#define BUNNYX_REQUEST_TIMEOUT 60.0
+// BUNNYX_REQUEST_TIMEOUT 已在 BunnyxNetworkMacros.h 中定义
 
 // MARK: - 分页相关宏
 #define BUNNYX_PAGE_SIZE 20

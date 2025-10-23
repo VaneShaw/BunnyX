@@ -8,6 +8,7 @@
 #import "AppDelegate.h"
 #import "MainTabBarController.h"
 #import "LaunchViewController.h"
+#import "Manager/Config/AppConfigManager.h"
 
 @interface AppDelegate ()
 
@@ -19,6 +20,11 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     
+    [[AppConfigManager sharedManager]getAppConfigWithSuccess:^(AppConfigModel * _Nonnull configModel) {
+            
+        } failure:^(NSError * _Nonnull error) {
+            
+        }];
     // 只在iOS 12及以下版本中设置启动页
     if (@available(iOS 13.0, *)) {
         // iOS 13+ 由 SceneDelegate 处理
@@ -42,6 +48,7 @@
         self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
         self.window.rootViewController = launchViewController;
         [self.window makeKeyAndVisible];
+    
     }
     
     return YES;

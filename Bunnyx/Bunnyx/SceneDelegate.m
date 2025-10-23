@@ -41,7 +41,7 @@
         }
         if (logoImage) {
             [launchViewController setLogoImage:logoImage];
-        }
+          }
         
         self.window.rootViewController = launchViewController;
         

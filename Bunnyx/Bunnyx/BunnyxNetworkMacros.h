@@ -11,7 +11,7 @@
 // MARK: - 服务器环境配置
 #ifdef DEBUG
     // 开发环境
-    #define BUNNYX_BASE_URL @"https://testappapi.bunnyx.ai/"
+    #define BUNNYX_BASE_URL @"https://testappapi.bunnyx.ai"
 #else
     // 生产环境
     #define BUNNYX_BASE_URL @"https://api.bunnyx.com"
@@ -22,7 +22,7 @@
 #define BUNNYX_API_VERSION_V2 @"v2"
 
 // MARK: - 完整API基础地址
-#define BUNNYX_API_BASE_URL [NSString stringWithFormat:@"%@/%@", BUNNYX_BASE_URL, BUNNYX_API_VERSION]
+#define BUNNYX_API_BASE_URL [NSString stringWithFormat:@"%@", BUNNYX_BASE_URL]
 #define BUNNYX_API_BASE_URL_V2 [NSString stringWithFormat:@"%@/%@", BUNNYX_BASE_URL, BUNNYX_API_VERSION_V2]
 
 // MARK: - 用户相关接口
@@ -33,6 +33,9 @@
 #define BUNNYX_API_USER_UPDATE [NSString stringWithFormat:@"%@/user/update", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_AVATAR [NSString stringWithFormat:@"%@/user/avatar", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_PASSWORD [NSString stringWithFormat:@"%@/user/password", BUNNYX_API_BASE_URL]
+
+// MARK: - 服务器相关接口
+#define BUNNYX_API_SERVER_GET_APP_CONFIG [NSString stringWithFormat:@"%@/server/getAppConfig", BUNNYX_API_BASE_URL]
 
 // MARK: - 首页相关接口
 #define BUNNYX_API_HOME_BANNER [NSString stringWithFormat:@"%@/home/banner", BUNNYX_API_BASE_URL]
