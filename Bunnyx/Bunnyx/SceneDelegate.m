@@ -7,6 +7,7 @@
 
 #import "SceneDelegate.h"
 #import "MainTabBarController.h"
+#import "LaunchViewController.h"
 
 @interface SceneDelegate ()
 
@@ -20,14 +21,29 @@
     // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
     // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
     
-    // 创建窗口并设置TabBar控制器
+    // 创建窗口并设置启动页
     if ([scene isKindOfClass:[UIWindowScene class]]) {
         UIWindowScene *windowScene = (UIWindowScene *)scene;
         self.window = [[UIWindow alloc] initWithWindowScene:windowScene];
         
-        // 创建TabBar控制器作为根视图控制器
-        MainTabBarController *tabBarController = [[MainTabBarController alloc] init];
-        self.window.rootViewController = tabBarController;
+        // 创建启动页控制器
+        LaunchViewController *launchViewController = [[LaunchViewController alloc] init];
+        
+        // 设置启动页图片（您需要将图片添加到Assets.xcassets中）
+        UIImage *backgroundImage = [UIImage imageNamed:@"launch_background"];
+        UIImage *logoImage = [UIImage imageNamed:@"launch_logo"];
+        
+        NSLog(@"背景图片加载状态: %@", backgroundImage ? @"成功" : @"失败");
+        NSLog(@"Logo图片加载状态: %@", logoImage ? @"成功" : @"失败");
+        
+        if (backgroundImage) {
+            [launchViewController setBackgroundImage:backgroundImage];
+        }
+        if (logoImage) {
+            [launchViewController setLogoImage:logoImage];
+        }
+        
+        self.window.rootViewController = launchViewController;
         
         // 显示窗口
         [self.window makeKeyAndVisible];

@@ -7,6 +7,7 @@
 
 #import "AppDelegate.h"
 #import "MainTabBarController.h"
+#import "LaunchViewController.h"
 
 @interface AppDelegate ()
 
@@ -17,6 +18,31 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    // 只在iOS 12及以下版本中设置启动页
+    if (@available(iOS 13.0, *)) {
+        // iOS 13+ 由 SceneDelegate 处理
+        return YES;
+    } else {
+        // iOS 12 及以下版本
+        LaunchViewController *launchViewController = [[LaunchViewController alloc] init];
+        
+        // 设置启动页图片（您需要将图片添加到Assets.xcassets中）
+        UIImage *backgroundImage = [UIImage imageNamed:@"launch_background"];
+        UIImage *logoImage = [UIImage imageNamed:@"launch_logo"];
+        
+        if (backgroundImage) {
+            [launchViewController setBackgroundImage:backgroundImage];
+        }
+        if (logoImage) {
+            [launchViewController setLogoImage:logoImage];
+        }
+        
+        // 设置根视图控制器为启动页
+        self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        self.window.rootViewController = launchViewController;
+        [self.window makeKeyAndVisible];
+    }
     
     return YES;
 }
