@@ -1,0 +1,80 @@
+/* 
+  Localizable.strings
+  Bunnyx
+  
+  Created by Assistant on 2025-01-30.
+  English translation file
+*/
+
+// MARK: - General
+"确定" = "OK";
+"取消" = "Cancel";
+"完成" = "Done";
+"保存" = "Save";
+"删除" = "Delete";
+"编辑" = "Edit";
+"添加" = "Add";
+"搜索" = "Search";
+"刷新" = "Refresh";
+"加载中" = "Loading...";
+"网络错误" = "Network connection failed, please check your network settings";
+"操作成功" = "Operation successful";
+"操作失败" = "Operation failed";
+
+// MARK: - Language Settings
+"语言设置" = "Language Settings";
+"选择语言" = "Select Language";
+"简体中文" = "简体中文";
+"English" = "English";
+
+// MARK: - Home
+"首页" = "Home";
+"推荐" = "Recommend";
+"热门" = "Hot";
+"分类" = "Category";
+"更多" = "More";
+
+// MARK: - User Related
+"个人中心" = "Profile";
+"设置" = "Settings";
+"关于我们" = "About Us";
+"意见反馈" = "Feedback";
+"帮助中心" = "Help Center";
+"退出登录" = "Logout";
+
+// MARK: - Content Related
+"内容详情" = "Content Details";
+"点赞" = "Like";
+"收藏" = "Favorite";
+"分享" = "Share";
+"评论" = "Comment";
+"发布" = "Publish";
+
+// MARK: - Error Messages
+"数据加载失败" = "Failed to load data, please try again";
+"网络连接超时" = "Network connection timeout, please check your network";
+"服务器错误" = "Server error, please try again later";
+"数据解析错误" = "Data format error";
+"权限不足" = "Insufficient permissions to perform this operation";
+
+// MARK: - Tips
+"请输入内容" = "Please enter content";
+"内容不能为空" = "Content cannot be empty";
+"操作确认" = "Confirm Operation";
+"是否确定要删除？" = "Are you sure you want to delete?";
+"删除后无法恢复" = "Cannot be recovered after deletion";
+
+// MARK: - Time Related
+"刚刚" = "Just now";
+"分钟前" = "minutes ago";
+"小时前" = "hours ago";
+"天前" = "days ago";
+"周前" = "weeks ago";
+"月前" = "months ago";
+"年前" = "years ago";
+
+// MARK: - Example Usage
+"例子" = "This is an example";
+"欢迎使用" = "Welcome to Bunnyx";
+"开始使用" = "Get Started";
+"了解更多" = "Learn More";

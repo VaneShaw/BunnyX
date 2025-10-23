@@ -48,6 +48,10 @@
 #define BOLD_FONT(size) [UIFont boldSystemFontOfSize:size]
 #define MEDIUM_FONT(size) [UIFont systemFontOfSize:size weight:UIFontWeightMedium]
 
+// MARK: - 国际化相关宏
+#define LocalString(key) [[LanguageManager sharedManager] localizedStringForKey:key]
+#define LocalStringWithDefault(key, defaultValue) [[LanguageManager sharedManager] localizedStringForKey:key defaultValue:defaultValue]
+
 // MARK: - 常用字体大小
 #define FONT_SIZE_10 10.0
 #define FONT_SIZE_12 12.0

@@ -1,0 +1,314 @@
+//
+//  LanguageManager.m
+//  Bunnyx
+//
+//  Created by 冯文骁 on 2025/11/30.
+//
+
+#import "LanguageManager.h"
+#import "LocalizationFileManager.h"
+
+// 通知名称
+NSString * const LanguageDidChangeNotification = @"LanguageDidChangeNotification";
+
+// 用户偏好设置key
+static NSString * const kLanguageKey = @"BunnyxLanguage";
+
+@interface LanguageManager ()
+
+@property (nonatomic, assign) LanguageType currentLanguage;
+@property (nonatomic, copy) NSString *currentLanguageCode;
+@property (nonatomic, copy) NSString *currentLanguageName;
+@property (nonatomic, assign) BOOL isRTL;
+
+@end
+
+@implementation LanguageManager
+
+#pragma mark - 单例
+
++ (instancetype)sharedManager {
+    static LanguageManager *instance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[LanguageManager alloc] init];
+    });
+    return instance;
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [self setupManager];
+    }
+    return self;
+}
+
+- (void)setupManager {
+    // 从用户偏好设置中读取语言设置
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSInteger savedLanguage = [defaults integerForKey:kLanguageKey];
+    
+    if (savedLanguage == 0 && savedLanguage != LanguageTypeChinese && savedLanguage != LanguageTypeEnglish) {
+        // 如果没有保存的语言设置，使用系统语言
+        [self useSystemLanguage];
+    } else {
+        [self setLanguage:(LanguageType)savedLanguage];
+    }
+}
+
+#pragma mark - 语言切换
+
+- (void)setLanguage:(LanguageType)language {
+    if (_currentLanguage == language) {
+        return;
+    }
+    
+    _currentLanguage = language;
+    
+    // 更新语言代码和名称
+    switch (language) {
+        case LanguageTypeChinese:
+            _currentLanguageCode = @"zh-Hans";
+            _currentLanguageName = @"中文";
+            _isRTL = NO;
+            break;
+        case LanguageTypeEnglish:
+            _currentLanguageCode = @"en";
+            _currentLanguageName = @"English";
+            _isRTL = NO;
+            break;
+    }
+    
+    // 保存到用户偏好设置
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setInteger:language forKey:kLanguageKey];
+    [defaults synchronize];
+    
+    // 发送语言切换通知
+    [[NSNotificationCenter defaultCenter] postNotificationName:LanguageDidChangeNotification object:nil];
+    
+    BUNNYX_LOG(@"语言已切换到: %@", _currentLanguageName);
+}
+
+- (void)setLanguageWithCode:(NSString *)languageCode {
+    LanguageType language = LanguageTypeChinese; // 默认中文
+    
+    if ([languageCode hasPrefix:@"en"]) {
+        language = LanguageTypeEnglish;
+    } else if ([languageCode hasPrefix:@"zh"]) {
+        language = LanguageTypeChinese;
+    }
+    
+    [self setLanguage:language];
+}
+
+- (NSString *)localizedStringForKey:(NSString *)key {
+    return [self localizedStringForKey:key defaultValue:key];
+}
+
+- (NSString *)localizedStringForKey:(NSString *)key defaultValue:(NSString *)defaultValue {
+    if (BUNNYX_IS_EMPTY_STRING(key)) {
+        return defaultValue ?: @"";
+    }
+    
+    // 获取当前语言的本地化字符串
+    NSString *localizedString = [self getLocalizedStringForKey:key language:_currentLanguage];
+    
+    if (localizedString && localizedString.length > 0) {
+        return localizedString;
+    }
+    
+    // 如果没有找到，返回默认值（中文key）
+    return defaultValue ?: key;
+}
+
+#pragma mark - 语言信息
+
+- (NSArray<NSDictionary *> *)supportedLanguages {
+    return @[
+        @{
+            @"type": @(LanguageTypeChinese),
+            @"code": @"zh-Hans",
+            @"name": @"中文",
+            @"displayName": @"中文"
+        },
+        @{
+            @"type": @(LanguageTypeEnglish),
+            @"code": @"en",
+            @"name": @"English",
+            @"displayName": @"English"
+        }
+    ];
+}
+
+- (NSString *)displayNameForLanguage:(LanguageType)language {
+    switch (language) {
+        case LanguageTypeChinese:
+            return @"中文";
+        case LanguageTypeEnglish:
+            return @"English";
+        default:
+            return @"中文";
+    }
+}
+
+- (BOOL)isLanguageSupported:(NSString *)languageCode {
+    if (BUNNYX_IS_EMPTY_STRING(languageCode)) {
+        return NO;
+    }
+    
+    return [languageCode hasPrefix:@"zh"] || [languageCode hasPrefix:@"en"];
+}
+
+#pragma mark - 系统语言
+
+- (LanguageType)systemLanguage {
+    NSArray *languages = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"];
+    NSString *preferredLanguage = languages.firstObject;
+    
+    if ([preferredLanguage hasPrefix:@"en"]) {
+        return LanguageTypeEnglish;
+    } else if ([preferredLanguage hasPrefix:@"zh"]) {
+        return LanguageTypeChinese;
+    }
+    
+    // 默认返回中文
+    return LanguageTypeChinese;
+}
+
+- (void)useSystemLanguage {
+    LanguageType systemLanguage = [self systemLanguage];
+    [self setLanguage:systemLanguage];
+}
+
+#pragma mark - 通知
+
++ (NSString *)languageDidChangeNotification {
+    return LanguageDidChangeNotification;
+}
+
+#pragma mark - 私有方法
+
+- (NSString *)getLocalizedStringForKey:(NSString *)key language:(LanguageType)language {
+    // 首先尝试从缓存获取
+    LocalizationFileManager *fileManager = [LocalizationFileManager sharedManager];
+    NSDictionary *cachedTranslations = [fileManager getCachedTranslationsForLanguage:language];
+    
+    if (cachedTranslations && cachedTranslations[key]) {
+        return cachedTranslations[key];
+    }
+    
+    // 如果缓存中没有，从文件加载
+    NSDictionary *fileTranslations = [fileManager loadTranslationsFromFileForLanguage:language];
+    if (fileTranslations && fileTranslations[key]) {
+        // 缓存翻译数据
+        [fileManager cacheTranslations:fileTranslations forLanguage:language];
+        return fileTranslations[key];
+    }
+    
+    // 如果找不到翻译，直接返回 key 本身
+    return key;
+}
+
+- (NSDictionary *)getTranslationsForLanguage:(LanguageType)language {
+    // 这里返回对应语言的翻译字典
+    // 实际项目中应该从本地化文件或服务器加载
+    
+    switch (language) {
+        case LanguageTypeChinese:
+            return [self getChineseTranslations];
+        case LanguageTypeEnglish:
+            return [self getEnglishTranslations];
+        default:
+            return [self getChineseTranslations];
+    }
+}
+
+- (NSDictionary *)getChineseTranslations {
+    // 中文翻译（key就是中文本身）
+    return @{
+        @"例子": @"例子",
+        @"你好": @"你好",
+        @"世界": @"世界",
+        @"欢迎": @"欢迎",
+        @"设置": @"设置",
+        @"关于": @"关于",
+        @"帮助": @"帮助",
+        @"退出": @"退出",
+        @"确定": @"确定",
+        @"取消": @"取消",
+        @"保存": @"保存",
+        @"删除": @"删除",
+        @"编辑": @"编辑",
+        @"添加": @"添加",
+        @"搜索": @"搜索",
+        @"登录": @"登录",
+        @"注册": @"注册",
+        @"密码": @"密码",
+        @"用户名": @"用户名",
+        @"邮箱": @"邮箱",
+        @"电话": @"电话",
+        @"地址": @"地址",
+        @"时间": @"时间",
+        @"日期": @"日期",
+        @"成功": @"成功",
+        @"失败": @"失败",
+        @"错误": @"错误",
+        @"警告": @"警告",
+        @"信息": @"信息",
+        @"加载中": @"加载中",
+        @"请稍候": @"请稍候",
+        @"网络错误": @"网络错误",
+        @"服务器错误": @"服务器错误",
+        @"数据错误": @"数据错误",
+        @"权限不足": @"权限不足",
+        @"操作成功": @"操作成功",
+        @"操作失败": @"操作失败"
+    };
+}
+
+- (NSDictionary *)getEnglishTranslations {
+    // 英文翻译
+    return @{
+        @"例子": @"Example",
+        @"你好": @"Hello",
+        @"世界": @"World",
+        @"欢迎": @"Welcome",
+        @"设置": @"Settings",
+        @"关于": @"About",
+        @"帮助": @"Help",
+        @"退出": @"Exit",
+        @"确定": @"OK",
+        @"取消": @"Cancel",
+        @"保存": @"Save",
+        @"删除": @"Delete",
+        @"编辑": @"Edit",
+        @"添加": @"Add",
+        @"搜索": @"Search",
+        @"登录": @"Login",
+        @"注册": @"Register",
+        @"密码": @"Password",
+        @"用户名": @"Username",
+        @"邮箱": @"Email",
+        @"电话": @"Phone",
+        @"地址": @"Address",
+        @"时间": @"Time",
+        @"日期": @"Date",
+        @"成功": @"Success",
+        @"失败": @"Failure",
+        @"错误": @"Error",
+        @"警告": @"Warning",
+        @"信息": @"Information",
+        @"加载中": @"Loading",
+        @"请稍候": @"Please wait",
+        @"网络错误": @"Network Error",
+        @"服务器错误": @"Server Error",
+        @"数据错误": @"Data Error",
+        @"权限不足": @"Insufficient Permission",
+        @"操作成功": @"Operation Successful",
+        @"操作失败": @"Operation Failed"
+    };
+}
+
+@end
