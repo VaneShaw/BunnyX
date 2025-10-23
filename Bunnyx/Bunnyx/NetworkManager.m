@@ -36,12 +36,15 @@
 - (void)setupSessionManager {
     self.sessionManager = [AFHTTPSessionManager manager];
     
-    // 设置请求超时时间
-    self.sessionManager.requestSerializer.timeoutInterval = 30.0;
+    // 使用宏定义设置请求超时时间
+    self.sessionManager.requestSerializer.timeoutInterval = BUNNYX_REQUEST_TIMEOUT;
     
     // 设置响应序列化器
     self.sessionManager.responseSerializer = [AFJSONResponseSerializer serializer];
-    self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript", @"text/html", @"text/plain", nil];
+    self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:BUNNYX_CONTENT_TYPE_JSON, @"text/json", @"text/javascript", @"text/html", @"text/plain", nil];
+    
+    // 使用宏定义设置请求头
+    [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_JSON forHTTPHeaderField:BUNNYX_HEADER_ACCEPT];
 }
 
 #pragma mark - GET Request (form-data)
@@ -77,7 +80,7 @@
      failure:(NetworkFailureBlock)failure {
     
     // POST 请求使用 x-www-form-urlencoded 格式
-    [self.sessionManager.requestSerializer setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+    [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];
     
     [self.sessionManager POST:url
                    parameters:parameters

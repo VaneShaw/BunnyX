@@ -6,6 +6,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "BunnyxMacros.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
