@@ -1,5 +1,21 @@
+#!/bin/bash
+
+# 快速修复沙盒权限问题
+# 适用于大多数 iOS 项目
+
+set -e
+
+echo "🚀 快速修复沙盒权限问题..."
+
+# 1. 备份原始文件
+echo "📁 备份原始文件..."
+cp Podfile Podfile.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+
+# 2. 创建简化的 Podfile
+echo "📦 创建简化的 Podfile..."
+cat > Podfile << 'EOF'
 platform :ios, '12.0'
-use_frameworks! :linkage => :static
+use_frameworks!
 
 # 优化安装设置
 install! 'cocoapods',
@@ -40,8 +56,6 @@ post_install do |installer|
     target.build_configurations.each do |config|
       # 禁用 Bitcode
       config.build_settings['ENABLE_BITCODE'] = 'NO'
-      # 统一最低部署版本到 iOS 12，避免 Xcode 16+ 缺少 libarclite 报错
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
       
       # 解决权限问题
       config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
@@ -57,19 +71,27 @@ post_install do |installer|
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
   end
-
-  # 替换主应用目标的资源复制脚本
-  installer.aggregate_targets.each do |aggregate_target|
-    aggregate_target.user_targets.each do |user_target|
-      user_target.build_phases.each do |phase|
-        if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase) && phase.name && phase.name.include?('Copy Pods Resources')
-          puts "✅ 替换主应用目标 '#{user_target.name}' 的 'Copy Pods Resources' 脚本"
-          phase.shell_script = <<~SCRIPT
-            # 使用健壮的资源复制脚本
-            "${SRCROOT}/Scripts/robust_resource_copy.sh"
-          SCRIPT
-        end
-      end
-    end
-  end
 end
+EOF
+
+# 3. 清理并重新安装
+echo "🧹 清理并重新安装 Pods..."
+pod deintegrate
+pod install
+
+# 4. 清理构建缓存
+echo "🗑️ 清理构建缓存..."
+rm -rf ~/Library/Developer/Xcode/DerivedData/Bunnyx-*
+rm -rf build/
+
+# 5. 测试构建
+echo "🏗️ 测试构建..."
+xcodebuild clean -workspace Bunnyx.xcworkspace -scheme Bunnyx
+xcodebuild -workspace Bunnyx.xcworkspace -scheme Bunnyx -destination 'platform=iOS Simulator,name=iPhone 16' build
+
+echo "✅ 修复完成！"
+echo ""
+echo "💡 如果仍有问题，请检查："
+echo "1. Xcode 版本是否支持当前 iOS 版本"
+echo "2. 模拟器是否正常运行"
+echo "3. 网络连接是否正常"

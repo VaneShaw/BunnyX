@@ -9,6 +9,8 @@
 #import "MainTabBarController.h"
 #import "LaunchViewController.h"
 #import "Manager/Config/AppConfigManager.h"
+#import "Manager/Config/SVProgressHUDConfig.h"
+#import <SVProgressHUD/SVProgressHUD.h>
 
 @interface AppDelegate ()
 
@@ -19,6 +21,12 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    // 配置SVProgressHUD
+    [SVProgressHUDConfig configureSVProgressHUD];
+    
+    // 测试SVProgressHUD是否正常工作
+    [SVProgressHUDConfig testSVProgressHUD];
     
     [[AppConfigManager sharedManager]getAppConfigWithSuccess:^(AppConfigModel * _Nonnull configModel) {
             

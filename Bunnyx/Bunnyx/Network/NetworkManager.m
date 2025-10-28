@@ -7,6 +7,7 @@
 
 #import "NetworkManager.h"
 #import <AFNetworking/AFNetworking.h>
+#import <Toast/Toast.h>
 
 @interface NetworkManager ()
 
@@ -47,6 +48,63 @@
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_JSON forHTTPHeaderField:BUNNYX_HEADER_ACCEPT];
 }
 
+#pragma mark - Error Handling
+
+- (void)showErrorToast:(NSError *)error {
+    NSString *errorMessage = [self getErrorMessageFromError:error];
+    
+//    // 在主线程显示Toast
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        [[UIApplication sharedApplication].keyWindow makeToast:errorMessage 
+//                                                      duration:3.0 
+//                                                      position:CSToastPositionCenter];
+//    });
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [SVProgressHUD showErrorWithStatus:errorMessage];
+    });
+}
+
+- (NSString *)getErrorMessageFromError:(NSError *)error {
+    NSString *errorMessage = @"网络请求失败";
+    
+    if (error) {
+        // 检查是否有用户友好的错误信息
+        if (error.userInfo[NSLocalizedDescriptionKey]) {
+            errorMessage = error.userInfo[NSLocalizedDescriptionKey];
+        } else if (error.userInfo[NSLocalizedFailureReasonErrorKey]) {
+            errorMessage = error.userInfo[NSLocalizedFailureReasonErrorKey];
+        } else {
+            // 根据错误码提供更友好的提示
+            switch (error.code) {
+                case NSURLErrorNotConnectedToInternet:
+                    errorMessage = @"网络连接失败，请检查网络设置";
+                    break;
+                case NSURLErrorTimedOut:
+                    errorMessage = @"请求超时，请稍后重试";
+                    break;
+                case NSURLErrorCannotFindHost:
+                    errorMessage = @"无法连接到服务器";
+                    break;
+                case NSURLErrorCannotConnectToHost:
+                    errorMessage = @"服务器连接失败";
+                    break;
+                case NSURLErrorNetworkConnectionLost:
+                    errorMessage = @"网络连接中断";
+                    break;
+                case NSURLErrorBadServerResponse:
+                    errorMessage = @"服务器响应异常";
+                    break;
+                default:
+                    errorMessage = [NSString stringWithFormat:@"请求失败 (错误码: %ld)", (long)error.code];
+                    break;
+            }
+        }
+    }
+    
+    return errorMessage;
+}
+
 #pragma mark - GET Request (form-data)
 
 - (void)GET:(NSString *)url
@@ -66,6 +124,9 @@
             success(responseObject);
         }
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        // 自动显示错误Toast
+        [self showErrorToast:error];
+        
         if (failure) {
             failure(error);
         }
@@ -81,16 +142,34 @@
     
     // POST 请求使用 x-www-form-urlencoded 格式
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];
+    // 打印请求头
+    NSDictionary *headersToLog = self.sessionManager.requestSerializer.HTTPRequestHeaders;
+    NSLog(@"[NetworkManager] POST %@\nHeaders: %@\nParams: %@", url, headersToLog, parameters);
     
     [self.sessionManager POST:url
                    parameters:parameters
                       headers:nil
                      progress:nil
                       success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-        if (success) {
+        NSInteger code = [responseObject[@"code"] integerValue];
+        if (code == 200) {
             success(responseObject);
         }
+        else
+        {
+            NSString * message = responseObject[@"message"];
+            
+            [SVProgressHUD showErrorWithStatus:message];
+            
+            if (failure) {
+                failure(responseObject);
+            }
+            
+        }
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        // 自动显示错误Toast
+        [self showErrorToast:error];
+        
         if (failure) {
             failure(error);
         }

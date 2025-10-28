@@ -26,7 +26,7 @@
 #define BUNNYX_API_BASE_URL_V2 [NSString stringWithFormat:@"%@/%@", BUNNYX_BASE_URL, BUNNYX_API_VERSION_V2]
 
 // MARK: - 用户相关接口
-#define BUNNYX_API_USER_LOGIN [NSString stringWithFormat:@"%@/user/login", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_USER_LOGIN_ACCOUNT [NSString stringWithFormat:@"%@/user/login/account", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REGISTER [NSString stringWithFormat:@"%@/user/register", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGOUT [NSString stringWithFormat:@"%@/user/logout", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_INFO [NSString stringWithFormat:@"%@/user/info", BUNNYX_API_BASE_URL]

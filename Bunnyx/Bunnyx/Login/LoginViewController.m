@@ -7,6 +7,7 @@
 
 #import "LoginViewController.h"
 #import "MainTabBarController.h"
+#import "AccountLoginViewController.h"
 #import <Masonry/Masonry.h>
 
 
@@ -217,7 +218,15 @@
 
 - (void)accountLoginButtonTapped:(UIButton *)sender {
     NSLog(@"Account Login 按钮被点击");
-    [self transitionToMainInterface];
+    
+    // 创建账号登录页面
+    AccountLoginViewController *accountLoginVC = [[AccountLoginViewController alloc] init];
+    
+    // 使用导航控制器进行跳转
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:accountLoginVC];
+    navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+    
+    [self presentViewController:navigationController animated:YES completion:nil];
 }
 
 - (void)agreementCheckboxTapped:(UIButton *)sender {

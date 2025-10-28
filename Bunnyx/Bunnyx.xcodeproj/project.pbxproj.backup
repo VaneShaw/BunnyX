@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		653CD8D4D13F72383B50FB95 /* Pods_BunnyxTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8854EF78225DF1242953B4E6 /* Pods_BunnyxTests.framework */; };
-		90178ECBE6434F2BE5CF091A /* Pods_Bunnyx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DC7CB0B9B3622C318AD1E68 /* Pods_Bunnyx.framework */; };
-		E95F5833BEC8D688A7BF93C9 /* Pods_BunnyxUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25E71AB494843949CF1CB045 /* Pods_BunnyxUITests.framework */; };
+		7578138D8730E68BF2488175 /* libPods-Bunnyx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 47AA43EF04A75391B5C7C34E /* libPods-Bunnyx.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,18 +28,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0F686BF6995A7E1D69B20441 /* Pods-BunnyxUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BunnyxUITests.release.xcconfig"; path = "Target Support Files/Pods-BunnyxUITests/Pods-BunnyxUITests.release.xcconfig"; sourceTree = "<group>"; };
 		10D2792E2EA68CF50052E919 /* Bunnyx.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bunnyx.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		10D279492EA68CF60052E919 /* BunnyxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BunnyxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		10D279532EA68CF60052E919 /* BunnyxUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BunnyxUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		25E71AB494843949CF1CB045 /* Pods_BunnyxUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BunnyxUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		51CE1CED5DF12DBB9AD0E1CA /* Pods-BunnyxUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BunnyxUITests.debug.xcconfig"; path = "Target Support Files/Pods-BunnyxUITests/Pods-BunnyxUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		55A927E9EA60D6D9C663B914 /* Pods-BunnyxTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BunnyxTests.debug.xcconfig"; path = "Target Support Files/Pods-BunnyxTests/Pods-BunnyxTests.debug.xcconfig"; sourceTree = "<group>"; };
-		6DC7CB0B9B3622C318AD1E68 /* Pods_Bunnyx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Bunnyx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		7D33267CDD1B3EF44FBB3D2C /* Pods-Bunnyx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bunnyx.debug.xcconfig"; path = "Target Support Files/Pods-Bunnyx/Pods-Bunnyx.debug.xcconfig"; sourceTree = "<group>"; };
-		8854EF78225DF1242953B4E6 /* Pods_BunnyxTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BunnyxTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		B4DB9CDF388AA533879997E8 /* Pods-BunnyxTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BunnyxTests.release.xcconfig"; path = "Target Support Files/Pods-BunnyxTests/Pods-BunnyxTests.release.xcconfig"; sourceTree = "<group>"; };
-		F5FD99737A5B4DE4EF6AD8EA /* Pods-Bunnyx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bunnyx.release.xcconfig"; path = "Target Support Files/Pods-Bunnyx/Pods-Bunnyx.release.xcconfig"; sourceTree = "<group>"; };
+		47AA43EF04A75391B5C7C34E /* libPods-Bunnyx.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Bunnyx.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		654F7D7F90EA07951D752607 /* Pods-Bunnyx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bunnyx.release.xcconfig"; path = "Target Support Files/Pods-Bunnyx/Pods-Bunnyx.release.xcconfig"; sourceTree = "<group>"; };
+		70B22F422A7E59BE9C997044 /* Pods-Bunnyx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Bunnyx.debug.xcconfig"; path = "Target Support Files/Pods-Bunnyx/Pods-Bunnyx.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,15 +57,11 @@
 		};
 		10D2794C2EA68CF60052E919 /* BunnyxTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = BunnyxTests;
 			sourceTree = "<group>";
 		};
 		10D279562EA68CF60052E919 /* BunnyxUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = BunnyxUITests;
 			sourceTree = "<group>";
 		};
@@ -84,7 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				90178ECBE6434F2BE5CF091A /* Pods_Bunnyx.framework in Frameworks */,
+				7578138D8730E68BF2488175 /* libPods-Bunnyx.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,7 +80,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				653CD8D4D13F72383B50FB95 /* Pods_BunnyxTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -100,7 +87,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E95F5833BEC8D688A7BF93C9 /* Pods_BunnyxUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,7 +101,7 @@
 				10D279562EA68CF60052E919 /* BunnyxUITests */,
 				10D2792F2EA68CF50052E919 /* Products */,
 				76AB43EFBFD9D3B83C31126C /* Pods */,
-				EFAF018EB26E3E30AFFE694F /* Frameworks */,
+				D7EACF72F9A24A6C670E057C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -132,22 +118,16 @@
 		76AB43EFBFD9D3B83C31126C /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				7D33267CDD1B3EF44FBB3D2C /* Pods-Bunnyx.debug.xcconfig */,
-				F5FD99737A5B4DE4EF6AD8EA /* Pods-Bunnyx.release.xcconfig */,
-				55A927E9EA60D6D9C663B914 /* Pods-BunnyxTests.debug.xcconfig */,
-				B4DB9CDF388AA533879997E8 /* Pods-BunnyxTests.release.xcconfig */,
-				51CE1CED5DF12DBB9AD0E1CA /* Pods-BunnyxUITests.debug.xcconfig */,
-				0F686BF6995A7E1D69B20441 /* Pods-BunnyxUITests.release.xcconfig */,
+				70B22F422A7E59BE9C997044 /* Pods-Bunnyx.debug.xcconfig */,
+				654F7D7F90EA07951D752607 /* Pods-Bunnyx.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		EFAF018EB26E3E30AFFE694F /* Frameworks */ = {
+		D7EACF72F9A24A6C670E057C /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				6DC7CB0B9B3622C318AD1E68 /* Pods_Bunnyx.framework */,
-				8854EF78225DF1242953B4E6 /* Pods_BunnyxTests.framework */,
-				25E71AB494843949CF1CB045 /* Pods_BunnyxUITests.framework */,
+				47AA43EF04A75391B5C7C34E /* libPods-Bunnyx.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -159,11 +139,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 10D2795C2EA68CF60052E919 /* Build configuration list for PBXNativeTarget "Bunnyx" */;
 			buildPhases = (
-				9020D988B3426A8D3A5685C2 /* [CP] Check Pods Manifest.lock */,
+				DFC8F01E4DB3912A70496C21 /* [CP] Check Pods Manifest.lock */,
 				10D2792A2EA68CF50052E919 /* Sources */,
 				10D2792B2EA68CF50052E919 /* Frameworks */,
 				10D2792C2EA68CF50052E919 /* Resources */,
-				50DA4383F6D4CB2276FBB940 /* [CP] Copy Pods Resources */,
+				48A3ACB745D400F88857F83C /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -181,7 +161,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 10D279612EA68CF60052E919 /* Build configuration list for PBXNativeTarget "BunnyxTests" */;
 			buildPhases = (
-				4A6F89693985E2700EFEEEA9 /* [CP] Check Pods Manifest.lock */,
 				10D279452EA68CF60052E919 /* Sources */,
 				10D279462EA68CF60052E919 /* Frameworks */,
 				10D279472EA68CF60052E919 /* Resources */,
@@ -203,7 +182,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 10D279642EA68CF60052E919 /* Build configuration list for PBXNativeTarget "BunnyxUITests" */;
 			buildPhases = (
-				63F9B23E1A04F952FFCF479D /* [CP] Check Pods Manifest.lock */,
 				10D2794F2EA68CF60052E919 /* Sources */,
 				10D279502EA68CF60052E919 /* Frameworks */,
 				10D279512EA68CF60052E919 /* Resources */,
@@ -291,66 +269,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		4A6F89693985E2700EFEEEA9 /* [CP] Check Pods Manifest.lock */ = {
+		48A3ACB745D400F88857F83C /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-BunnyxTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		50DA4383F6D4CB2276FBB940 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Bunnyx/Pods-Bunnyx-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Bunnyx/Pods-Bunnyx-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"Resource copy disabled due to sandbox restrictions\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Bunnyx/Pods-Bunnyx-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		63F9B23E1A04F952FFCF479D /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-BunnyxUITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		9020D988B3426A8D3A5685C2 /* [CP] Check Pods Manifest.lock */ = {
+		DFC8F01E4DB3912A70496C21 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -414,15 +350,13 @@
 /* Begin XCBuildConfiguration section */
 		10D2795D2EA68CF60052E919 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7D33267CDD1B3EF44FBB3D2C /* Pods-Bunnyx.debug.xcconfig */;
+			baseConfigurationReference = 70B22F422A7E59BE9C997044 /* Pods-Bunnyx.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bunnyx/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -444,15 +378,13 @@
 		};
 		10D2795E2EA68CF60052E919 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = F5FD99737A5B4DE4EF6AD8EA /* Pods-Bunnyx.release.xcconfig */;
+			baseConfigurationReference = 654F7D7F90EA07951D752607 /* Pods-Bunnyx.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bunnyx/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -513,8 +445,6 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -574,8 +504,6 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -593,13 +521,10 @@
 		};
 		10D279622EA68CF60052E919 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 55A927E9EA60D6D9C663B914 /* Pods-BunnyxTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
@@ -613,13 +538,10 @@
 		};
 		10D279632EA68CF60052E919 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B4DB9CDF388AA533879997E8 /* Pods-BunnyxTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
@@ -633,12 +555,9 @@
 		};
 		10D279652EA68CF60052E919 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 51CE1CED5DF12DBB9AD0E1CA /* Pods-BunnyxUITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yunxu.BunnyxUITests;
@@ -651,12 +570,9 @@
 		};
 		10D279662EA68CF60052E919 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0F686BF6995A7E1D69B20441 /* Pods-BunnyxUITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Bunnyx/Bunnyx-Prefix.pch";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yunxu.BunnyxUITests;

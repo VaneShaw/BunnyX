@@ -1,0 +1,122 @@
+# 健壮的 Podfile 配置
+# 解决沙盒权限问题
+
+platform :ios, '12.0'
+use_frameworks!
+
+# 优化 CocoaPods 安装设置
+install! 'cocoapods',
+  :disable_input_output_paths => true,
+  :integrate_targets => true,
+  :preserve_pod_file_structure => true,
+  :deterministic_uuids => false,
+  :share_schemes_for_development_pods => true,
+  :warn_for_multiple_pod_sources => false
+
+# 全局设置
+inhibit_all_warnings!
+
+target 'Bunnyx' do
+  # 网络库
+  pod 'AFNetworking', '~> 4.0'
+  
+  # 图片处理
+  pod 'SDWebImage', '5.19.2', :modular_headers => true
+  
+  # UI 布局
+  pod 'Masonry'
+  
+  # 下拉刷新
+  pod 'MJRefresh'
+  
+  # 响应式编程
+  pod 'ReactiveObjC'
+  
+  # 数据模型
+  pod 'YYModel'
+  pod 'YYCache'
+  
+  # 进度提示
+  pod 'SVProgressHUD'
+  
+  # 键盘管理
+  pod 'IQKeyboardManager'
+  
+  # 数据库
+  pod 'FMDB'
+  
+  # 日志
+  pod 'CocoaLumberjack/Swift'
+  
+  # 空数据视图
+  pod 'DZNEmptyDataSet'
+  
+  # 图片选择器
+  pod 'TZImagePickerController', :modular_headers => true
+  
+  # 提示框
+  pod 'Toast'
+  
+  # 工具类
+  pod 'YYCategories'
+  pod 'YYText'
+end
+
+target 'BunnyxTests' do
+  inherit! :search_paths
+end
+
+target 'BunnyxUITests' do
+  inherit! :search_paths
+end
+
+# 后安装脚本
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      # 禁用 Bitcode
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+      
+      # 优化编译设置
+      config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
+      config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+      
+      # 解决权限问题
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+      
+      # 优化构建
+      config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+      config.build_settings['VALIDATE_PRODUCT'] = 'NO'
+      config.build_settings['SKIP_INSTALL'] = 'YES'
+      
+      # 解决警告
+      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+    end
+    
+    # 修复资源复制问题
+    if target.respond_to?(:resource_bundle_targets)
+      target.resource_bundle_targets.each do |resource_target|
+        resource_target.build_configurations.each do |config|
+          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+          config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+        end
+      end
+    end
+  end
+  
+  # 替换资源复制脚本
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |phase|
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        if phase.name && phase.name.include?('Copy Pods Resources')
+          phase.shell_script = <<~SCRIPT
+            # 使用健壮的资源复制脚本
+            "${SRCROOT}/Scripts/robust_resource_copy.sh"
+          SCRIPT
+        end
+      end
+    end
+  end
+end
