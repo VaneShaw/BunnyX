@@ -9,6 +9,10 @@
 #import "MainTabBarController.h"
 #import <Masonry/Masonry.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import "BunnyxMacros.h"
+#import "DeviceIdentifierManager.h"
+#import "UserManager.h"
+#import "UserInfoManager.h"
 
 @interface AccountLoginViewController ()
 
@@ -400,11 +404,10 @@
     
     [[NetworkManager sharedManager]POST:BUNNYX_API_USER_LOGIN_ACCOUNT parameters:param success:^(id  _Nonnull responseObject) {
         NSLog(@"登录成功: %@", responseObject);
-        // dispatch_async(dispatch_get_main_queue(), ^{
-             [SVProgressHUD dismiss];
-        // });
-        // 登录成功，跳转到主界面
-        [self transitionToMainInterface];
+        
+        // 处理登录成功后的逻辑
+        [self handleLoginSuccess:responseObject];
+        
     } failure:^(NSError * _Nonnull error) {
         NSLog(@"登录失败: %@", error);
         // dispatch_async(dispatch_get_main_queue(), ^{
@@ -413,6 +416,65 @@
         // 错误信息会通过NetworkManager自动显示Toast
     }];
     
+}
+
+- (void)handleLoginSuccess:(NSDictionary *)responseObject {
+    NSLog(@"处理登录成功响应: %@", responseObject);
+    
+    // 提取token信息
+    NSDictionary *data = responseObject[@"data"];
+    if (data && [data isKindOfClass:[NSDictionary class]]) {
+        NSString *accessToken = data[@"access_token"];
+        NSString *refreshToken = data[@"refresh_token"];
+        NSString *tokenType = data[@"token_type"];
+        NSNumber *expiresIn = data[@"expires_in"];
+        
+        if (accessToken && accessToken.length > 0 && refreshToken && refreshToken.length > 0) {
+            // 保存token信息
+            [[UserManager sharedManager] saveUserTokensWithAccessToken:accessToken
+                                                           refreshToken:refreshToken
+                                                              tokenType:tokenType
+                                                              expiresIn:expiresIn];
+            
+            // 设置网络管理器的Bearer认证
+            [[NetworkManager sharedManager] setBearerAuthWithToken:accessToken];
+            
+            // 保存用户信息
+            [[UserManager sharedManager] saveUserInfo:data];
+            
+            NSLog(@"Token保存成功: %@ %@", tokenType, accessToken);
+            
+            // 获取用户详细信息
+            [self fetchUserInfoAfterLogin];
+        } else {
+            NSLog(@"登录响应中未找到完整的token信息");
+            [SVProgressHUD showErrorWithStatus:@"登录响应格式错误"];
+        }
+    } else {
+        NSLog(@"登录响应数据格式错误");
+        [SVProgressHUD showErrorWithStatus:@"登录响应格式错误"];
+    }
+}
+
+- (void)fetchUserInfoAfterLogin {
+    NSLog(@"登录成功后获取用户详细信息");
+    
+    [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+        NSLog(@"获取用户详细信息成功: %@", userInfo.nickname);
+        
+        // 隐藏加载状态
+        [SVProgressHUD dismiss];
+        
+        // 跳转到主界面
+        [self transitionToMainInterface];
+        
+    } failure:^(NSError *error) {
+        NSLog(@"获取用户详细信息失败: %@", error);
+        
+        // 即使获取用户信息失败，也继续跳转到主界面
+        [SVProgressHUD dismiss];
+        [self transitionToMainInterface];
+    }];
 }
 
 - (void)transitionToMainInterface {

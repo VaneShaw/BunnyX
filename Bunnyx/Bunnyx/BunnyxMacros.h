@@ -154,4 +154,8 @@
 #define BUNNYX_IS_EMPTY_DICTIONARY(dict) (!dict || [dict isKindOfClass:[NSNull class]] || [dict count] == 0)
 #define BUNNYX_SAFE_DICTIONARY(dict) (dict ? dict : @{})
 
+// MARK: - 设备标识宏
+#define BUNNYX_DEVICE_UUID_KEY @"BunnyxDeviceUUID"
+#define BUNNYX_DEVICE_UUID [[DeviceIdentifierManager sharedManager] getDeviceUUID]
+
 #endif /* BunnyxMacros_h */

@@ -65,15 +65,11 @@
 		};
 		10D2794C2EA68CF60052E919 /* BunnyxTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = BunnyxTests;
 			sourceTree = "<group>";
 		};
 		10D279562EA68CF60052E919 /* BunnyxUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = BunnyxUITests;
 			sourceTree = "<group>";
 		};

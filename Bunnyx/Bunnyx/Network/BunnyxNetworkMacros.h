@@ -29,6 +29,7 @@
 #define BUNNYX_API_USER_LOGIN_ACCOUNT [NSString stringWithFormat:@"%@/user/login/account", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REGISTER [NSString stringWithFormat:@"%@/user/register", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGOUT [NSString stringWithFormat:@"%@/user/logout", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_USER_REFRESH_TOKEN [NSString stringWithFormat:@"%@/user/refresh/token", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_INFO [NSString stringWithFormat:@"%@/user/info", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_UPDATE [NSString stringWithFormat:@"%@/user/update", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_AVATAR [NSString stringWithFormat:@"%@/user/avatar", BUNNYX_API_BASE_URL]
@@ -217,5 +218,33 @@
 #define BUNNYX_SUCCESS_UPDATE @"更新成功"
 #define BUNNYX_SUCCESS_DELETE @"删除成功"
 #define BUNNYX_SUCCESS_UPLOAD @"上传成功"
+
+// MARK: - 设备相关宏
+#define BUNNYX_DEVICE_UUID_KEY @"BunnyxDeviceUUID"
+#define BUNNYX_APP_VERSION @"1.0.0"
+#define BUNNYX_SYSTEM_NAME @"ios"
+#define BUNNYX_API_VERSION @"v1"
+#define BUNNYX_CHANNEL @"AppStore"
+
+// MARK: - 认证相关宏
+#define BUNNYX_BASIC_AUTH_USERNAME @"weking"
+#define BUNNYX_BASIC_AUTH_PASSWORD @"weking"
+
+// MARK: - 语言相关宏
+#define BUNNYX_LANGUAGE_ZH_CN @"zh_CN"
+#define BUNNYX_LANGUAGE_EN_US @"en_US"
+#define BUNNYX_LANGUAGE_ZH_TW @"zh_TW"
+
+// MARK: - 请求头字段宏
+#define BUNNYX_HEADER_ACCEPT_LANGUAGE @"Accept-Language"
+#define BUNNYX_HEADER_APP_VERSION @"App-Version"
+#define BUNNYX_HEADER_SYSTEM_NAME @"System-Name"
+#define BUNNYX_HEADER_SYSTEM_VERSION @"System-Version"
+#define BUNNYX_HEADER_DEVICE_ID @"Device-Id"
+#define BUNNYX_HEADER_DEVICE_MODEL @"Device-Model"
+#define BUNNYX_HEADER_API_VERSION @"Api-Version"
+#define BUNNYX_HEADER_CHANNEL @"channel"
+#define BUNNYX_HEADER_EFFECTIVE_IMEI @"Effective-imei"
+#define BUNNYX_HEADER_EQUIPMENT_BRAND @"Equipment-brand"
 
 #endif /* BunnyxNetworkMacros_h */

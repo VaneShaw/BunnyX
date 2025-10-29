@@ -25,9 +25,6 @@
     // 配置SVProgressHUD
     [SVProgressHUDConfig configureSVProgressHUD];
     
-    // 测试SVProgressHUD是否正常工作
-    [SVProgressHUDConfig testSVProgressHUD];
-    
     [[AppConfigManager sharedManager]getAppConfigWithSuccess:^(AppConfigModel * _Nonnull configModel) {
             
         } failure:^(NSError * _Nonnull error) {

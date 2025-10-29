@@ -41,6 +41,22 @@ typedef void(^NetworkFailureBlock)(NSError *error);
      success:(NetworkSuccessBlock)success
      failure:(NetworkFailureBlock)failure;
 
+/**
+ * 设置Basic认证 (用于登录和刷新token接口)
+ */
+- (void)setBasicAuth;
+
+/**
+ * 设置Bearer认证 (用于除登录和刷新token外的其他接口)
+ * @param token 从登录或刷新token接口返回的token
+ */
+- (void)setBearerAuthWithToken:(NSString *)token;
+
+/**
+ * 清除认证信息
+ */
+- (void)clearAuth;
+
 @end
 
 NS_ASSUME_NONNULL_END

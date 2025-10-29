@@ -67,10 +67,8 @@
         self.appNameLabel.alpha = 1.0;
         self.appNameLabel.transform = CGAffineTransformIdentity;
     } completion:^(BOOL finished) {
-        // 动画完成后，延迟跳转到主界面
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self transitionToMainInterface];
-        });
+        // 动画完成，不自动跳转，等待外部控制
+        NSLog(@"[LaunchViewController] 启动动画完成");
     }];
 }
 

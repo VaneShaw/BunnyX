@@ -8,6 +8,9 @@
 #import "SceneDelegate.h"
 #import "MainTabBarController.h"
 #import "LaunchViewController.h"
+#import "UserManager.h"
+#import "NetworkManager.h"
+#import "UserInfoManager.h"
 
 @interface SceneDelegate ()
 
@@ -26,27 +29,126 @@
         UIWindowScene *windowScene = (UIWindowScene *)scene;
         self.window = [[UIWindow alloc] initWithWindowScene:windowScene];
         
-        // 创建启动页控制器
-        LaunchViewController *launchViewController = [[LaunchViewController alloc] init];
-        
-        // 设置启动页图片（您需要将图片添加到Assets.xcassets中）
-        UIImage *backgroundImage = [UIImage imageNamed:@"launch_background"];
-        UIImage *logoImage = [UIImage imageNamed:@"launch_logo"];
-        
-        NSLog(@"背景图片加载状态: %@", backgroundImage ? @"成功" : @"失败");
-        NSLog(@"Logo图片加载状态: %@", logoImage ? @"成功" : @"失败");
-        
-        if (backgroundImage) {
-            [launchViewController setBackgroundImage:backgroundImage];
-        }
-        if (logoImage) {
-            [launchViewController setLogoImage:logoImage];
-          }
-        
-        self.window.rootViewController = launchViewController;
+        // 先显示启动页
+        [self showLaunchScreen];
         
         // 显示窗口
         [self.window makeKeyAndVisible];
+        
+        // 延迟检查用户登录状态，让启动页有时间显示（2.5秒，包含动画时间）
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self checkUserLoginStatusAndNavigate];
+        });
+    }
+}
+
+- (void)showLaunchScreen {
+    NSLog(@"[SceneDelegate] 显示启动页");
+    // 创建启动页控制器
+    LaunchViewController *launchViewController = [[LaunchViewController alloc] init];
+    
+    // 设置启动页图片（您需要将图片添加到Assets.xcassets中）
+    UIImage *backgroundImage = [UIImage imageNamed:@"launch_background"];
+    UIImage *logoImage = [UIImage imageNamed:@"launch_logo"];
+    
+    NSLog(@"[SceneDelegate] 背景图片加载状态: %@", backgroundImage ? @"成功" : @"失败");
+    NSLog(@"[SceneDelegate] Logo图片加载状态: %@", logoImage ? @"成功" : @"失败");
+    
+    if (backgroundImage) {
+        [launchViewController setBackgroundImage:backgroundImage];
+    }
+    if (logoImage) {
+        [launchViewController setLogoImage:logoImage];
+    }
+    
+    self.window.rootViewController = launchViewController;
+    NSLog(@"[SceneDelegate] 启动页设置完成");
+}
+
+- (void)checkUserLoginStatusAndNavigate {
+    NSLog(@"[SceneDelegate] 检查用户登录状态");
+    BOOL isLoggedIn = [[UserManager sharedManager] isUserLoggedIn];
+    NSLog(@"[SceneDelegate] 用户登录状态: %@", isLoggedIn ? @"已登录" : @"未登录");
+    
+    if (isLoggedIn) {
+        // 已登录，跳转到主页
+        NSLog(@"[SceneDelegate] 跳转到主页");
+        [self navigateToMainInterface];
+    } else {
+        // 未登录，跳转到登录页
+        NSLog(@"[SceneDelegate] 跳转到登录页");
+        [self navigateToLoginPage];
+    }
+}
+
+- (void)navigateToMainInterface {
+    // 创建主界面
+    MainTabBarController *mainTabBarController = [[MainTabBarController alloc] init];
+    self.window.rootViewController = mainTabBarController;
+    
+    // 设置用户认证
+    [self setupUserAuthentication];
+}
+
+- (void)setupUserAuthentication {
+    // 已登录用户，设置认证
+    NSString *accessToken = [[UserManager sharedManager] getAccessToken];
+    if (accessToken) {
+        // 检查token是否过期
+        if ([[UserManager sharedManager] isTokenExpired]) {
+            NSLog(@"[SceneDelegate] Token已过期，尝试刷新");
+            [self refreshTokenIfNeeded];
+        } else {
+            // 设置Bearer认证
+            [[NetworkManager sharedManager] setBearerAuthWithToken:accessToken];
+            NSLog(@"[SceneDelegate] 自动设置Bearer认证成功");
+            
+            // 刷新用户信息
+            [self refreshUserInfoIfNeeded];
+        }
+    } else {
+        NSLog(@"[SceneDelegate] 访问token不存在，清除登录状态");
+        [[UserManager sharedManager] logout];
+    }
+}
+
+- (void)refreshTokenIfNeeded {
+    [[UserManager sharedManager] refreshTokenWithSuccess:^{
+        NSLog(@"[SceneDelegate] Token刷新成功");
+        // 刷新用户信息
+        [self refreshUserInfoIfNeeded];
+    } failure:^(NSError *error) {
+        NSLog(@"[SceneDelegate] Token刷新失败: %@", error);
+        // Token刷新失败，清除登录状态并跳转到登录页
+        [[UserManager sharedManager] logout];
+        [self navigateToLoginPage];
+    }];
+}
+
+- (void)navigateToLoginPage {
+    // 创建登录页面
+    Class loginClass = NSClassFromString(@"LoginViewController");
+    if (loginClass) {
+        UIViewController *loginViewController = [[loginClass alloc] init];
+        self.window.rootViewController = loginViewController;
+    } else {
+        // 如果没有找到LoginViewController，显示启动页
+        [self showLaunchScreen];
+    }
+}
+
+- (void)refreshUserInfoIfNeeded {
+    // 检查本地是否有用户信息，如果没有则刷新
+    UserInfoModel *userInfo = [[UserInfoManager sharedManager] getCurrentUserInfo];
+    if (!userInfo) {
+        NSLog(@"[SceneDelegate] 本地无用户信息，开始刷新");
+        [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+            NSLog(@"[SceneDelegate] 刷新用户信息成功: %@", userInfo.nickname);
+        } failure:^(NSError *error) {
+            NSLog(@"[SceneDelegate] 刷新用户信息失败: %@", error);
+        }];
+    } else {
+        NSLog(@"[SceneDelegate] 本地已有用户信息: %@", userInfo.nickname);
     }
 }
 

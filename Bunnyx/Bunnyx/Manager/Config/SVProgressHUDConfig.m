@@ -31,16 +31,12 @@
     // 测试资源包加载
     NSBundle *bundle = [SVProgressHUD imageBundle];
     if (bundle) {
-        NSLog(@"SVProgressHUD 资源包: %@", bundle);
-        
+    
         // 测试图片加载
         UIImage *successImage = [SVProgressHUDResourceLoader imageNamed:@"success"];
         UIImage *errorImage = [SVProgressHUDResourceLoader imageNamed:@"error"];
         UIImage *infoImage = [SVProgressHUDResourceLoader imageNamed:@"info"];
-        
-        NSLog(@"成功图片: %@", successImage ? @"✅" : @"❌");
-        NSLog(@"错误图片: %@", errorImage ? @"✅" : @"❌");
-        NSLog(@"信息图片: %@", infoImage ? @"✅" : @"❌");
+
     } else {
         NSLog(@"⚠️ SVProgressHUD 资源包未找到，将使用默认样式");
     }
