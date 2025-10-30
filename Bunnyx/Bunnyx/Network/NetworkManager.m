@@ -221,12 +221,39 @@
                      headers:nil
                     progress:nil
                      success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-        if (success) {
-            success(responseObject);
+        // 校验响应对象
+        if (!responseObject || ![responseObject isKindOfClass:[NSDictionary class]]) {
+            NSString *errorMessage = @"服务器响应格式错误";
+            [SVProgressHUD showErrorWithStatus:errorMessage];
+            if (failure) {
+                NSError *err = [NSError errorWithDomain:@"NetworkError" code:-1002 userInfo:@{NSLocalizedDescriptionKey: errorMessage}];
+                failure(err);
+            }
+            return;
+        }
+        NSDictionary *dict = (NSDictionary *)responseObject;
+        NSInteger code = [dict[@"code"] integerValue];
+        if (code == 0) {
+            if (success) { success(responseObject); }
+        } else if (code == 1) {
+            // Token 失效，统一处理并回调失败
+            NSLog(@"[NetworkManager] Token失效（GET），准备跳转登录页");
+            [self handleTokenExpired];
+            if (failure) {
+                NSError *err = [NSError errorWithDomain:@"TokenExpiredError" code:1 userInfo:@{NSLocalizedDescriptionKey: @"登录已过期，请重新登录"}];
+                failure(err);
+            }
+        } else {
+            NSString *message = dict[@"message"]; if (!message || message.length == 0) { message = @"请求失败，请稍后重试"; }
+            [SVProgressHUD showErrorWithStatus:message];
+            if (failure) {
+                NSError *err = [NSError errorWithDomain:@"BusinessError" code:code userInfo:@{NSLocalizedDescriptionKey: message, @"responseObject": dict ?: @{} }];
+                failure(err);
+            }
         }
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
         // 打印详细的错误信息
-        NSLog(@"[NetworkManager] POST请求失败: %@", error);
+        NSLog(@"[NetworkManager] GET请求失败: %@", error);
         NSLog(@"[NetworkManager] 响应数据: %@", task.response);
         NSLog(@"[NetworkManager] 错误详情: %@", error.userInfo);
         

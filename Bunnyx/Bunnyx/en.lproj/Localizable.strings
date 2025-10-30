@@ -78,3 +78,10 @@
 "欢迎使用" = "Welcome to Bunnyx";
 "开始使用" = "Get Started";
 "了解更多" = "Learn More";
+
+// MARK: - Profile Page
+"订阅" = "Subscribe";
+"生成" = "Generate";
+"点赞" = "Like";
+"金币" = "Coins";
+"ID" = "ID";

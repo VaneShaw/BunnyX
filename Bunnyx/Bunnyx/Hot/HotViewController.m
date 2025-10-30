@@ -7,8 +7,10 @@
 
 #import "HotViewController.h"
 #import <Masonry/Masonry.h>
+#import "BunnyxMacros.h"
 
 @interface HotViewController ()
+@property (nonatomic, strong) UILabel *label;
 
 @end
 
@@ -17,47 +19,18 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.title = @"热门";
-    self.view.backgroundColor = [UIColor systemBackgroundColor];
-    
-    // 设置导航栏样式
-    [self setupNavigationBar];
-    
-    // 添加内容视图
-    [self setupContentView];
-}
-
-- (void)setupNavigationBar {
-    // 设置导航栏标题颜色
-    self.navigationController.navigationBar.titleTextAttributes = @{
-        NSForegroundColorAttributeName: [UIColor labelColor]
-    };
-    
-    // 设置导航栏背景色
-    if (@available(iOS 13.0, *)) {
-        UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
-        [appearance configureWithOpaqueBackground];
-        appearance.backgroundColor = [UIColor systemBackgroundColor];
-        appearance.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor labelColor]};
-        
-        self.navigationController.navigationBar.standardAppearance = appearance;
-        self.navigationController.navigationBar.scrollEdgeAppearance = appearance;
-    }
-}
-
-- (void)setupContentView {
-    // 创建热门标签
-    UILabel *hotLabel = [[UILabel alloc] init];
-    hotLabel.text = @"🔥 热门内容";
-    hotLabel.font = [UIFont systemFontOfSize:24 weight:UIFontWeightBold];
-    hotLabel.textColor = [UIColor systemOrangeColor];
-    hotLabel.textAlignment = NSTextAlignmentCenter;
-    
-    [self.view addSubview:hotLabel];
-    
-    // 使用Masonry设置约束
-    [hotLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+    self.view.backgroundColor = BUNNYX_BACKGROUND_COLOR;
+    UILabel *label = [[UILabel alloc] init];
+    label.text = LocalString(@"热门内容稍后呈现");
+    label.textColor = BUNNYX_LIGHT_TEXT_COLOR;
+    label.font = FONT(14);
+    label.textAlignment = NSTextAlignmentCenter;
+    self.label = label;
+    [self.view addSubview:label];
+    [label mas_makeConstraints:^(MASConstraintMaker *make) {
         make.center.equalTo(self.view);
+        make.left.equalTo(self.view).offset(20);
+        make.right.equalTo(self.view).offset(-20);
     }];
 }
 

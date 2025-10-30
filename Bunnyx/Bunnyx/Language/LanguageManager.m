@@ -7,6 +7,8 @@
 
 #import "LanguageManager.h"
 #import "LocalizationFileManager.h"
+#import <UIKit/UIKit.h>
+#import "MainTabBarController.h"
 
 // 通知名称
 NSString * const LanguageDidChangeNotification = @"LanguageDidChangeNotification";
@@ -83,12 +85,19 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
     // 保存到用户偏好设置
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setInteger:language forKey:kLanguageKey];
+    // 按系统做法，写入 AppleLanguages 以让 NSLocalizedString 读取对应 .lproj
+    if (_currentLanguageCode.length > 0) {
+        [defaults setObject:@[_currentLanguageCode] forKey:@"AppleLanguages"];
+    }
     [defaults synchronize];
     
     // 发送语言切换通知
     [[NSNotificationCenter defaultCenter] postNotificationName:LanguageDidChangeNotification object:nil];
     
     BUNNYX_LOG(@"语言已切换到: %@", _currentLanguageName);
+    
+    // 立即重建根界面，使文案生效（无需逐控件 setTitle）
+    [self rebuildRootInterface];
 }
 
 - (void)setLanguageWithCode:(NSString *)languageCode {
@@ -223,6 +232,32 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
         default:
             return [self getChineseTranslations];
     }
+}
+
+#pragma mark - UI重建
+- (void)rebuildRootInterface {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIWindow *targetWindow = nil;
+        if (@available(iOS 13.0, *)) {
+            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive && [scene isKindOfClass:[UIWindowScene class]]) {
+                    UIWindowScene *ws = (UIWindowScene *)scene;
+                    targetWindow = ws.windows.firstObject;
+                    break;
+                }
+            }
+        } else {
+            targetWindow = [UIApplication sharedApplication].keyWindow;
+        }
+        if (!targetWindow) { return; }
+        MainTabBarController *root = [[MainTabBarController alloc] init];
+        targetWindow.rootViewController = root;
+        [targetWindow makeKeyAndVisible];
+        CATransition *fade = [CATransition animation];
+        fade.type = kCATransitionFade;
+        fade.duration = 0.2;
+        [targetWindow.layer addAnimation:fade forKey:@"bx.lang.fade"];
+    });
 }
 
 - (NSDictionary *)getChineseTranslations {

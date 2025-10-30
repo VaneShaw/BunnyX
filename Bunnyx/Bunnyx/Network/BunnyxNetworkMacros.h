@@ -44,6 +44,10 @@
 #define BUNNYX_API_HOME_CATEGORY [NSString stringWithFormat:@"%@/home/category", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_HOME_HOT [NSString stringWithFormat:@"%@/home/hot", BUNNYX_API_BASE_URL]
 
+// MARK: - 素材广场相关接口
+#define BUNNYX_API_MATERIAL_TYPE_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialTypeList", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialList", BUNNYX_API_BASE_URL]
+
 // MARK: - 内容相关接口
 #define BUNNYX_API_CONTENT_LIST [NSString stringWithFormat:@"%@/content/list", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_CONTENT_DETAIL [NSString stringWithFormat:@"%@/content/detail", BUNNYX_API_BASE_URL]
