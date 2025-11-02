@@ -10,6 +10,61 @@
 
 @implementation AppConfigModel
 
+#pragma mark - YYModel 映射配置
+
++ (NSDictionary *)modelCustomPropertyMapper {
+    return @{
+        // IMEI登录
+        @"loginImeiSalt": @"login_imei_salt",
+        
+        // 服务器配置
+        @"tencentVodConfig": @"tencent_vod_config",
+        @"voteDrawUrl": @"vote_draw_url",
+        @"feedbackUrl": @"feedback_url",
+        @"interactMsg": @"interact_msg",
+        @"votePath": @"vote_path",
+        @"navigationMenu": @"navigation_menu",
+        @"isEditSex": @"is_edit_sex",
+        @"liveNotifyTitle": @"live_notify_title",
+        @"serverIp": @"server_ip",
+        @"purchaseAgreementUrl": @"purchase_agreement_url",
+        @"siteServer": @"site_server",
+        @"h5Server": @"h5_server",
+        @"weixinClientId": @"weixinClientId",
+        @"msgXingeConfig": @"msg_xinge_config",
+        @"userAgreementUrl": @"user_agreement_url",
+        @"recommendAnchorList": @"recommend_anchor_list",
+        @"imageServer": @"image_server",
+        @"liveGoBackTips": @"live_goBack_tips",
+        @"liveLicenceUrl": @"live_licence_url",
+        @"liveNotifyFansMsg": @"live_notify_fans_msg",
+        @"userRegisterMsg": @"user_register_msg",
+        @"avatarDefaultUrl": @"avatar_default_url",
+        @"platformNotice": @"platform_notice",
+        @"esIndex": @"es_index",
+        @"cascadeFollow": @"cascade_follow",
+        @"liveProgramGoBackTips": @"live_program_goBack_tips",
+        @"vipPrivilegeConfig": @"vip_privilege_config",
+        @"deviceMaxLogin": @"device_max_login",
+        @"websiteUrl": @"website_url",
+        @"liveProgramPremiereTitle": @"live_program_premiere_title",
+        @"msgConfig": @"msg_config",
+        @"barragePrice": @"barrage_price",
+        @"anchorAdminNumber": @"anchor_admin_number",
+        @"liveProgramPremiereMsg": @"live_program_premiere_msg",
+        @"liveLicenceKey": @"live_licence_key",
+        @"vipDiscountRate": @"vip_discount_rate",
+        @"livePayTips": @"live_pay_tips",
+        @"liveProgramPayTips": @"live_program_pay_tips",
+        @"disclaimerTips": @"disclaimer_tips",
+        @"ipMaxLogin": @"ip_max_login",
+        @"privacyPolicyUrl": @"privacy_policy_url",
+        @"subscribeVipTips": @"subscribe_vip_tips",
+        @"vipDiscountTips": @"vip_discount_tips"
+    };
+}
+
+
 #pragma mark - 便利方法
 
 - (BOOL)needUpdate {

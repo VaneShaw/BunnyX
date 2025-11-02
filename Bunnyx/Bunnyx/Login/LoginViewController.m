@@ -8,7 +8,13 @@
 #import "LoginViewController.h"
 #import "MainTabBarController.h"
 #import "AccountLoginViewController.h"
+#import "UserManager.h"
+#import "UserInfoManager.h"
+#import "AppConfigManager.h"
+#import "DeviceIdentifierManager.h"
+#import "NetworkManager.h"
 #import <Masonry/Masonry.h>
+#import <SVProgressHUD/SVProgressHUD.h>
 
 
 @interface LoginViewController ()
@@ -208,7 +214,7 @@
 
 - (void)quickLoginButtonTapped:(UIButton *)sender {
     NSLog(@"Quick Login 按钮被点击");
-    [self transitionToMainInterface];
+    [self performQuickLogin];
 }
 
 - (void)appleLoginButtonTapped:(UIButton *)sender {
@@ -279,6 +285,114 @@
     UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil];
     [alert addAction:okAction];
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)performQuickLogin {
+    // 显示加载提示
+    [SVProgressHUD showWithStatus:LocalString(@"加载中")];
+    
+    // 获取设备UUID（IMEI）
+    NSString *imei = [[DeviceIdentifierManager sharedManager] getDeviceUUID];
+    if (!imei || imei.length == 0) {
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:@"获取设备标识失败"];
+        return;
+    }
+    
+    NSLog(@"[LoginViewController] 设备IMEI: %@", imei);
+    
+    // 获取应用配置（包含 login_imei_salt）
+    [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *configModel) {
+        // 获取 login_imei_salt
+        NSString *loginImeiSalt = configModel.loginImeiSalt;
+        
+        // 如果没有 login_imei_salt，尝试从配置字典中获取（兼容处理）
+        if (!loginImeiSalt || loginImeiSalt.length == 0) {
+            // 尝试从缓存的配置中获取
+            AppConfigModel *cachedConfig = [[AppConfigManager sharedManager] getCachedConfig];
+            if (cachedConfig) {
+                loginImeiSalt = cachedConfig.loginImeiSalt;
+            }
+        }
+        
+        if (!loginImeiSalt || loginImeiSalt.length == 0) {
+            [SVProgressHUD dismiss];
+            [SVProgressHUD showErrorWithStatus:@"获取登录配置失败，请稍后重试"];
+            return;
+        }
+        
+        NSLog(@"[LoginViewController] login_imei_salt: %@", loginImeiSalt);
+        
+        // 生成签名：IMEI + login_imei_salt，然后进行 Base64 编码
+        NSString *signatureString = [NSString stringWithFormat:@"%@%@", imei, loginImeiSalt];
+        NSData *signatureData = [signatureString dataUsingEncoding:NSUTF8StringEncoding];
+        NSString *signature = [signatureData base64EncodedStringWithOptions:0];
+        
+        NSLog(@"[LoginViewController] 签名字符串: %@", signatureString);
+        NSLog(@"[LoginViewController] Base64签名: %@", signature);
+        
+        // 调用快速登录接口
+        [[UserManager sharedManager] quickLoginWithUsername:imei
+                                                  signature:signature
+                                                    success:^(NSDictionary *tokenInfo) {
+            NSLog(@"[LoginViewController] 快速登录成功，token信息: %@", tokenInfo);
+            
+            // 保存token信息
+            NSString *accessToken = tokenInfo[@"access_token"];
+            NSString *refreshToken = tokenInfo[@"refresh_token"];
+            NSString *tokenType = tokenInfo[@"token_type"];
+            NSNumber *expiresIn = tokenInfo[@"expires_in"];
+            
+            if (accessToken && refreshToken) {
+                [[UserManager sharedManager] saveUserTokensWithAccessToken:accessToken
+                                                              refreshToken:refreshToken
+                                                                 tokenType:tokenType
+                                                                 expiresIn:expiresIn];
+                
+                // 设置网络管理器的Bearer认证
+                [[NetworkManager sharedManager] setBearerAuthWithToken:accessToken];
+                
+                // 保存用户信息
+                [[UserManager sharedManager] saveUserInfo:tokenInfo];
+                
+                // 获取用户详细信息
+                [self fetchUserInfoAfterQuickLogin];
+            } else {
+                [SVProgressHUD dismiss];
+                [SVProgressHUD showErrorWithStatus:@"登录响应格式错误"];
+            }
+        } failure:^(NSError *error) {
+            NSLog(@"[LoginViewController] 快速登录失败: %@", error);
+            // 错误提示由 NetworkManager 自动显示
+            [SVProgressHUD dismiss];
+        }];
+        
+    } failure:^(NSError *error) {
+        NSLog(@"[LoginViewController] 获取应用配置失败: %@", error);
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:@"获取应用配置失败，请稍后重试"];
+    }];
+}
+
+- (void)fetchUserInfoAfterQuickLogin {
+    NSLog(@"[LoginViewController] 快速登录成功后获取用户详细信息");
+    
+    [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+        NSLog(@"[LoginViewController] 获取用户详细信息成功: %@", userInfo.nickname);
+        
+        // 隐藏加载状态
+        [SVProgressHUD dismiss];
+        
+        // 跳转到主界面
+        [self transitionToMainInterface];
+        
+    } failure:^(NSError *error) {
+        NSLog(@"[LoginViewController] 获取用户详细信息失败: %@", error);
+        
+        // 即使获取用户信息失败，也继续跳转到主界面
+        [SVProgressHUD dismiss];
+        [self transitionToMainInterface];
+    }];
 }
 
 - (void)transitionToMainInterface {

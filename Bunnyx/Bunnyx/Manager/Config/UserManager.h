@@ -91,6 +91,27 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)logout;
 
+/**
+ * 用户登出（调用后端接口）
+ * 先调用退出登录接口，然后清除所有用户信息和token
+ * @param success 成功回调
+ * @param failure 失败回调（接口调用失败时回调，但本地数据仍会清除）
+ */
+- (void)logoutWithSuccess:(void(^)(void))success
+                   failure:(void(^)(NSError *error))failure;
+
+/**
+ * 快速登录（IMEI登录）
+ * @param username IMEI（设备UUID）
+ * @param signature 签名（IMEI + login_imei_salt 的 Base64 编码）
+ * @param success 成功回调，返回token信息
+ * @param failure 失败回调
+ */
+- (void)quickLoginWithUsername:(NSString *)username
+                     signature:(NSString *)signature
+                       success:(void(^)(NSDictionary *tokenInfo))success
+                       failure:(void(^)(NSError *error))failure;
+
 @end
 
 NS_ASSUME_NONNULL_END

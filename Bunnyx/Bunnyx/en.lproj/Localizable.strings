@@ -41,6 +41,7 @@
 "意见反馈" = "Feedback";
 "帮助中心" = "Help Center";
 "退出登录" = "Logout";
+"确定要退出登录吗？" = "Are you sure you want to logout?";
 
 // MARK: - Content Related
 "内容详情" = "Content Details";

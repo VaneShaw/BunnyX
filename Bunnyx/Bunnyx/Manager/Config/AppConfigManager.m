@@ -100,8 +100,8 @@
         return;
     }
     
-    // 检查响应是否成功
-    if (![response isSuccess]) {
+    // 检查响应是否成功（code 0 即为成功）
+    if (response.code != 0) {
         NSError *error = [NSError errorWithDomain:@"AppConfigManager" 
                                              code:response.code 
                                          userInfo:@{NSLocalizedDescriptionKey: [response errorMessage]}];
@@ -129,19 +129,6 @@
         NSError *error = [NSError errorWithDomain:@"AppConfigManager" 
                                              code:-3 
                                          userInfo:@{NSLocalizedDescriptionKey: @"配置模型创建失败"}];
-        if (failure) {
-            failure(error);
-        }
-        return;
-    }
-    
-    // 验证配置数据
-    if (![configModel isValid]) {
-        NSArray *errors = [configModel validationErrors];
-        BUNNYX_ERROR(@"配置数据验证失败: %@", errors);
-        NSError *error = [NSError errorWithDomain:@"AppConfigManager" 
-                                             code:-4 
-                                         userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"配置数据验证失败: %@", [errors componentsJoinedByString:@", "]]}];
         if (failure) {
             failure(error);
         }

@@ -8,6 +8,7 @@
 #import "UserManager.h"
 #import "BunnyxNetworkMacros.h"
 #import "UserInfoManager.h"
+#import "NetworkManager.h"
 
 @interface UserManager ()
 
@@ -230,6 +231,75 @@
     [[NetworkManager sharedManager] clearAuth];
     
     NSLog(@"[UserManager] 用户登出完成");
+}
+
+- (void)logoutWithSuccess:(void(^)(void))success
+                   failure:(void(^)(NSError *error))failure {
+    // 先调用退出登录接口
+    [[NetworkManager sharedManager] POST:BUNNYX_API_USER_LOGOUT
+                               parameters:nil
+                                  success:^(id responseObject) {
+        NSLog(@"[UserManager] 退出登录接口调用成功: %@", responseObject);
+        
+        // 只有接口调用成功，才清除本地数据
+        [self logout];
+        
+        if (success) {
+            success();
+        }
+    } failure:^(NSError *error) {
+        NSLog(@"[UserManager] 退出登录接口调用失败: %@", error);
+        
+        // 接口调用失败，不清除本地数据，只回调失败
+        if (failure) {
+            failure(error);
+        }
+    }];
+}
+
+- (void)quickLoginWithUsername:(NSString *)username
+                     signature:(NSString *)signature
+                       success:(void(^)(NSDictionary *tokenInfo))success
+                       failure:(void(^)(NSError *error))failure {
+    // 构建请求参数
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+    if (username) {
+        parameters[@"username"] = username;
+    }
+    if (signature) {
+        parameters[@"signature"] = signature;
+    }
+    
+    // 快速登录接口使用Basic认证
+    [[NetworkManager sharedManager] setBasicAuth];
+    
+    NSLog(@"[UserManager] 快速登录请求参数: %@", parameters);
+    
+    [[NetworkManager sharedManager] POST:BUNNYX_API_USER_LOGIN_QUICK
+                              parameters:parameters
+                                 success:^(id responseObject) {
+        NSLog(@"[UserManager] 快速登录成功: %@", responseObject);
+        
+        // 解析token信息
+        NSDictionary *data = responseObject[@"data"];
+        if (data && [data isKindOfClass:[NSDictionary class]]) {
+            if (success) {
+                success(data);
+            }
+        } else {
+            NSError *error = [NSError errorWithDomain:@"QuickLoginError" 
+                                                 code:-1001 
+                                             userInfo:@{NSLocalizedDescriptionKey: @"登录响应数据格式错误"}];
+            if (failure) {
+                failure(error);
+            }
+        }
+    } failure:^(NSError *error) {
+        NSLog(@"[UserManager] 快速登录失败: %@", error);
+        if (failure) {
+            failure(error);
+        }
+    }];
 }
 
 @end

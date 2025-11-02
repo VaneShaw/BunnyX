@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 响应消息
 @property (nonatomic, strong) NSString *message;
 
+@property (nonatomic, strong) NSString * promptType;
+
 /// 响应数据
 @property (nonatomic, strong) id data;
 

@@ -27,6 +27,7 @@
 
 // MARK: - 用户相关接口
 #define BUNNYX_API_USER_LOGIN_ACCOUNT [NSString stringWithFormat:@"%@/user/login/account", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_USER_LOGIN_QUICK [NSString stringWithFormat:@"%@/user/login/quick", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REGISTER [NSString stringWithFormat:@"%@/user/register", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGOUT [NSString stringWithFormat:@"%@/user/logout", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REFRESH_TOKEN [NSString stringWithFormat:@"%@/user/refresh/token", BUNNYX_API_BASE_URL]

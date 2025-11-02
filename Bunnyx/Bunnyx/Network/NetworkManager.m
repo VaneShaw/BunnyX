@@ -282,14 +282,18 @@
     }
     // 打印请求头
     NSDictionary *headersToLog = self.sessionManager.requestSerializer.HTTPRequestHeaders;
-    NSLog(@"[NetworkManager] POST %@\nHeaders: %@\nParams: %@", url, headersToLog, parameters);
+    NSLog(@"[NetworkManager] POST %@\nHeaders: %@\nParams: %@", url, headersToLog, parameters ?: @{});
     
-    // 打印请求体内容（用于调试）
-    NSError *error;
-    NSData *requestData = [NSJSONSerialization dataWithJSONObject:parameters options:0 error:&error];
-    if (requestData) {
-        NSString *requestBody = [[NSString alloc] initWithData:requestData encoding:NSUTF8StringEncoding];
-        NSLog(@"[NetworkManager] Request Body: %@", requestBody);
+    // 打印请求体内容（用于调试）- 只有当参数不为 nil 时才序列化
+    if (parameters && [parameters isKindOfClass:[NSDictionary class]]) {
+        NSError *error;
+        NSData *requestData = [NSJSONSerialization dataWithJSONObject:parameters options:0 error:&error];
+        if (requestData) {
+            NSString *requestBody = [[NSString alloc] initWithData:requestData encoding:NSUTF8StringEncoding];
+            NSLog(@"[NetworkManager] Request Body: %@", requestBody);
+        }
+    } else {
+        NSLog(@"[NetworkManager] Request Body: (无参数)");
     }
     
     [self.sessionManager POST:url

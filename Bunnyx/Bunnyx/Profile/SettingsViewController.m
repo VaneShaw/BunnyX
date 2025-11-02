@@ -7,7 +7,11 @@
 
 #import "SettingsViewController.h"
 #import "LanguageSettingsViewController.h"
+#import "GradientButton.h"
+#import "UserManager.h"
+#import "LoginViewController.h"
 #import <SafariServices/SafariServices.h>
+#import <SVProgressHUD/SVProgressHUD.h>
 
 typedef NS_ENUM(NSInteger, SettingsRow) {
     SettingsRowLanguage = 0,
@@ -22,6 +26,7 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, copy) NSArray<NSString *> *titles;
+@property (nonatomic, strong) GradientButton *logoutButton;
 
 @end
 
@@ -39,10 +44,24 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
         LocalString(@"注销账号")
     ];
     
+    [self setupLogoutButton];
     [self setupTableView];
 }
 
 #pragma mark - UI
+- (void)setupLogoutButton {
+    self.logoutButton = [GradientButton buttonWithTitle:LocalString(@"退出登录")];
+    [self.logoutButton addTarget:self action:@selector(logoutButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.logoutButton];
+    
+    [self.logoutButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.view).offset(MARGIN_20);
+        make.right.equalTo(self.view).offset(-MARGIN_20);
+        make.bottom.equalTo(self.view).offset(-(SAFE_AREA_BOTTOM + MARGIN_20));
+        make.height.mas_equalTo(self.logoutButton.buttonHeight);
+    }];
+}
+
 - (void)setupTableView {
     self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
     self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -53,7 +72,8 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
     [self.view addSubview:self.tableView];
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.offset(NAVIGATION_BAR_HEIGHT+STATUS_BAR_HEIGHT+SAFE_AREA_TOP);
-        make.left.bottom.right.equalTo(self.view);
+        make.left.right.equalTo(self.view);
+        make.bottom.equalTo(self.logoutButton.mas_top).offset(-MARGIN_20);
     }];
 }
 
@@ -162,6 +182,58 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
     [alert addAction:deleteAction];
     [alert addAction:cancelAction];
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)logoutButtonTapped:(UIButton *)sender {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"退出登录")
+                                                                   message:LocalString(@"确定要退出登录吗？")
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:LocalString(@"确定") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self performLogout];
+    }];
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") style:UIAlertActionStyleCancel handler:nil];
+    [alert addAction:confirmAction];
+    [alert addAction:cancelAction];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+- (void)performLogout {
+    // 显示加载提示
+    [SVProgressHUD showWithStatus:LocalString(@"加载中")];
+    
+    // 执行退出登录（调用后端接口）
+    [[UserManager sharedManager] logoutWithSuccess:^{
+        [SVProgressHUD dismiss];
+        
+        // 接口调用成功，跳转到登录页面
+        [self navigateToLoginPage];
+    } failure:^(NSError *error) {
+        // 接口调用失败，只关闭加载提示，错误提示由 NetworkManager 自动显示
+        [SVProgressHUD dismiss];
+        
+        // 不进行后续操作，保持在当前页面
+    }];
+}
+
+- (void)navigateToLoginPage {
+    UIWindow *window = nil;
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene *windowScene in [UIApplication sharedApplication].connectedScenes) {
+            if (windowScene.activationState == UISceneActivationStateForegroundActive) {
+                window = windowScene.windows.firstObject;
+                break;
+            }
+        }
+    } else {
+        window = [UIApplication sharedApplication].delegate.window;
+    }
+    
+    if (window) {
+        LoginViewController *loginViewController = [[LoginViewController alloc] init];
+        [UIView transitionWithView:window duration:0.5 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            window.rootViewController = loginViewController;
+        } completion:nil];
+    }
 }
 
 @end
