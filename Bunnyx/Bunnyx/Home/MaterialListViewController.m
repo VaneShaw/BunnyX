@@ -6,6 +6,7 @@
 #import "MaterialListViewController.h"
 #import "MaterialCollectionViewCell.h"
 #import "MaterialItemModel.h"
+#import "MaterialDetailViewController.h"
 #import "NetworkManager.h"
 #import "BunnyxMacros.h"
 #import <MJRefresh/MJRefresh.h>
@@ -134,6 +135,13 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     CGFloat itemW = floor(available / 2.0);
     CGFloat itemH = itemW * 1.3; // 略高一些
     return CGSizeMake(itemW, itemH);
+}
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    MaterialItemModel *model = self.items[indexPath.item];
+    MaterialDetailViewController *detailVC = [[MaterialDetailViewController alloc] initWithMaterialId:model.materialId];
+    detailVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:detailVC animated:YES];
 }
 
 @end

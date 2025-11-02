@@ -23,6 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 默认的返回操作，子类可以重写此方法
 - (void)performBackAction;
 
+/// 将返回按钮移到最上层，确保不被其他视图遮挡
+/// 建议在子类的 viewDidAppear 或页面布局完成后调用此方法
+- (void)bringBackButtonToFront;
+
 @end
 
 NS_ASSUME_NONNULL_END

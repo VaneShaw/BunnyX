@@ -82,7 +82,19 @@
 
 // MARK: - Profile Page
 "订阅" = "Subscribe";
+"续费" = "Renew";
+"已订阅" = "Subscribed";
 "生成" = "Generate";
 "点赞" = "Like";
 "金币" = "Coins";
 "ID" = "ID";
+
+// MARK: - Material Detail Page
+"模板素材查看" = "Template Material View";
+"生成" = "Generate";
+"举报" = "Report";
+"确定要举报此素材吗？" = "Are you sure you want to report this material?";
+"举报成功" = "Report successful";
+"金币不足" = "Insufficient Coins";
+"您的金币不足，是否前往充值？" = "Your coins are insufficient. Would you like to recharge?";
+"去充值" = "Recharge";

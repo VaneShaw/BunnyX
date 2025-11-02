@@ -9,6 +9,9 @@
 #import <Masonry/Masonry.h>
 #import "LanguageManager.h"
 #import "SettingsViewController.h"
+#import "UserInfoManager.h"
+#import "BunnyxMacros.h"
+#import <SDWebImage/SDWebImage.h>
 
 @interface ProfileViewController ()
 
@@ -67,6 +70,16 @@
     [self setupCoinsView];
     [self setupTabView];
     [self setupContentView];
+    
+    // 加载本地用户信息（首次显示）
+    [self updateUserInfoUI];
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    
+    // 每次进入页面都刷新用户信息
+    [self refreshUserInfo];
 }
 
 #pragma mark - 背景设置
@@ -322,7 +335,7 @@
     
     // 硬币数量
     self.coinsLabel = [[UILabel alloc] init];
-    self.coinsLabel.text = @"88 Coins";
+    self.coinsLabel.text = @"- Coins";
     self.coinsLabel.font = BOLD_FONT(FONT_SIZE_16);
     self.coinsLabel.textColor = [UIColor whiteColor];
     [self.coinsView addSubview:self.coinsLabel];
@@ -509,6 +522,85 @@
     [UIView animateWithDuration:0.3 animations:^{
         [self.view layoutIfNeeded];
     }];
+}
+
+#pragma mark - 刷新用户信息
+
+- (void)refreshUserInfo {
+    [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+        BUNNYX_LOG(@"刷新用户信息成功");
+        [self updateUserInfoUI];
+    } failure:^(NSError *error) {
+        BUNNYX_LOG(@"刷新用户信息失败: %@", error.localizedDescription);
+        // 失败时也尝试使用本地缓存的用户信息更新UI
+        [self updateUserInfoUI];
+    }];
+}
+
+- (void)updateUserInfoUI {
+    UserInfoManager *userManager = [UserInfoManager sharedManager];
+    UserInfoModel *userInfo = [userManager getCurrentUserInfo];
+    
+    if (!userInfo) {
+        // 如果没有用户信息，显示默认值
+        self.usernameLabel.text = @"";
+        self.userIDLabel.text = [NSString stringWithFormat:@"%@:--", LocalString(@"ID")];
+        self.coinsLabel.text = @"0 Coins";
+        // 订阅状态保持默认
+        return;
+    }
+    
+    // 更新头像
+    NSString *avatarUrl = [userManager getAvatar];
+    if (avatarUrl && avatarUrl.length > 0) {
+        NSURL *url = [NSURL URLWithString:avatarUrl];
+        [self.avatarImageView sd_setImageWithURL:url 
+                                 placeholderImage:[UIImage imageNamed:@"icon_login_account_back"]
+                                          options:SDWebImageRetryFailed];
+    } else {
+        self.avatarImageView.image = [UIImage imageNamed:@"icon_login_account_back"];
+    }
+    
+    // 更新昵称
+    NSString *nickname = [userManager getNickname];
+    if (nickname && nickname.length > 0) {
+        self.usernameLabel.text = nickname;
+    } else {
+        NSString *account = [userManager getAccount];
+        self.usernameLabel.text = account ?: @"";
+    }
+    
+    // 更新用户ID
+    NSNumber *userId = [userManager getUserId];
+    if (userId) {
+        self.userIDLabel.text = [NSString stringWithFormat:@"%@:%@", LocalString(@"ID"), userId];
+    } else {
+        self.userIDLabel.text = [NSString stringWithFormat:@"%@:--", LocalString(@"ID")];
+    }
+    
+    // 更新金币
+    NSNumber *coins = [userManager getSurplusMxdDiamond];
+    NSInteger coinsValue = coins ? [coins integerValue] : 0;
+    self.coinsLabel.text = [NSString stringWithFormat:@"%ld Coins", (long)coinsValue];
+    
+    // 更新订阅状态
+    BOOL isVip = [userManager isVip];
+    if (isVip) {
+        // VIP用户：显示VIP状态，按钮改为"已订阅"或"续费"
+        self.proBadgeView.hidden = NO;
+        self.proBadgeLabel.text = @"PRO";
+        // 可以显示VIP到期时间
+        NSNumber *vipEndTime = [userManager getVipEndTime];
+        if (vipEndTime && [vipEndTime longLongValue] > 0) {
+            [self.subscribeButton setTitle:LocalString(@"续费") forState:UIControlStateNormal];
+        } else {
+            [self.subscribeButton setTitle:LocalString(@"已订阅") forState:UIControlStateNormal];
+        }
+    } else {
+        // 非VIP用户：显示订阅按钮
+        self.proBadgeView.hidden = YES;
+        [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
+    }
 }
 
 // 不再在此监听语言切换，文案通过 LocalString 宏从系统 .strings 获取

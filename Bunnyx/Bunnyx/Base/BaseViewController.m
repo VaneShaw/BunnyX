@@ -39,6 +39,13 @@
     // [self.navigationController setNavigationBarHidden:NO animated:animated];
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    // 确保返回按钮在最上层
+    [self bringBackButtonToFront];
+}
+
 - (void)setupBackground {
     self.view.backgroundColor = [UIColor colorWithRed:0.0 green:0.3 blue:0.2 alpha:1.0];
     self.backgroundImageView = [[UIImageView alloc] init];
@@ -139,6 +146,12 @@
 - (void)setShowBackButton:(BOOL)showBackButton {
     _showBackButton = showBackButton;
     self.customBackButton.hidden = !showBackButton;
+}
+
+- (void)bringBackButtonToFront {
+    if (self.customBackButton && self.customBackButton.superview) {
+        [self.view bringSubviewToFront:self.customBackButton];
+    }
 }
 
 #pragma mark - Button Actions

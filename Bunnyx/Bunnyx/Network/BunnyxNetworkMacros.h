@@ -48,6 +48,9 @@
 // MARK: - 素材广场相关接口
 #define BUNNYX_API_MATERIAL_TYPE_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialTypeList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialList", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_MATERIAL_DETAIL [NSString stringWithFormat:@"%@/aitool/getMaterialById", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_MATERIAL_FAVORITE_ADD [NSString stringWithFormat:@"%@/aitool/favoriteMaterial", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_MATERIAL_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/aitool/unfavoriteMaterial", BUNNYX_API_BASE_URL]
 
 // MARK: - 内容相关接口
 #define BUNNYX_API_CONTENT_LIST [NSString stringWithFormat:@"%@/content/list", BUNNYX_API_BASE_URL]
