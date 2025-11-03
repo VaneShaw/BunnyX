@@ -98,3 +98,9 @@
 "金币不足" = "Insufficient Coins";
 "您的金币不足，是否前往充值？" = "Your coins are insufficient. Would you like to recharge?";
 "去充值" = "Recharge";
+
+// MARK: - Recharge Page
+"Coins" = "Coins";
+"Details" = "Details";
+"Buy" = "Buy";
+"请选择充值套餐" = "Please select a recharge package";

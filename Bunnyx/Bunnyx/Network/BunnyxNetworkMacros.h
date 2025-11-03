@@ -51,6 +51,8 @@
 #define BUNNYX_API_MATERIAL_DETAIL [NSString stringWithFormat:@"%@/aitool/getMaterialById", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_ADD [NSString stringWithFormat:@"%@/aitool/favoriteMaterial", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/aitool/unfavoriteMaterial", BUNNYX_API_BASE_URL]
+// 检查素材生成金币是否足够
+#define BUNNYX_API_CHECK_SURPLUS_MXD [NSString stringWithFormat:@"%@/aitool/checkSurplusMxd", BUNNYX_API_BASE_URL]
 
 // MARK: - 内容相关接口
 #define BUNNYX_API_CONTENT_LIST [NSString stringWithFormat:@"%@/content/list", BUNNYX_API_BASE_URL]
@@ -85,6 +87,7 @@
 #define BUNNYX_API_PAYMENT_CREATE [NSString stringWithFormat:@"%@/payment/create", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAYMENT_VERIFY [NSString stringWithFormat:@"%@/payment/verify", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAYMENT_HISTORY [NSString stringWithFormat:@"%@/payment/history", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_RECHARGE_LIST [NSString stringWithFormat:@"%@/pay/rechargeList", BUNNYX_API_BASE_URL]
 
 // MARK: - 设置相关接口
 #define BUNNYX_API_SETTINGS_GET [NSString stringWithFormat:@"%@/settings/get", BUNNYX_API_BASE_URL]

@@ -12,6 +12,7 @@
 #import "UserInfoManager.h"
 #import "BunnyxMacros.h"
 #import <SDWebImage/SDWebImage.h>
+#import "RechargeViewController.h"
 
 @interface ProfileViewController ()
 
@@ -299,6 +300,12 @@
     self.coinsView.backgroundColor = [UIColor colorWithWhite:0.05 alpha:1.0];
     self.coinsView.layer.cornerRadius = CORNER_RADIUS_12;
     self.coinsView.layer.masksToBounds = YES;
+    
+    // 添加点击手势
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(coinsViewTapped:)];
+    [self.coinsView addGestureRecognizer:tapGesture];
+    self.coinsView.userInteractionEnabled = YES;
+    
     [self.view addSubview:self.coinsView];
     
     [self.coinsView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -497,6 +504,13 @@
 - (void)likeTabTapped:(UIButton *)sender {
     BUNNYX_LOG(@"点赞标签被点击");
     [self switchToTab:sender];
+}
+
+- (void)coinsViewTapped:(UITapGestureRecognizer *)sender {
+    BUNNYX_LOG(@"Coins视图被点击，跳转到充值页面");
+    RechargeViewController *rechargeVC = [[RechargeViewController alloc] init];
+    rechargeVC.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:rechargeVC animated:YES];
 }
 
 - (void)switchToTab:(UIButton *)selectedButton {

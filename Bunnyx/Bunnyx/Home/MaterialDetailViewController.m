@@ -14,6 +14,8 @@
 #import <SDWebImage/SDWebImage.h>
 #import <Masonry/Masonry.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import "UploadMaterialViewController.h"
+#import "RechargeViewController.h"
 
 @interface MaterialDetailViewController ()
 
@@ -299,44 +301,65 @@
 
 - (void)generateButtonTapped:(UIButton *)sender {
     if (!self.detailModel) { return; }
-    
-    // 检查金币余额
-    NSNumber *coins = [[UserInfoManager sharedManager] getSurplusMxdDiamond];
-    NSInteger userCoins = coins ? [coins integerValue] : 0;
-    
-    if (userCoins < self.detailModel.generatePrice) {
-        // 金币不足，提示充值
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"金币不足")
-                                                                         message:LocalString(@"您的金币不足，是否前往充值？")
-                                                                  preferredStyle:UIAlertControllerStyleAlert];
-        
-        UIAlertAction *rechargeAction = [UIAlertAction actionWithTitle:LocalString(@"去充值")
-                                                                 style:UIAlertActionStyleDefault
-                                                               handler:^(UIAlertAction * _Nonnull action) {
-            [self navigateToRecharge];
-        }];
-        
-        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
-                                                               style:UIAlertActionStyleCancel
-                                                             handler:nil];
-        
-        [alert addAction:rechargeAction];
-        [alert addAction:cancelAction];
-        [self presentViewController:alert animated:YES completion:nil];
-    } else {
-        // 金币充足，跳转到上传素材界面
-        [self navigateToUploadMaterial];
-    }
+    [self checkSurplusAndProceed:self.detailModel.materialId];
 }
 
 - (void)navigateToRecharge {
-    // TODO: 跳转到充值页面
-    NSLog(@"跳转到充值页面");
+    RechargeViewController *vc = [[RechargeViewController alloc] init];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)navigateToUploadMaterial {
-    // TODO: 跳转到上传素材界面
-    NSLog(@"跳转到上传素材界面，materialId: %ld", (long)self.detailModel.materialId);
+    UploadMaterialViewController *vc = [[UploadMaterialViewController alloc] initWithMaterialId:self.detailModel.materialId];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+#pragma mark - Check Surplus API
+
+- (void)checkSurplusAndProceed:(NSInteger)materialId {
+    NSDictionary *params = @{ @"materialId": @(materialId) };
+    [SVProgressHUD showWithStatus:LocalString(@"加载中")];
+    [[NetworkManager sharedManager] GET:BUNNYX_API_CHECK_SURPLUS_MXD
+                               parameters:params
+                                  success:^(id responseObject) {
+        [SVProgressHUD dismiss];
+        NSDictionary *dict = (NSDictionary *)responseObject;
+        NSInteger code = [dict[@"code"] integerValue];
+        BOOL ok = NO;
+        if (code == 0) {
+            id data = dict[@"data"];
+            if ([data isKindOfClass:[NSNumber class]]) {
+                ok = [data boolValue];
+            } else if ([data isKindOfClass:[NSString class]]) {
+                ok = [((NSString *)data) boolValue];
+            }
+        }
+        if (ok) {
+            // 余额足够，继续生成流程
+            [self navigateToUploadMaterial];
+        } else {
+            // 余额不足，提醒去充值
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"金币不足")
+                                                                           message:LocalString(@"您的金币不足，是否前往充值？")
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertAction *rechargeAction = [UIAlertAction actionWithTitle:LocalString(@"去充值")
+                                                                     style:UIAlertActionStyleDefault
+                                                                   handler:^(UIAlertAction * _Nonnull action) {
+                [self navigateToRecharge];
+            }];
+            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
+                                                                   style:UIAlertActionStyleCancel
+                                                                 handler:nil];
+            [alert addAction:rechargeAction];
+            [alert addAction:cancelAction];
+            [self presentViewController:alert animated:YES completion:nil];
+        }
+    } failure:^(NSError *error) {
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+    }];
 }
 
 @end

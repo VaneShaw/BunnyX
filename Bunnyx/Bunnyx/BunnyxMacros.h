@@ -61,6 +61,7 @@
 #define FONT_SIZE_18 18.0
 #define FONT_SIZE_20 20.0
 #define FONT_SIZE_24 24.0
+#define FONT_SIZE_32 32.0
 
 // MARK: - 间距相关宏
 #define MARGIN_5 5.0
