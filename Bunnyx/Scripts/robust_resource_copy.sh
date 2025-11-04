@@ -136,6 +136,7 @@ if [[ "${CONFIGURATION:-Debug}" == "Debug" ]]; then
         "${PODS_ROOT}/SVProgressHUD/SVProgressHUD/SVProgressHUD.bundle"
         "${PODS_ROOT}/SVProgressHUD/SVProgressHUD/PrivacyInfo.xcprivacy"
         "${PODS_ROOT}/TZImagePickerController/TZImagePickerController/TZImagePickerController/TZImagePickerController.bundle"
+        "${PODS_CONFIGURATION_BUILD_DIR}/TZImagePickerController/TZImagePickerController.bundle"
         "${PODS_CONFIGURATION_BUILD_DIR}/Toast/Toast.bundle"
     )
     
@@ -158,6 +159,7 @@ if [[ "${CONFIGURATION:-Debug}" == "Release" ]]; then
         "${PODS_ROOT}/SVProgressHUD/SVProgressHUD/SVProgressHUD.bundle"
         "${PODS_ROOT}/SVProgressHUD/SVProgressHUD/PrivacyInfo.xcprivacy"
         "${PODS_ROOT}/TZImagePickerController/TZImagePickerController/TZImagePickerController/TZImagePickerController.bundle"
+        "${PODS_CONFIGURATION_BUILD_DIR}/TZImagePickerController/TZImagePickerController.bundle"
         "${PODS_CONFIGURATION_BUILD_DIR}/Toast/Toast.bundle"
     )
     

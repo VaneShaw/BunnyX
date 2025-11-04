@@ -10,6 +10,10 @@
 #import "AppConfigManager.h"
 #import "AppConfigModel.h"
 #import <TZImagePickerController/TZImagePickerController.h>
+#import "ImageUploadManager.h"
+#import "NetworkManager.h"
+#import "BunnyxNetworkMacros.h"
+#import <SVProgressHUD/SVProgressHUD.h>
 
 @interface UploadMaterialViewController () <TZImagePickerControllerDelegate>
 
@@ -254,8 +258,74 @@
 }
 
 - (void)uploadButtonTapped:(UIButton *)sender {
-    // TODO: 执行上传与生成流程（与后端对接）
-    BUNNYX_LOG(@"点击上传生成，materialId: %ld, 选择图片数: %lu", (long)self.materialId, (unsigned long)self.selectedImages.count);
+    if (self.selectedImages.count == 0) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"请先选择图片")];
+        return;
+    }
+    
+    // 使用第一张图片进行上传和生成
+    UIImage *image = self.selectedImages.firstObject;
+    [self startUploadAndGenerateWithImage:image];
+}
+
+#pragma mark - Upload & Generate Flow
+
+- (void)startUploadAndGenerateWithImage:(UIImage *)image {
+    BUNNYX_LOG(@"开始上传生成流程，materialId: %ld", (long)self.materialId);
+    
+    // 使用 ImageUploadManager 上传图片（按照安卓版逻辑）
+    [[ImageUploadManager sharedManager] uploadImage:self.materialId
+                                              image:image
+                                            progress:^(CGFloat progress, NSString *status) {
+        // 显示进度
+        [SVProgressHUD showProgress:progress status:status];
+    } success:^(NSString *initImage) {
+        // 上传成功，提交生成任务
+        BUNNYX_LOG(@"图片上传成功，initImage: %@", initImage);
+        [SVProgressHUD showProgress:0.8 status:LocalString(@"正在提交生成任务...")];
+        [self submitGenerateTaskWithImagePath:initImage];
+    } failure:^(NSError *error) {
+        // 上传失败
+        [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: LocalString(@"图片上传失败")];
+        BUNNYX_ERROR(@"图片上传失败: %@", error.localizedDescription);
+    }];
+}
+
+- (void)submitGenerateTaskWithImagePath:(NSString *)imagePath {
+    NSDictionary *parameters = @{
+        @"materialId": @(self.materialId),
+        @"initImage": imagePath
+    };
+    
+    [[NetworkManager sharedManager] POST:BUNNYX_API_GENERATE_CREATE
+                                parameters:parameters
+                                   success:^(id responseObject) {
+        NSDictionary *dict = (NSDictionary *)responseObject;
+        NSInteger code = [dict[@"code"] integerValue];
+        
+        if (code == 0) {
+            NSString *createId = dict[@"data"];
+            if (createId && createId.length > 0) {
+                BUNNYX_LOG(@"提交生成任务成功，createId: %@", createId);
+                [SVProgressHUD showSuccessWithStatus:LocalString(@"提交成功")];
+                
+                // TODO: 可以跳转到生成结果页面或返回上一页
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    [self.navigationController popViewControllerAnimated:YES];
+                });
+            } else {
+                [SVProgressHUD showErrorWithStatus:LocalString(@"提交生成任务失败")];
+            }
+        } else {
+            // 与安卓版一致：显示promptType
+            NSString *promptType = dict[@"promptType"];
+            NSString *errorMessage = promptType ?: dict[@"message"] ?: LocalString(@"提交生成任务失败");
+            [SVProgressHUD showErrorWithStatus:errorMessage];
+        }
+    } failure:^(NSError *error) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+        BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
+    }];
 }
 
 #pragma mark - TZImagePickerControllerDelegate

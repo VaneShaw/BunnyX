@@ -51,6 +51,10 @@
 #define BUNNYX_API_MATERIAL_DETAIL [NSString stringWithFormat:@"%@/aitool/getMaterialById", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_ADD [NSString stringWithFormat:@"%@/aitool/favoriteMaterial", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/aitool/unfavoriteMaterial", BUNNYX_API_BASE_URL]
+// 获取 AWS 上传配置（与安卓版一致）
+#define BUNNYX_API_AWS_UPLOAD [NSString stringWithFormat:@"%@/oss/upload/aws", BUNNYX_API_BASE_URL]
+// 提交生成任务
+#define BUNNYX_API_GENERATE_CREATE [NSString stringWithFormat:@"%@/aitool/generateCreate", BUNNYX_API_BASE_URL]
 // 检查素材生成金币是否足够
 #define BUNNYX_API_CHECK_SURPLUS_MXD [NSString stringWithFormat:@"%@/aitool/checkSurplusMxd", BUNNYX_API_BASE_URL]
 

@@ -104,3 +104,19 @@
 "Details" = "Details";
 "Buy" = "Buy";
 "请选择充值套餐" = "Please select a recharge package";
+
+// MARK: - Upload Page
+"上传" = "Upload";
+"使用单人正脸照片" = "Use a single-person photo";
+"确保清晰、正面、无遮挡" = "Use a clear and front-facing photo";
+"请先选择图片" = "Please select an image first";
+"正在压缩图片..." = "Compressing image...";
+"图片压缩失败" = "Image compression failed";
+"正在获取上传配置..." = "Getting upload configuration...";
+"AWS配置信息不完整" = "AWS configuration is incomplete";
+"AWS配置格式错误" = "AWS configuration format error";
+"正在上传图片..." = "Uploading image...";
+"图片上传失败" = "Image upload failed";
+"正在提交生成任务..." = "Submitting generation task...";
+"提交成功" = "Submission successful";
+"提交生成任务失败" = "Failed to submit generation task";
