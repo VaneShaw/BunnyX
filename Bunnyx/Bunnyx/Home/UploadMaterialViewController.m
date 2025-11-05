@@ -9,15 +9,19 @@
 #import "GradientButton.h"
 #import "AppConfigManager.h"
 #import "AppConfigModel.h"
+#import "MaterialDetailModel.h"
 #import <TZImagePickerController/TZImagePickerController.h>
-#import "ImageUploadManager.h"
+#import "UploadingViewController.h"
+#import "UploadHistoryManager.h"
 #import "NetworkManager.h"
 #import "BunnyxNetworkMacros.h"
+#import <SDWebImage/SDWebImage.h>
 #import <SVProgressHUD/SVProgressHUD.h>
 
 @interface UploadMaterialViewController () <TZImagePickerControllerDelegate>
 
 @property (nonatomic, assign) NSInteger materialId;
+@property (nonatomic, strong) NSString *templateImageUrl; // 模板图片URL
 
 // 预览与指导
 @property (nonatomic, strong) UIImageView *previewImageView;
@@ -25,7 +29,22 @@
 @property (nonatomic, strong) UILabel *tipLine1Label;
 @property (nonatomic, strong) UILabel *tipLine2Label;
 
-// 缩略图列表
+// 无效示例（4个小图，带X标记）
+@property (nonatomic, strong) UIView *invalidExamplesContainer;
+@property (nonatomic, strong) NSMutableArray<UIView *> *invalidExampleViews;
+
+// 当前选择的图片（新增或历史）
+@property (nonatomic, strong) UIImage *currentSelectedImage;
+@property (nonatomic, strong) NSString *currentSelectedImageUrl; // 历史记录的URL
+
+// 历史记录
+@property (nonatomic, strong) UIView *historyContainer;
+@property (nonatomic, strong) UIScrollView *historyScrollView;
+@property (nonatomic, strong) NSArray<UploadHistoryItem *> *historyItems;
+@property (nonatomic, strong) UploadHistoryItem *selectedHistoryItem;
+@property (nonatomic, strong) UploadHistoryManager *historyManager;
+
+// 缩略图列表（已选择的图片）
 @property (nonatomic, strong) UIScrollView *thumbsScrollView;
 @property (nonatomic, strong) NSMutableArray<UIImage *> *selectedImages;
 
@@ -34,8 +53,9 @@
 @property (nonatomic, strong) UILabel *disclaimerTitleLabel;
 @property (nonatomic, strong) UILabel *disclaimerContentLabel;
 
-// 上传按钮
+// 按钮
 @property (nonatomic, strong) GradientButton *uploadButton;
+@property (nonatomic, strong) GradientButton *generateButton;
 
 @end
 
@@ -51,11 +71,16 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"";
+    self.title = LocalString(@"上传素材");
     self.view.backgroundColor = [UIColor blackColor];
     self.selectedImages = [NSMutableArray array];
+    self.historyItems = @[];
+    self.invalidExampleViews = [NSMutableArray array];
+    self.historyManager = [UploadHistoryManager sharedManager];
     [self setupUI];
     [self loadDisclaimerFromConfig];
+    [self loadHistory];
+    [self loadMaterialInfo]; // 加载素材信息，获取模板图片URL
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -125,12 +150,35 @@
         make.left.right.equalTo(self.tipLine1Label);
     }];
     
-    // 缩略图横向列表
+    // 无效示例容器（4个小图，带X标记）
+    [self setupInvalidExamples];
+    
+    // 历史记录容器（在有历史记录时显示）
+    self.historyContainer = [[UIView alloc] init];
+    [self.view addSubview:self.historyContainer];
+    
+    self.historyScrollView = [[UIScrollView alloc] init];
+    self.historyScrollView.showsHorizontalScrollIndicator = NO;
+    [self.historyContainer addSubview:self.historyScrollView];
+    
+    [self.historyContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.invalidExamplesContainer.mas_bottom).offset(MARGIN_15);
+        make.left.right.equalTo(self.view);
+        make.height.mas_equalTo(76);
+    }];
+    
+    [self.historyScrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.historyContainer);
+    }];
+    
+    self.historyContainer.hidden = YES;
+    
+    // 缩略图横向列表（当前选择的图片）
     self.thumbsScrollView = [[UIScrollView alloc] init];
     self.thumbsScrollView.showsHorizontalScrollIndicator = NO;
     [self.view addSubview:self.thumbsScrollView];
     [self.thumbsScrollView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.tipLine2Label.mas_bottom).offset(MARGIN_15);
+        make.top.equalTo(self.invalidExamplesContainer.mas_bottom).offset(MARGIN_15);
         make.left.right.equalTo(self.view);
         make.height.mas_equalTo(76);
     }];
@@ -170,17 +218,109 @@
         make.bottom.equalTo(self.disclaimerCardView).offset(-12);
     }];
     
-    // 上传按钮
+    // 上传按钮（带图标）
     self.uploadButton = [GradientButton buttonWithTitle:LocalString(@"上传")];
     [self.uploadButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     self.uploadButton.cornerRadius = 20;
+    // TODO: 添加上传图标（切图占位） - [self.uploadButton setImage:[UIImage imageNamed:@"icon_upload"] forState:UIControlStateNormal];
     [self.uploadButton addTarget:self action:@selector(uploadButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.uploadButton];
-    [self.uploadButton mas_makeConstraints:^(MASConstraintMaker *make) {
+    
+    // 生成按钮（历史记录存在时显示）
+    self.generateButton = [GradientButton buttonWithTitle:LocalString(@"生成")];
+    [self.generateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.generateButton.cornerRadius = 20;
+    // TODO: 生成按钮使用不同的渐变色（切图占位）
+    [self.generateButton addTarget:self action:@selector(generateButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:self.generateButton];
+    self.generateButton.hidden = YES;
+    
+    [self updateButtonLayout];
+}
+
+- (void)updateButtonLayout {
+    if (self.historyItems.count > 0 && self.selectedHistoryItem) {
+        // 有历史记录且已选中，显示两个按钮
+        self.uploadButton.hidden = NO;
+        self.generateButton.hidden = NO;
+        
+        [self.uploadButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
+            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-70);
+            make.height.mas_equalTo(50);
+        }];
+        
+        [self.generateButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
+            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
+            make.height.mas_equalTo(50);
+        }];
+    } else {
+        // 没有历史记录，只显示上传按钮
+        self.uploadButton.hidden = NO;
+        self.generateButton.hidden = YES;
+        
+        [self.uploadButton mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
+            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
+            make.height.mas_equalTo(50);
+        }];
+    }
+}
+
+- (void)setupInvalidExamples {
+    self.invalidExamplesContainer = [[UIView alloc] init];
+    [self.view addSubview:self.invalidExamplesContainer];
+    
+    [self.invalidExamplesContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.tipLine2Label.mas_bottom).offset(MARGIN_15);
         make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
-        make.height.mas_equalTo(50);
+        make.height.mas_equalTo(60);
     }];
+    
+    // 创建4个无效示例
+    CGFloat itemSize = 50;
+    CGFloat spacing = (self.view.bounds.size.width - 40 - itemSize * 4) / 3;
+    
+    for (NSInteger i = 0; i < 4; i++) {
+        UIView *exampleView = [[UIView alloc] init];
+        exampleView.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
+        exampleView.layer.cornerRadius = 8;
+        exampleView.layer.masksToBounds = YES;
+        [self.invalidExamplesContainer addSubview:exampleView];
+        [self.invalidExampleViews addObject:exampleView];
+        
+        // 占位图片
+        UIImageView *placeholderIV = [[UIImageView alloc] init];
+        // TODO: 使用切图占位 - placeholderIV.image = [UIImage imageNamed:[NSString stringWithFormat:@"invalid_example_%ld", (long)i]];
+        placeholderIV.image = [UIImage systemImageNamed:@"person.crop.square"];
+        placeholderIV.contentMode = UIViewContentModeScaleAspectFill;
+        placeholderIV.clipsToBounds = YES;
+        placeholderIV.tintColor = [UIColor colorWithWhite:0.5 alpha:1.0];
+        [exampleView addSubview:placeholderIV];
+        
+        // X标记
+        UIImageView *xMark = [[UIImageView alloc] init];
+        // TODO: 使用切图占位 - xMark.image = [UIImage imageNamed:@"icon_invalid_x"];
+        xMark.image = [UIImage systemImageNamed:@"xmark.circle.fill"];
+        xMark.tintColor = [UIColor colorWithRed:1.0 green:0.3 blue:0.3 alpha:1.0];
+        [exampleView addSubview:xMark];
+        
+        [exampleView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(self.invalidExamplesContainer).offset(i * (itemSize + spacing));
+            make.top.equalTo(self.invalidExamplesContainer);
+            make.width.height.mas_equalTo(itemSize);
+        }];
+        
+        [placeholderIV mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(exampleView);
+        }];
+        
+        [xMark mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.top.right.equalTo(exampleView).insets(UIEdgeInsetsMake(-4, -4, 0, 0));
+            make.width.height.mas_equalTo(16);
+        }];
+    }
 }
 
 - (void)reloadThumbs {
@@ -241,6 +381,128 @@
     self.disclaimerContentLabel.text = tips;
 }
 
+- (void)loadHistory {
+    // 加载历史记录
+    self.historyItems = [self.historyManager getUploadHistoryList];
+    
+    // 默认选中最新的历史记录
+    if (self.historyItems.count > 0) {
+        self.selectedHistoryItem = self.historyItems.firstObject;
+    }
+    
+    // 更新UI
+    [self reloadHistoryUI];
+    [self updateButtonLayout];
+}
+
+- (void)reloadHistoryUI {
+    // 清空历史记录视图
+    for (UIView *view in self.historyScrollView.subviews) {
+        [view removeFromSuperview];
+    }
+    
+    if (self.historyItems.count == 0) {
+        self.historyContainer.hidden = YES;
+        return;
+    }
+    
+    self.historyContainer.hidden = NO;
+    
+    CGFloat margin = 16;
+    CGFloat x = margin;
+    CGFloat itemSize = 60;
+    
+    // 添加"+"按钮（添加新图片）
+    UIButton *addBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    addBtn.frame = CGRectMake(x, 8, itemSize, itemSize);
+    addBtn.layer.cornerRadius = 10;
+    addBtn.layer.masksToBounds = YES;
+    addBtn.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1.0];
+    // TODO: 使用切图占位 - [addBtn setImage:[UIImage imageNamed:@"icon_add_history"] forState:UIControlStateNormal];
+    [addBtn setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
+    addBtn.tintColor = [UIColor whiteColor];
+    [addBtn addTarget:self action:@selector(selectPhoto) forControlEvents:UIControlEventTouchUpInside];
+    [self.historyScrollView addSubview:addBtn];
+    x += itemSize + margin;
+    
+    // 添加历史记录项
+    for (NSInteger i = 0; i < self.historyItems.count; i++) {
+        UploadHistoryItem *item = self.historyItems[i];
+        UIView *wrap = [[UIView alloc] initWithFrame:CGRectMake(x, 8, itemSize, itemSize)];
+        wrap.layer.cornerRadius = 10;
+        wrap.layer.masksToBounds = YES;
+        wrap.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
+        wrap.tag = i;
+        
+        // 添加点击手势
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onHistoryItemTapped:)];
+        [wrap addGestureRecognizer:tap];
+        
+        // 图片视图
+        UIImageView *iv = [[UIImageView alloc] init];
+        iv.frame = wrap.bounds;
+        iv.contentMode = UIViewContentModeScaleAspectFill;
+        iv.clipsToBounds = YES;
+        
+        // 加载图片（从Uri或URL）
+        if ([item.imageUri hasPrefix:@"http://"] || [item.imageUri hasPrefix:@"https://"]) {
+            [iv sd_setImageWithURL:[NSURL URLWithString:item.imageUri] 
+                   placeholderImage:[UIImage systemImageNamed:@"photo"]];
+        } else {
+            // 本地路径
+            UIImage *localImage = [UIImage imageWithContentsOfFile:item.imageUri];
+            if (localImage) {
+                iv.image = localImage;
+            } else {
+                iv.image = [UIImage systemImageNamed:@"photo"];
+            }
+        }
+        [wrap addSubview:iv];
+        
+        // 选中标记
+        if (item == self.selectedHistoryItem) {
+            wrap.layer.borderWidth = 2;
+            wrap.layer.borderColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.5 alpha:1.0].CGColor;
+        }
+        
+        // 删除按钮
+        UIButton *del = [UIButton buttonWithType:UIButtonTypeCustom];
+        del.backgroundColor = [UIColor colorWithRed:1.0 green:0.25 blue:0.25 alpha:1.0];
+        del.layer.cornerRadius = 10;
+        del.layer.masksToBounds = YES;
+        // TODO: 使用切图占位 - [del setImage:[UIImage imageNamed:@"icon_delete_history"] forState:UIControlStateNormal];
+        [del setTitle:@"✕" forState:UIControlStateNormal];
+        del.titleLabel.font = BOLD_FONT(12);
+        del.frame = CGRectMake(itemSize-18, -2, 20, 20);
+        del.tag = i;
+        [del addTarget:self action:@selector(onDeleteHistoryItem:) forControlEvents:UIControlEventTouchUpInside];
+        [wrap addSubview:del];
+        
+        [self.historyScrollView addSubview:wrap];
+        x += itemSize + margin;
+    }
+    
+    self.historyScrollView.contentSize = CGSizeMake(MAX(x, self.view.bounds.size.width), 76);
+}
+
+- (void)onHistoryItemTapped:(UITapGestureRecognizer *)gesture {
+    NSInteger index = gesture.view.tag;
+    if (index >= 0 && index < self.historyItems.count) {
+        self.selectedHistoryItem = self.historyItems[index];
+        [self reloadHistoryUI];
+        [self updateButtonLayout];
+    }
+}
+
+- (void)onDeleteHistoryItem:(UIButton *)sender {
+    NSInteger index = sender.tag;
+    if (index >= 0 && index < self.historyItems.count) {
+        UploadHistoryItem *item = self.historyItems[index];
+        [self.historyManager removeUploadHistory:item.imageUri];
+        [self loadHistory];
+    }
+}
+
 #pragma mark - Actions
 
 - (void)onAddTapped {
@@ -258,40 +520,108 @@
 }
 
 - (void)uploadButtonTapped:(UIButton *)sender {
-    if (self.selectedImages.count == 0) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"请先选择图片")];
+    // 参考安卓逻辑：如果有历史记录，显示选择弹窗；否则直接打开相册
+    if ([self.historyManager hasHistory]) {
+        // 有历史记录，显示选择界面（iOS直接显示在页面上，不弹窗）
+        [self showHistorySelection];
+    } else {
+        // 没有历史记录，直接打开相册
+        [self selectPhoto];
+    }
+}
+
+- (void)generateButtonTapped:(UIButton *)sender {
+    // 使用选中的历史记录直接生成
+    if (!self.selectedHistoryItem) {
+        // 如果没有选中，使用最新的历史记录
+        self.selectedHistoryItem = [self.historyManager getLatestHistoryItem];
+    }
+    
+    if (!self.selectedHistoryItem) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"没有可用的历史记录")];
         return;
     }
     
-    // 使用第一张图片进行上传和生成
-    UIImage *image = self.selectedImages.firstObject;
-    [self startUploadAndGenerateWithImage:image];
+    // 使用历史记录的AWS路径直接生成
+    [self callGenerateCreateWithImagePath:self.selectedHistoryItem.awsRelativePath 
+                          compressedImagePath:self.selectedHistoryItem.imageUri];
 }
 
-#pragma mark - Upload & Generate Flow
+- (void)selectPhoto {
+    TZImagePickerController *picker = [[TZImagePickerController alloc] initWithMaxImagesCount:1 delegate:self];
+    picker.allowPickingVideo = NO;
+    picker.allowTakeVideo = NO;
+    picker.allowTakePicture = YES;
+    [self presentViewController:picker animated:YES completion:nil];
+}
 
-- (void)startUploadAndGenerateWithImage:(UIImage *)image {
-    BUNNYX_LOG(@"开始上传生成流程，materialId: %ld", (long)self.materialId);
+- (void)showHistorySelection {
+    // iOS版本：直接在页面上显示历史记录，不弹窗
+    // 历史记录已经在loadHistory中加载并显示
+    // 用户点击历史记录项即可选择
+}
+
+#pragma mark - TZImagePickerControllerDelegate
+
+- (void)imagePickerController:(TZImagePickerController *)picker didFinishPickingPhotos:(NSArray<UIImage *> *)photos sourceAssets:(NSArray *)assets isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
+    if (photos.count == 0) {
+        return;
+    }
     
-    // 使用 ImageUploadManager 上传图片（按照安卓版逻辑）
-    [[ImageUploadManager sharedManager] uploadImage:self.materialId
-                                              image:image
-                                            progress:^(CGFloat progress, NSString *status) {
-        // 显示进度
-        [SVProgressHUD showProgress:progress status:status];
-    } success:^(NSString *initImage) {
-        // 上传成功，提交生成任务
-        BUNNYX_LOG(@"图片上传成功，initImage: %@", initImage);
-        [SVProgressHUD showProgress:0.8 status:LocalString(@"正在提交生成任务...")];
-        [self submitGenerateTaskWithImagePath:initImage];
+    // 清空之前的选择，只保留新选择的图片
+    [self.selectedImages removeAllObjects];
+    [self.selectedImages addObject:photos.firstObject];
+    
+    // 设置第一张作为预览
+    self.previewImageView.image = self.selectedImages.firstObject;
+    self.currentSelectedImage = self.selectedImages.firstObject;
+    self.currentSelectedImageUrl = nil; // 新选择的图片，不是历史记录
+    
+    [self reloadThumbs];
+    
+    // 选择图片后，直接开始上传流程（参考安卓逻辑）
+    UIImage *image = self.selectedImages.firstObject;
+    [self startUploadWithImage:image];
+}
+
+- (void)startUploadWithImage:(UIImage *)image {
+    if (!image) {
+        return;
+    }
+    
+    // 跳转到上传中页面（传入模板图片URL）
+    UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId image:image];
+    uploadingVC.templateImageUrl = self.templateImageUrl; // 设置模板图片URL
+    [self.navigationController pushViewController:uploadingVC animated:YES];
+}
+
+- (void)loadMaterialInfo {
+    // 加载素材信息，获取模板图片URL（参考安卓逻辑）
+    NSDictionary *params = @{ @"materialId": @(self.materialId) };
+    [[NetworkManager sharedManager] GET:BUNNYX_API_MATERIAL_DETAIL 
+                              parameters:params 
+                                 success:^(id responseObject) {
+        NSDictionary *dict = (NSDictionary *)responseObject;
+        NSInteger code = [dict[@"code"] integerValue];
+        
+        if (code == 0) {
+            NSDictionary *data = dict[@"data"];
+            if (data && [data isKindOfClass:[NSDictionary class]]) {
+                MaterialDetailModel *material = [MaterialDetailModel modelFromResponse:data];
+                if (material && material.materialUrl && material.materialUrl.length > 0) {
+                    self.templateImageUrl = material.materialUrl;
+                    BUNNYX_LOG(@"加载素材信息成功，模板图片URL: %@", self.templateImageUrl);
+                }
+            }
+        }
     } failure:^(NSError *error) {
-        // 上传失败
-        [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: LocalString(@"图片上传失败")];
-        BUNNYX_ERROR(@"图片上传失败: %@", error.localizedDescription);
+        // 获取素材信息失败，不影响主要功能
+        BUNNYX_LOG(@"获取素材信息失败: %@", error.localizedDescription);
     }];
 }
 
-- (void)submitGenerateTaskWithImagePath:(NSString *)imagePath {
+- (void)callGenerateCreateWithImagePath:(NSString *)imagePath compressedImagePath:(NSString *)compressedImagePath {
+    // 使用历史记录的AWS路径直接生成（参考安卓逻辑）
     NSDictionary *parameters = @{
         @"materialId": @(self.materialId),
         @"initImage": imagePath
@@ -304,20 +634,21 @@
         NSInteger code = [dict[@"code"] integerValue];
         
         if (code == 0) {
-            NSString *createId = dict[@"data"];
-            if (createId && createId.length > 0) {
-                BUNNYX_LOG(@"提交生成任务成功，createId: %@", createId);
-                [SVProgressHUD showSuccessWithStatus:LocalString(@"提交成功")];
+            NSString *createIds = dict[@"data"];
+            if (createIds && createIds.length > 0) {
+                BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
                 
-                // TODO: 可以跳转到生成结果页面或返回上一页
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [self.navigationController popViewControllerAnimated:YES];
-                });
+                // 跳转到上传中页面（使用历史记录的图片路径）
+                UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
+                                                                                                     image:nil 
+                                                                                            createIds:createIds 
+                                                                                      uploadedImagePath:compressedImagePath 
+                                                                                       templateImageUrl:self.templateImageUrl];
+                [self.navigationController pushViewController:uploadingVC animated:YES];
             } else {
                 [SVProgressHUD showErrorWithStatus:LocalString(@"提交生成任务失败")];
             }
         } else {
-            // 与安卓版一致：显示promptType
             NSString *promptType = dict[@"promptType"];
             NSString *errorMessage = promptType ?: dict[@"message"] ?: LocalString(@"提交生成任务失败");
             [SVProgressHUD showErrorWithStatus:errorMessage];
@@ -326,17 +657,6 @@
         [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
         BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
     }];
-}
-
-#pragma mark - TZImagePickerControllerDelegate
-
-- (void)imagePickerController:(TZImagePickerController *)picker didFinishPickingPhotos:(NSArray<UIImage *> *)photos sourceAssets:(NSArray *)assets isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
-    [self.selectedImages addObjectsFromArray:photos];
-    // 设置第一张作为预览
-    if (self.selectedImages.count > 0) {
-        self.previewImageView.image = self.selectedImages.firstObject;
-    }
-    [self reloadThumbs];
 }
 
 @end

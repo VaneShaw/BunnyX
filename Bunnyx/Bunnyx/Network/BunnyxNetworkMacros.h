@@ -55,6 +55,8 @@
 #define BUNNYX_API_AWS_UPLOAD [NSString stringWithFormat:@"%@/oss/upload/aws", BUNNYX_API_BASE_URL]
 // 提交生成任务
 #define BUNNYX_API_GENERATE_CREATE [NSString stringWithFormat:@"%@/aitool/generateCreate", BUNNYX_API_BASE_URL]
+// 根据createIds获取生成任务列表（轮询进度）
+#define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getGenerateTaskList", BUNNYX_API_BASE_URL]
 // 检查素材生成金币是否足够
 #define BUNNYX_API_CHECK_SURPLUS_MXD [NSString stringWithFormat:@"%@/aitool/checkSurplusMxd", BUNNYX_API_BASE_URL]
 
