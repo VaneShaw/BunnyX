@@ -135,3 +135,6 @@
 "处理中" = "Processing";
 "生成失败，请重试" = "Generation failed, please try again";
 "生成失败" = "Generation Failed";
+
+// MARK: - Hot Page
+"余额不足，是否前往充值？" = "Insufficient balance. Would you like to recharge?";

@@ -51,6 +51,8 @@
 #define BUNNYX_API_MATERIAL_DETAIL [NSString stringWithFormat:@"%@/aitool/getMaterialById", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_ADD [NSString stringWithFormat:@"%@/aitool/favoriteMaterial", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/aitool/unfavoriteMaterial", BUNNYX_API_BASE_URL]
+// 举报素材接口
+#define BUNNYX_API_MATERIAL_REPORT [NSString stringWithFormat:@"%@/aitool/reportMaterial", BUNNYX_API_BASE_URL]
 // 获取 AWS 上传配置（与安卓版一致）
 #define BUNNYX_API_AWS_UPLOAD [NSString stringWithFormat:@"%@/oss/upload/aws", BUNNYX_API_BASE_URL]
 // 提交生成任务
