@@ -25,171 +25,380 @@
 }
 
 - (void)setupUI {
-    self.containerView = [[UIView alloc] init];
-    self.containerView.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.5];
-    self.containerView.layer.cornerRadius = 12;
-    self.containerView.layer.masksToBounds = YES;
-    [self.contentView addSubview:self.containerView];
+    // 外层容器（对应CardView）
+    // marginHorizontal: 10dp, marginVertical: 5dp, cornerRadius: 15dp, backgroundColor: #08FFFFFF
+    self.outerContainerView = [[UIView alloc] init];
+    self.outerContainerView.backgroundColor = RGBA(255, 255, 255, 0.031); // #08FFFFFF
+    self.outerContainerView.layer.cornerRadius = 15;
+    self.outerContainerView.layer.masksToBounds = YES;
+    [self.contentView addSubview:self.outerContainerView];
     
-    [self.containerView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
-        make.top.bottom.equalTo(self.contentView).insets(UIEdgeInsetsMake(8, 0, 8, 0));
+    [self.outerContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.contentView).offset(10);
+        make.right.equalTo(self.contentView).offset(-10);
+        make.top.equalTo(self.contentView).offset(5);
+        make.bottom.equalTo(self.contentView).offset(-5);
     }];
     
+    // 内层容器（对应LinearLayout）
+    // padding: 16dp
+    self.innerContainerView = [[UIView alloc] init];
+    self.innerContainerView.backgroundColor = [UIColor clearColor];
+    [self.outerContainerView addSubview:self.innerContainerView];
+    
+    [self.innerContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.outerContainerView).insets(UIEdgeInsetsMake(16, 16, 16, 16));
+    }];
+    
+    // 标题和时间容器（对应标题时间行的LinearLayout）
+    // marginTop: 15dp, orientation: horizontal
+    self.titleTimeContainerView = [[UIView alloc] init];
+    self.titleTimeContainerView.backgroundColor = [UIColor clearColor];
+    [self.innerContainerView addSubview:self.titleTimeContainerView];
+    
+    [self.titleTimeContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.equalTo(self.innerContainerView);
+        make.top.equalTo(self.innerContainerView).offset(15);
+    }];
+    
+    // 标题Label
+    // textSize: 15sp, textColor: white, marginStart: 15dp, textStyle: bold
+    self.titleLabel = [[UILabel alloc] init];
+    self.titleLabel.font = BOLD_FONT(15);
+    self.titleLabel.textColor = [UIColor whiteColor];
+    self.titleLabel.text = @"AI face changing";
+    [self.titleTimeContainerView addSubview:self.titleLabel];
+    
+    [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.titleTimeContainerView).offset(15);
+        make.top.bottom.equalTo(self.titleTimeContainerView);
+    }];
+    
+    // 时间Label
+    // textSize: 12sp, textColor: black9 (#999999), marginStart: 15dp
+    self.timeLabel = [[UILabel alloc] init];
+    self.timeLabel.font = FONT(12);
+    self.timeLabel.textColor = HEX_COLOR(0x999999); // black9
+    self.timeLabel.text = @"2025-10-25 09:22:03";
+    [self.titleTimeContainerView addSubview:self.timeLabel];
+    
+    [self.timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.equalTo(self.titleTimeContainerView).offset(-15);
+        make.top.bottom.equalTo(self.titleTimeContainerView);
+        make.left.greaterThanOrEqualTo(self.titleLabel.mas_right).offset(15);
+    }];
+    
+    // 图片卡片容器（对应CardView）
+    // width: 175dp, height: 220dp, marginTop: 15dp, marginBottom: 12dp, cornerRadius: 10dp
+    self.imageCardView = [[UIView alloc] init];
+    self.imageCardView.backgroundColor = [UIColor clearColor];
+    self.imageCardView.layer.cornerRadius = 10;
+    self.imageCardView.layer.masksToBounds = YES;
+    [self.innerContainerView addSubview:self.imageCardView];
+    
+    [self.imageCardView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.innerContainerView);
+        make.width.mas_equalTo(175);
+        make.height.mas_equalTo(220);
+        make.top.equalTo(self.titleTimeContainerView.mas_bottom).offset(15);
+        make.bottom.equalTo(self.innerContainerView).offset(-12);
+    }];
+    
+    // 封面图（对应ImageView）
+    // scaleType: centerCrop
     self.coverImageView = [[UIImageView alloc] init];
     self.coverImageView.contentMode = UIViewContentModeScaleAspectFill;
     self.coverImageView.clipsToBounds = YES;
-    self.coverImageView.layer.cornerRadius = 8;
+    self.coverImageView.layer.cornerRadius = 10;
     self.coverImageView.layer.masksToBounds = YES;
-    [self.containerView addSubview:self.coverImageView];
+    [self.imageCardView addSubview:self.coverImageView];
     
     [self.coverImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.containerView).offset(MARGIN_15);
-        make.top.bottom.equalTo(self.containerView).insets(UIEdgeInsetsMake(MARGIN_15, 0, MARGIN_15, 0));
-        make.width.equalTo(self.coverImageView.mas_height);
+        make.edges.equalTo(self.imageCardView);
     }];
     
-    self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.font = BOLD_FONT(FONT_SIZE_16);
-    self.titleLabel.textColor = [UIColor whiteColor];
-    self.titleLabel.numberOfLines = 1;
-    [self.containerView addSubview:self.titleLabel];
+    // VIP图标（对应ImageView）
+    // alignParentEnd: true, alignParentTop: true, margin: 8dp
+    self.vipImageView = [[UIImageView alloc] init];
+    self.vipImageView.image = [UIImage imageNamed:@"icon_vip_list_light"];
+    self.vipImageView.hidden = YES;
+    [self.imageCardView addSubview:self.vipImageView];
     
-    [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.coverImageView.mas_right).offset(MARGIN_15);
-        make.top.equalTo(self.containerView).offset(MARGIN_15);
-        make.right.equalTo(self.containerView).offset(-MARGIN_15);
+    [self.vipImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.right.equalTo(self.imageCardView).insets(UIEdgeInsetsMake(8, 0, 0, 8));
     }];
     
-    self.timeLabel = [[UILabel alloc] init];
-    self.timeLabel.font = FONT(FONT_SIZE_12);
-    self.timeLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
-    [self.containerView addSubview:self.timeLabel];
+    // 状态标签行容器（对应LinearLayout）
+    // visibility: gone (默认隐藏), orientation: horizontal, gravity: center_vertical
+    self.statusRowView = [[UIView alloc] init];
+    self.statusRowView.backgroundColor = [UIColor clearColor];
+    self.statusRowView.hidden = YES;
+    [self.innerContainerView addSubview:self.statusRowView];
     
-    [self.timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.titleLabel);
-        make.top.equalTo(self.titleLabel.mas_bottom).offset(8);
+    [self.statusRowView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.equalTo(self.innerContainerView);
+        make.top.equalTo(self.imageCardView.mas_bottom);
+        make.bottom.equalTo(self.innerContainerView);
     }];
     
+    // 状态标签（对应ShapeTextView）
+    // height: 24dp, marginEnd: 8dp, paddingStart/End: 8dp, textSize: 12sp, textColor: white
+    // background: bg_status_gradient (渐变背景 #0AEA6F -> #1CB3C1, 圆角: topLeft/topRight/bottomLeft/bottomRight: 10/5/5/10)
+    
+    // 创建渐变背景容器
+    UIView *statusBackgroundView = [[UIView alloc] init];
+    statusBackgroundView.layer.masksToBounds = YES;
+    [self.statusRowView addSubview:statusBackgroundView];
+    
+    [statusBackgroundView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.statusRowView);
+        make.height.mas_equalTo(24);
+        make.centerY.equalTo(self.statusRowView);
+    }];
+    
+    // 创建渐变背景layer（在layoutSubviews中设置frame）
+    CAGradientLayer *statusGradientLayer = [CAGradientLayer layer];
+    statusGradientLayer.colors = @[(__bridge id)HEX_COLOR(0x0AEA6F).CGColor, (__bridge id)HEX_COLOR(0x1CB3C1).CGColor];
+    statusGradientLayer.startPoint = CGPointMake(0, 0);
+    statusGradientLayer.endPoint = CGPointMake(0, 1);
+    // 圆角: topLeft/topRight/bottomLeft/bottomRight: 10/5/5/10
+    // 使用CAShapeLayer创建自定义圆角路径
+    [statusBackgroundView.layer addSublayer:statusGradientLayer];
+    self.statusGradientLayer = statusGradientLayer;
+    
+    // 状态标签（放在渐变背景容器上）
     self.statusLabel = [[UILabel alloc] init];
-    self.statusLabel.font = FONT(FONT_SIZE_12);
-    self.statusLabel.textColor = [UIColor colorWithRed:0.0 green:0.7 blue:0.3 alpha:1.0];
-    self.statusLabel.numberOfLines = 0;
-    [self.containerView addSubview:self.statusLabel];
+    self.statusLabel.font = FONT(12);
+    self.statusLabel.textColor = [UIColor whiteColor];
+    self.statusLabel.textAlignment = NSTextAlignmentCenter;
+    self.statusLabel.text = LocalString(@"mine_in_queue");
+    [statusBackgroundView addSubview:self.statusLabel];
     
     [self.statusLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.titleLabel);
-        make.top.equalTo(self.timeLabel.mas_bottom).offset(8);
-        make.right.lessThanOrEqualTo(self.containerView).offset(-MARGIN_15);
-        make.bottom.lessThanOrEqualTo(self.containerView).offset(-MARGIN_15);
+        make.edges.equalTo(statusBackgroundView).insets(UIEdgeInsetsMake(0, 8, 0, 8)); // paddingStart/End: 8dp
     }];
     
-    self.loadingView = [[UIView alloc] init];
-    self.loadingView.backgroundColor = [UIColor clearColor];
-    self.loadingView.hidden = YES;
-    [self.containerView addSubview:self.loadingView];
+    // 队列信息标签（对应TextView）
+    // textSize: 12sp, textColor: white
+    self.queueInfoLabel = [[UILabel alloc] init];
+    self.queueInfoLabel.font = FONT(12);
+    self.queueInfoLabel.textColor = [UIColor whiteColor];
+    [self.statusRowView addSubview:self.queueInfoLabel];
     
-    [self.loadingView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.coverImageView);
-        make.width.height.mas_equalTo(40);
+    [self.queueInfoLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.statusLabel.mas_right).offset(8);
+        make.centerY.equalTo(self.statusRowView);
+        make.right.lessThanOrEqualTo(self.statusRowView);
     }];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
     
-    for (int i = 0; i < 5; i++) {
-        UIView *square = [[UIView alloc] init];
-        square.backgroundColor = [UIColor colorWithRed:0.4 green:0.7 blue:1.0 alpha:1.0];
-        square.layer.cornerRadius = 2;
-        [self.loadingView addSubview:square];
+    // 更新状态标签的渐变背景layer的frame和圆角
+    if (self.statusGradientLayer && self.statusGradientLayer.superlayer) {
+        CALayer *parentLayer = self.statusGradientLayer.superlayer;
+        self.statusGradientLayer.frame = parentLayer.bounds;
+        // 创建自定义圆角路径：topLeft/topRight/bottomLeft/bottomRight: 10/5/5/10
+        UIBezierPath *path = [UIBezierPath bezierPath];
+        CGFloat width = parentLayer.bounds.size.width;
+        CGFloat height = parentLayer.bounds.size.height;
+        CGFloat topLeft = 10;
+        CGFloat topRight = 5;
+        CGFloat bottomLeft = 5;
+        CGFloat bottomRight = 10;
         
-        [square mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.width.height.mas_equalTo(6);
-            make.centerY.equalTo(self.loadingView);
-            make.left.equalTo(self.loadingView).offset(i * 10);
-        }];
+        [path moveToPoint:CGPointMake(topLeft, 0)];
+        [path addLineToPoint:CGPointMake(width - topRight, 0)];
+        [path addQuadCurveToPoint:CGPointMake(width, topRight) controlPoint:CGPointMake(width, 0)];
+        [path addLineToPoint:CGPointMake(width, height - bottomRight)];
+        [path addQuadCurveToPoint:CGPointMake(width - bottomRight, height) controlPoint:CGPointMake(width, height)];
+        [path addLineToPoint:CGPointMake(bottomLeft, height)];
+        [path addQuadCurveToPoint:CGPointMake(0, height - bottomLeft) controlPoint:CGPointMake(0, height)];
+        [path addLineToPoint:CGPointMake(0, topLeft)];
+        [path addQuadCurveToPoint:CGPointMake(topLeft, 0) controlPoint:CGPointMake(0, 0)];
+        [path closePath];
+        
+        CAShapeLayer *maskLayer = [CAShapeLayer layer];
+        maskLayer.path = path.CGPath;
+        self.statusGradientLayer.mask = maskLayer;
+    }
+    
+    // 更新封面图的渐变背景layer的frame
+    if (self.coverImageView.layer.sublayers.count > 0) {
+        for (CALayer *layer in self.coverImageView.layer.sublayers) {
+            if ([layer isKindOfClass:[CAGradientLayer class]]) {
+                layer.frame = self.coverImageView.bounds;
+            }
+        }
     }
 }
 
 - (void)configureWithModel:(CreateTaskModel *)model {
+    if (!model) {
+        return;
+    }
+    
+    // 设置标题
     if (model.typeRemark && model.typeRemark.length > 0) {
         self.titleLabel.text = model.typeRemark;
     } else {
-        self.titleLabel.text = LocalString(@"生成");
+        self.titleLabel.text = @"AI face changing";
     }
     
+    // 设置时间
     if (model.addDate && model.addDate.length > 0) {
-        self.timeLabel.text = model.addDate;
+        // 格式化时间：支持多种输入格式，转换为 "yyyy-MM-dd HH:mm"
+        self.timeLabel.text = [self formatDateTime:model.addDate];
     } else {
         self.timeLabel.text = @"";
     }
     
-    NSString *imageUrl = nil;
-    if (model.status == 3) {
-        if (model.videoUrl && model.videoUrl.length > 0) {
-            imageUrl = model.videoUrl;
-        } else if (model.imageUrl && model.imageUrl.length > 0) {
-            imageUrl = model.imageUrl;
-        }
+    // 设置状态标签
+    if (model.statusRemark && model.statusRemark.length > 0) {
+        self.statusLabel.text = model.statusRemark;
     } else {
-        if (model.imageUrl && model.imageUrl.length > 0) {
-            imageUrl = model.imageUrl;
+        self.statusLabel.text = LocalString(@"mine_in_queue");
+    }
+    
+    // 设置队列信息
+    if (model.positionRemark && model.positionRemark.length > 0) {
+        self.queueInfoLabel.text = model.positionRemark;
+    } else {
+        self.queueInfoLabel.text = @"";
+    }
+    
+    // 设置VIP图标显示/隐藏
+    self.vipImageView.hidden = (model.onlyVip != 1);
+    
+    // 根据status状态显示不同内容
+    int status = model.status;
+    switch (status) {
+        case 1: // 排队中
+        case 2: // 生成中
+            [self showLoadingState:model];
+            break;
+        case 3: // 生成成功
+            [self showCompletedState:model];
+            break;
+        case 0: // 等待进入队列
+        case 4: // 生成失败
+        case 5: // 生成不存在
+        default: // 其他状态
+            [self showDefaultState:model];
+            break;
+    }
+}
+
+- (void)showLoadingState:(CreateTaskModel *)createTask {
+    // 显示渐变背景
+    self.coverImageView.hidden = NO;
+    // 设置渐变背景（bg_generate_gradient: #CECDF5 -> #F0CADB -> #CFCBF5）
+    CAGradientLayer *gradientLayer = [CAGradientLayer layer];
+    gradientLayer.colors = @[
+        (__bridge id)HEX_COLOR(0xCECDF5).CGColor,
+        (__bridge id)HEX_COLOR(0xF0CADB).CGColor,
+        (__bridge id)HEX_COLOR(0xCFCBF5).CGColor
+    ];
+    gradientLayer.startPoint = CGPointMake(0, 0);
+    gradientLayer.endPoint = CGPointMake(0, 1);
+    gradientLayer.cornerRadius = 10;
+    gradientLayer.frame = self.coverImageView.bounds;
+    // 移除旧的渐变层
+    NSArray *sublayers = [self.coverImageView.layer.sublayers copy];
+    for (CALayer *layer in sublayers) {
+        if ([layer isKindOfClass:[CAGradientLayer class]]) {
+            [layer removeFromSuperlayer];
         }
     }
+    [self.coverImageView.layer insertSublayer:gradientLayer atIndex:0];
+    self.coverImageView.image = nil;
+    
+    // 显示状态标签行
+    self.statusRowView.hidden = NO;
+}
+
+- (void)showCompletedState:(CreateTaskModel *)createTask {
+    // 显示图片
+    self.coverImageView.hidden = NO;
+    // 去掉渐变背景
+    NSArray *sublayers = [self.coverImageView.layer.sublayers copy];
+    for (CALayer *layer in sublayers) {
+        if ([layer isKindOfClass:[CAGradientLayer class]]) {
+            [layer removeFromSuperlayer];
+        }
+    }
+    
+    // 直接使用imageUrl显示封面图
+    NSString *imageUrl = createTask.imageUrl;
     
     if (imageUrl && imageUrl.length > 0) {
         NSURL *url = [NSURL URLWithString:imageUrl];
-        [self.coverImageView sd_setImageWithURL:url placeholderImage:nil options:SDWebImageRetryFailed];
+        // 使用SDWebImage加载图片，并添加圆角处理
+        [self.coverImageView sd_setImageWithURL:url
+                               placeholderImage:[UIImage imageNamed:@"image_loading_ic"]
+                                        options:SDWebImageRetryFailed
+                                      completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+            if (error) {
+                self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+            }
+        }];
     } else {
-        self.coverImageView.image = nil;
+        self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
     }
     
-    if (model.status == 3) {
-        self.statusLabel.hidden = YES;
-        self.loadingView.hidden = YES;
-    } else {
-        self.statusLabel.hidden = NO;
-        self.loadingView.hidden = NO;
-        
-        NSMutableString *statusText = [NSMutableString string];
-        if (model.statusRemark && model.statusRemark.length > 0) {
-            [statusText appendString:model.statusRemark];
-        }
-        if (model.positionRemark && model.positionRemark.length > 0) {
-            if (statusText.length > 0) {
-                [statusText appendString:@"\n"];
-            }
-            [statusText appendString:model.positionRemark];
-        }
-        self.statusLabel.text = statusText.length > 0 ? statusText : @"";
-        
-        if (model.status == 2) {
-            self.loadingView.hidden = NO;
-            [self startLoadingAnimation];
-        } else {
-            self.loadingView.hidden = YES;
-            [self stopLoadingAnimation];
-        }
-    }
+    // 隐藏状态标签行
+    self.statusRowView.hidden = YES;
 }
 
-- (void)startLoadingAnimation {
-    NSArray *subviews = self.loadingView.subviews;
-    for (int i = 0; i < subviews.count; i++) {
-        UIView *square = subviews[i];
-        [UIView animateWithDuration:0.6
-                              delay:i * 0.1
-                            options:UIViewAnimationOptionRepeat | UIViewAnimationOptionAutoreverse
-                         animations:^{
-            square.alpha = 0.3;
-        } completion:nil];
+- (void)showDefaultState:(CreateTaskModel *)createTask {
+    // 显示默认图片
+    self.coverImageView.hidden = NO;
+    // 去掉渐变背景
+    NSArray *sublayers = [self.coverImageView.layer.sublayers copy];
+    for (CALayer *layer in sublayers) {
+        if ([layer isKindOfClass:[CAGradientLayer class]]) {
+            [layer removeFromSuperlayer];
+        }
     }
+    self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+    
+    // 显示状态标签行（除了成功状态，其他状态都要显示）
+    self.statusRowView.hidden = NO;
 }
 
-- (void)stopLoadingAnimation {
-    NSArray *subviews = self.loadingView.subviews;
-    for (UIView *square in subviews) {
-        [square.layer removeAllAnimations];
-        square.alpha = 1.0;
+- (NSString *)formatDateTime:(NSString *)dateTimeStr {
+    if (!dateTimeStr || dateTimeStr.length == 0) {
+        return @"";
     }
+    
+    // 输出格式：yyyy-MM-dd HH:mm
+    NSDateFormatter *outputFormatter = [[NSDateFormatter alloc] init];
+    outputFormatter.dateFormat = @"yyyy-MM-dd HH:mm";
+    outputFormatter.locale = [NSLocale currentLocale];
+    
+    // 尝试多种输入格式
+    NSArray *inputFormats = @[
+        @"yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // ISO 8601格式: 2025-10-11T07:48:49.000+00:00
+        @"yyyy-MM-dd'T'HH:mm:ss.SSS",     // ISO格式不带时区: 2025-10-11T07:48:49.000
+        @"yyyy-MM-dd'T'HH:mm:ss",         // ISO格式不带毫秒: 2025-10-11T07:48:49
+        @"yyyy-MM-dd HH:mm:ss",            // 简单格式: 2025-11-06 06:46:07
+        @"yyyy-MM-dd HH:mm"                // 简单格式不带秒: 2025-11-06 06:46
+    ];
+    
+    for (NSString *format in inputFormats) {
+        NSDateFormatter *inputFormatter = [[NSDateFormatter alloc] init];
+        inputFormatter.dateFormat = format;
+        inputFormatter.locale = [NSLocale currentLocale];
+        NSDate *date = [inputFormatter dateFromString:dateTimeStr];
+        if (date) {
+            return [outputFormatter stringFromDate:date];
+        }
+    }
+    
+    // 所有格式都解析失败，返回原字符串
+    BUNNYX_LOG(@"无法解析日期格式: %@", dateTimeStr);
+    return dateTimeStr;
 }
 
 @end
-

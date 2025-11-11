@@ -14,8 +14,15 @@
 #import <MJRefresh/MJRefresh.h>
 #import <JXPagingView/JXPagerView.h>
 #import "GenerateListCell.h" // 导入以使用 GenerateListCell
+#import <SDWebImage/SDWebImage.h>
+#import <QuartzCore/QuartzCore.h> // 用于CACurrentMediaTime()
+#import "MaterialDetailViewController.h"
 
 static NSString *const kGenerateCellId = @"GenerateListCell";
+
+// 通知名称：生成详情页删除成功
+NSString *const kGenerateDetailDeletedNotification = @"GenerateDetailDeletedNotification";
+NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 
 @interface GenerateListViewController () <UITableViewDataSource, UITableViewDelegate, JXPagerViewListViewDelegate>
 
@@ -26,6 +33,8 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
 @property (nonatomic, assign) BOOL isLoading;
 @property (nonatomic, assign) BOOL hasMoreData;
 @property (nonatomic, copy) void(^listViewDidScrollCallback)(UIScrollView *scrollView);
+@property (nonatomic, assign) NSTimeInterval lastClickTime; // 防重复点击（600ms间隔）
+@property (nonatomic, assign) NSInteger lastClickIndex; // 最后点击的索引
 
 @end
 
@@ -39,20 +48,54 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
     self.currentPage = 1;
     self.isLoading = NO;
     self.hasMoreData = YES;
+    self.lastClickTime = 0;
+    self.lastClickIndex = -1;
     
     [self setupUI];
     [self setupRefresh];
+    [self setupNotifications];
     // 不在 viewDidLoad 中直接加载数据，等列表出现时再加载（listDidAppear）
 }
 
+- (void)setupNotifications {
+    // 监听生成详情页删除成功的通知（对应安卓的ActivityResultLauncher）
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleGenerateDetailDeleted:)
+                                                 name:kGenerateDetailDeletedNotification
+                                               object:nil];
+}
+
+- (void)handleGenerateDetailDeleted:(NSNotification *)notification {
+    // 对应安卓的detailLauncher回调
+    NSDictionary *userInfo = notification.userInfo;
+    if (!userInfo) {
+        return;
+    }
+    
+    NSString *createId = userInfo[kGenerateDetailDeletedCreateIdKey];
+    if (createId && createId.length > 0) {
+        NSInteger removedPosition = [self removeByCreateId:createId];
+        if (removedPosition >= 0 && self.dataList.count == 0) {
+            // 列表为空，显示空状态（已在removeByCreateId中调用updateUI）
+        }
+    }
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (void)setupUI {
+    // 设置背景色（对应安卓的 #0A1C1B）
+    self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
+    
     // 表格视图
     self.tableView = [[UITableView alloc] init];
     self.tableView.backgroundColor = [UIColor clearColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
-    self.tableView.estimatedRowHeight = 120;
+    self.tableView.estimatedRowHeight = 300; // 根据安卓布局估算：16+15+15+220+12+24+16 = 约300
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     // 设置 alwaysBounceVertical 为 YES，确保即使内容不够时也能触发下拉刷新
     self.tableView.alwaysBounceVertical = YES;
@@ -60,6 +103,8 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
     if (@available(iOS 11.0, *)) {
         self.tableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     }
+    // 设置paddingTop和paddingBottom为8dp（对应安卓的paddingTop="8dp" paddingBottom="8dp"）
+    self.tableView.contentInset = UIEdgeInsetsMake(8, 0, 8, 0);
     [self.tableView registerClass:[GenerateListCell class] forCellReuseIdentifier:kGenerateCellId];
     [self.view addSubview:self.tableView];
     
@@ -67,34 +112,25 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
         make.edges.equalTo(self.view);
     }];
     
-    // 空状态视图
+    // 空状态视图（对应安卓的layout_empty）
     self.emptyView = [[UIView alloc] init];
     self.emptyView.hidden = YES;
+    self.emptyView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.emptyView];
     
     [self.emptyView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.view);
-        make.width.height.mas_equalTo(100);
+        make.edges.equalTo(self.view);
     }];
     
-    // 空状态图标（文件夹+星星）
-    UIImageView *folderIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"folder.fill"]];
-    folderIcon.tintColor = [UIColor colorWithWhite:0.3 alpha:1.0];
-    [self.emptyView addSubview:folderIcon];
+    // 空状态图标（对应安卓的icon_mine_default_image，80dp x 80dp）
+    UIImageView *emptyIcon = [[UIImageView alloc] init];
+    emptyIcon.image = [UIImage imageNamed:@"icon_mine_default_image"];
+    emptyIcon.contentMode = UIViewContentModeScaleAspectFit;
+    [self.emptyView addSubview:emptyIcon];
     
-    [folderIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.emptyView);
-        make.centerY.equalTo(self.emptyView).offset(-10);
-        make.width.height.mas_equalTo(60);
-    }];
-    
-    UIImageView *starIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"star.fill"]];
-    starIcon.tintColor = [UIColor whiteColor];
-    [self.emptyView addSubview:starIcon];
-    
-    [starIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(folderIcon);
-        make.width.height.mas_equalTo(24);
+    [emptyIcon mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self.emptyView);
+        make.width.height.mas_equalTo(80);
     }];
 }
 
@@ -227,14 +263,86 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
     CreateTaskModel *model = self.dataList[indexPath.row];
-    
-    // 如果状态是排队中(1)或生成中(2)，不允许点击
-    if (model.status == 1 || model.status == 2) {
+    if (!model) {
         return;
     }
     
-    // TODO: 跳转到详情页
-    BUNNYX_LOG(@"点击生成任务: %@", model.createId);
+    // 防重复点击（600ms间隔，对应安卓的SystemClock.elapsedRealtime()）
+    NSTimeInterval now = CACurrentMediaTime() * 1000; // 转换为毫秒
+    if (now - self.lastClickTime < 600) {
+        return;
+    }
+    self.lastClickTime = now;
+    self.lastClickIndex = indexPath.row;
+    
+    // 检查状态，status为1（排队中）或2（生成中）时不可点击，4、5（生成失败）也不可点击
+    if (model.status == 1 || model.status == 2 || model.status == 4 || model.status == 5) {
+        // 不执行任何操作，也不显示提示
+        return;
+    }
+    
+    // 预加载生成详情需要的大图（videoUrl 优先，其次 imageUrl）
+    NSString *preloadUrl = nil;
+    if (model.videoUrl && model.videoUrl.length > 0) {
+        preloadUrl = model.videoUrl;
+    } else if (model.imageUrl && model.imageUrl.length > 0) {
+        preloadUrl = model.imageUrl;
+    }
+    if (preloadUrl && preloadUrl.length > 0) {
+        NSURL *url = [NSURL URLWithString:preloadUrl];
+        [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:@[url]];
+    }
+    
+    // 跳转到详情页
+    [self navigateToDetailWithCreateTask:model];
+}
+
+- (void)navigateToDetailWithCreateTask:(CreateTaskModel *)createTask {
+    // 对应安卓的VideoDetailActivity.startForGenerate(context, createTask)
+    // 需要传递：
+    // 1. createTask (CreateTaskModel)
+    // 2. pageType (PAGE_TYPE_GENERATE = 1)
+    // 3. materialId (createTask.materialId)
+    
+    // 暂时使用MaterialDetailViewController，通过materialId跳转
+    // 后续可能需要扩展MaterialDetailViewController来支持生成详情模式
+    if (createTask.materialId > 0) {
+        MaterialDetailViewController *vc = [[MaterialDetailViewController alloc] initWithMaterialId:createTask.materialId];
+        vc.hidesBottomBarWhenPushed = YES;
+        
+        // 使用block回调来处理详情页返回后的删除操作
+        // 注意：需要在MaterialDetailViewController中添加回调支持
+        // 暂时先跳转，删除功能通过通知或其他方式实现
+        
+        [self.navigationController pushViewController:vc animated:YES];
+        BUNNYX_LOG(@"跳转到详情页，createId: %@, materialId: %ld", createTask.createId, (long)createTask.materialId);
+    } else {
+        BUNNYX_LOG(@"无法跳转，materialId无效: %ld", (long)createTask.materialId);
+    }
+}
+
+/// 根据createId删除item（对应安卓的adapter.removeByCreateId）
+- (NSInteger)removeByCreateId:(NSString *)createId {
+    if (!createId || createId.length == 0) {
+        return -1;
+    }
+    
+    for (NSInteger i = 0; i < self.dataList.count; i++) {
+        CreateTaskModel *task = self.dataList[i];
+        if (task && [task.createId isEqualToString:createId]) {
+            [self.dataList removeObjectAtIndex:i];
+            [self.tableView deleteRowsAtIndexPaths:@[[NSIndexPath indexPathForRow:i inSection:0]] withRowAnimation:UITableViewRowAnimationFade];
+            
+            // 如果删除后列表为空，显示空状态
+            if (self.dataList.count == 0) {
+                [self updateUI];
+            }
+            
+            return i;
+        }
+    }
+    
+    return -1;
 }
 
 #pragma mark - JXPagerViewListViewDelegate
@@ -265,9 +373,6 @@ static NSString *const kGenerateCellId = @"GenerateListCell";
     // 在 JXPagerView 嵌套滚动中，当主滚动视图的 header 还没有消失时，
     // 子列表的 contentOffset 会被重置，此时下拉刷新才能正常工作
     // 确保 tableView 的 contentOffset 为 0，这样下拉刷新才能正常触发
-    if (self.tableView.contentOffset.y < 0) {
-        self.tableView.contentOffset = CGPointZero;
-    }
 }
 
 - (void)listDidAppear {

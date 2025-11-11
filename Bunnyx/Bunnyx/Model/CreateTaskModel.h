@@ -31,6 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSString *typeRemark; // 生成列表的标题
 @property (nonatomic, copy) NSString *statusRemark; // 生成列表的状态标签
 @property (nonatomic, copy) NSString *positionRemark; // 生成列表的排队进度
+@property (nonatomic, assign) NSInteger onlyVip; // 是否仅VIP可用 1为仅VIP可用
 
 + (NSArray<CreateTaskModel *> *)modelsFromResponse:(NSArray *)array;
 

@@ -30,6 +30,7 @@
         m.typeRemark = [dict[@"typeRemark"] isKindOfClass:[NSString class]] ? dict[@"typeRemark"] : @"";
         m.statusRemark = [dict[@"statusRemark"] isKindOfClass:[NSString class]] ? dict[@"statusRemark"] : @"";
         m.positionRemark = [dict[@"positionRemark"] isKindOfClass:[NSString class]] ? dict[@"positionRemark"] : @"";
+        m.onlyVip = [dict[@"onlyVip"] integerValue];
         [result addObject:m];
     }
     return result.copy;
