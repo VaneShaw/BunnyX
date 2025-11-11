@@ -10,4 +10,7 @@
 
 @interface HomeViewController : UIViewController
 
+// 刷新数据（对齐安卓：refreshData方法）
+- (void)refreshData;
+
 @end

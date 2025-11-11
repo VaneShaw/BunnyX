@@ -86,6 +86,7 @@
 "已订阅" = "Subscribed";
 "生成" = "Generate";
 "点赞" = "Like";
+"收藏" = "Favorite";
 "金币" = "Coins";
 "ID" = "ID";
 
@@ -138,3 +139,32 @@
 
 // MARK: - Hot Page
 "余额不足，是否前往充值？" = "Insufficient balance. Would you like to recharge?";
+
+// MARK: - Subscription Page
+"订阅标题" = "Subscribe";
+"订阅按钮" = "Subscribe";
+"订阅提示默认" = "Subscribe to enjoy all VIP privileges";
+"隐私政策" = "Privacy Policy";
+"用户协议" = "User Agreement";
+"订阅协议" = "Subscription Agreement";
+"免费金币" = "Free %d gold coins Per %@";
+"快速生成" = "Quickly generate";
+"解锁高级模型" = "Unlock advanced models";
+"高质量生成" = "High quality generation";
+"双倍签到奖励" = "Double the check-in reward";
+"请选择订阅套餐" = "Please select a subscription plan";
+"限时优惠" = "Limited Offer";
+"首年" = "First Year";
+"我再想想" = "Think About It";
+"订阅成功" = "Subscription Success";
+"订阅失败" = "Subscription Failed";
+
+// MARK: - Profile Page
+"生成列表" = "Generate List";
+"收藏列表" = "Like List";
+"生成" = "Generate";
+"点赞" = "Like";
+"订阅" = "Subscribe";
+"ID:%@" = "ID:%@";
+"%d Coins" = "%d Coins";
+"有效期至: %@" = "Valid until: %@";

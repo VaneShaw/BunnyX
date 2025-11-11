@@ -11,15 +11,21 @@
 #import "MaterialTypeModel.h"
 #import "MaterialListViewController.h"
 #import "BunnyxMacros.h"
+#import "HomeTabCell.h"
 
-@interface HomeViewController () <UIScrollViewDelegate>
+// 通知名称：刷新首页列表
+extern NSString *const kRefreshMaterialListNotification;
 
-@property (nonatomic, strong) UISegmentedControl *segmentedControl;
+@interface HomeViewController () <UIScrollViewDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout>
+
+@property (nonatomic, strong) UICollectionView *tabCollectionView;
 @property (nonatomic, strong) UIScrollView *pagesScrollView;
 @property (nonatomic, strong) NSArray<MaterialTypeModel *> *types;
 @property (nonatomic, strong) NSMutableArray<MaterialListViewController *> *pages;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) UIImageView *backgroundImageView;
+@property (nonatomic, assign) NSInteger currentIndex;
+@property (nonatomic, assign) BOOL hasLoadedData; // 是否已经加载过数据（对齐安卓）
 
 @end
 
@@ -31,10 +37,27 @@
     // 背景图
     [self setupBackgroundImage];
     self.pages = [NSMutableArray array];
-    [self setupTopBar];
+    self.hasLoadedData = NO;
+    [self setupTopTabs];
     [self setupPagesScrollView];
     [self setupEmptyLabel];
     [self fetchCategories];
+    
+    // 对齐安卓：监听刷新列表通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleRefreshMaterialListNotification:)
+                                                 name:kRefreshMaterialListNotification
+                                               object:nil];
+}
+
+- (void)dealloc {
+    // 移除通知监听
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)handleRefreshMaterialListNotification:(NSNotification *)notification {
+    // 对齐安卓：收到刷新通知时，刷新所有MaterialListViewController
+    [self refreshData];
 }
 
 - (void)setupBackgroundImage {
@@ -51,41 +74,27 @@
 }
 
 
-// 顶部分段
-- (void)setupTopBar {
-    UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[]];
-    seg.selectedSegmentIndex = 0;
-    seg.backgroundColor = [UIColor clearColor];
-    [seg addTarget:self action:@selector(onSegmentChanged:) forControlEvents:UIControlEventValueChanged];
-
-    // 背景透明与分隔线透明
-    UIImage *clearImg = [self bx_imageWithColor:[UIColor clearColor]];
-    [seg setBackgroundImage:clearImg forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-    [seg setBackgroundImage:clearImg forState:UIControlStateSelected barMetrics:UIBarMetricsDefault];
-    [seg setDividerImage:clearImg forLeftSegmentState:UIControlStateNormal rightSegmentState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-
-    // 文本颜色与选中样式
-    if (@available(iOS 13.0, *)) {
-        seg.selectedSegmentTintColor = HEX_COLOR(0x999999); // 选中背景 #999999
-        NSDictionary *normalAttrs = @{ NSForegroundColorAttributeName: BUNNYX_LIGHT_TEXT_COLOR, NSFontAttributeName: FONT(17) };
-        NSDictionary *selectedAttrs = @{ NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: BOLD_FONT(20) };
-        [seg setTitleTextAttributes:normalAttrs forState:UIControlStateNormal];
-        [seg setTitleTextAttributes:selectedAttrs forState:UIControlStateSelected];
-    } else {
-        seg.tintColor = HEX_COLOR(0x999999); // 老系统用tint
-        NSDictionary *normalAttrs = @{ NSForegroundColorAttributeName: BUNNYX_LIGHT_TEXT_COLOR, NSFontAttributeName: FONT(17) };
-        NSDictionary *selectedAttrs = @{ NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: BOLD_FONT(20) };
-        [seg setTitleTextAttributes:normalAttrs forState:UIControlStateNormal];
-        [seg setTitleTextAttributes:selectedAttrs forState:UIControlStateSelected];
-    }
-
-    self.segmentedControl = seg;
-    [self.view addSubview:seg];
-    [seg mas_makeConstraints:^(MASConstraintMaker *make) {
+// 顶部横向可滚动分类Tab（对齐安卓UI交互）
+- (void)setupTopTabs {
+    UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
+    layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+    layout.minimumInteritemSpacing = 8;
+    layout.minimumLineSpacing = 8;
+    layout.sectionInset = UIEdgeInsetsMake(0, 12, 0, 12);
+    
+    UICollectionView *collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:layout];
+    collectionView.backgroundColor = [UIColor clearColor];
+    collectionView.showsHorizontalScrollIndicator = NO;
+    collectionView.delegate = self;
+    collectionView.dataSource = self;
+    [collectionView registerClass:[HomeTabCell class] forCellWithReuseIdentifier:@"HomeTabCell"];
+    self.tabCollectionView = collectionView;
+    [self.view addSubview:collectionView];
+    [collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(8);
-        make.left.equalTo(self.view).offset(12);
-        make.right.equalTo(self.view).offset(-12);
-        make.height.mas_equalTo(32);
+        make.left.equalTo(self.view);
+        make.right.equalTo(self.view);
+        make.height.mas_equalTo(44);
     }];
 }
 
@@ -110,7 +119,7 @@
     self.pagesScrollView = scroll;
     [self.view addSubview:scroll];
     [scroll mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.segmentedControl.mas_bottom).offset(8);
+        make.top.equalTo(self.tabCollectionView.mas_bottom).offset(8);
         make.left.right.bottom.equalTo(self.view);
     }];
 }
@@ -136,32 +145,57 @@
 #pragma mark - Networking
 
 - (void)fetchCategories {
+    // 只有在没有加载过数据时才加载（对齐安卓）
+    if (self.hasLoadedData) {
+        return;
+    }
+    
     [[NetworkManager sharedManager] GET:BUNNYX_API_MATERIAL_TYPE_LIST parameters:nil success:^(id  _Nonnull responseObject) {
         NSArray *data = responseObject[@"data"];
         self.types = [MaterialTypeModel modelsFromResponse:data];
-        [self reloadSegmentsAndPages];
+        self.hasLoadedData = YES;
+        [self reloadTabsAndPages];
     } failure:^(NSError * _Nonnull error) {
         self.types = @[];
-        [self reloadSegmentsAndPages];
+        self.hasLoadedData = YES; // 即使失败也标记为已加载，避免重复请求
+        [self reloadTabsAndPages];
     }];
 }
 
-- (void)reloadSegmentsAndPages {
-    [self.segmentedControl removeAllSegments];
+- (void)refreshData {
+    // 刷新数据（对齐安卓：refreshData方法）
+    // 如果已经有数据，直接通知所有MaterialListViewController刷新
+    if (self.hasLoadedData && self.pages.count > 0) {
+        for (MaterialListViewController *vc in self.pages) {
+            if ([vc respondsToSelector:@selector(refreshData)]) {
+                [vc refreshData];
+            }
+        }
+    } else {
+        // 如果没有数据，重新加载分类
+        self.hasLoadedData = NO;
+        [self fetchCategories];
+    }
+}
+
+- (void)reloadTabsAndPages {
     [self.pages makeObjectsPerformSelector:@selector(removeFromParentViewController)];
     [self.pages removeAllObjects];
+    self.currentIndex = 0;
     NSInteger idx = 0;
     for (MaterialTypeModel *t in self.types) {
-        [self.segmentedControl insertSegmentWithTitle:[t displayName] atIndex:idx animated:NO];
         MaterialListViewController *vc = [[MaterialListViewController alloc] initWithMaterialType:t.typeId];
         [self addChildViewController:vc];
         [self.pages addObject:vc];
         idx++;
     }
-    if (self.types.count > 0) {
-        self.segmentedControl.selectedSegmentIndex = 0;
-    }
     self.emptyLabel.hidden = (self.types.count > 0);
+    [self.tabCollectionView reloadData];
+    if (self.types.count > 0) {
+        NSIndexPath *first = [NSIndexPath indexPathForItem:0 inSection:0];
+        [self.tabCollectionView selectItemAtIndexPath:first animated:NO scrollPosition:UICollectionViewScrollPositionLeft];
+        [self.tabCollectionView scrollToItemAtIndexPath:first atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
+    }
     [self layoutPages];
 }
 
@@ -184,12 +218,14 @@
     [self layoutPages];
 }
 
-#pragma mark - Actions
+#pragma mark - Tab Helpers
 
-- (void)onSegmentChanged:(UISegmentedControl *)seg {
-    CGFloat width = self.pagesScrollView.bounds.size.width;
-    CGPoint offset = CGPointMake(width * seg.selectedSegmentIndex, 0);
-    [self.pagesScrollView setContentOffset:offset animated:YES];
+- (void)scrollTabsToVisibleIndex:(NSInteger)index {
+    if (!self.tabCollectionView) { return; }
+    if (index < 0 || index >= [self collectionView:self.tabCollectionView numberOfItemsInSection:0]) { return; }
+    NSIndexPath *idxPath = [NSIndexPath indexPathForItem:index inSection:0];
+    [self.tabCollectionView selectItemAtIndexPath:idxPath animated:YES scrollPosition:UICollectionViewScrollPositionCenteredHorizontally];
+    [self.tabCollectionView scrollToItemAtIndexPath:idxPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
 }
 
 #pragma mark - UIScrollViewDelegate
@@ -198,8 +234,10 @@
     if (scrollView != self.pagesScrollView) { return; }
     CGFloat width = MAX(scrollView.bounds.size.width, 1);
     NSInteger page = lround(scrollView.contentOffset.x / width);
-    if (page >= 0 && page < self.segmentedControl.numberOfSegments && self.segmentedControl.selectedSegmentIndex != page) {
-        self.segmentedControl.selectedSegmentIndex = page;
+    if (page >= 0 && page < (NSInteger)self.types.count && self.currentIndex != page) {
+        self.currentIndex = page;
+        [self scrollTabsToVisibleIndex:page];
+        [self.tabCollectionView reloadData];
     }
 }
 
@@ -207,9 +245,70 @@
     if (scrollView != self.pagesScrollView) { return; }
     CGFloat width = MAX(scrollView.bounds.size.width, 1);
     NSInteger page = lround(scrollView.contentOffset.x / width);
-    if (page >= 0 && page < self.segmentedControl.numberOfSegments) {
-        self.segmentedControl.selectedSegmentIndex = page;
+    if (page >= 0 && page < (NSInteger)self.types.count) {
+        self.currentIndex = page;
+        [self scrollTabsToVisibleIndex:page];
+        [self.tabCollectionView reloadData];
     }
+}
+
+#pragma mark - UICollectionViewDataSource
+
+- (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
+    return 1;
+}
+
+- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+    return self.types.count;
+}
+
+- (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    HomeTabCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"HomeTabCell" forIndexPath:indexPath];
+    MaterialTypeModel *m = self.types[indexPath.item];
+    BOOL selected = (indexPath.item == self.currentIndex);
+    [cell configureWithTitle:[m displayName] selected:selected];
+    return cell;
+}
+
+#pragma mark - UICollectionViewDelegate
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.item == self.currentIndex) { return; }
+    self.currentIndex = indexPath.item;
+    CGFloat width = self.pagesScrollView.bounds.size.width;
+    CGPoint offset = CGPointMake(width * self.currentIndex, 0);
+    [self.pagesScrollView setContentOffset:offset animated:YES];
+    [self scrollTabsToVisibleIndex:self.currentIndex];
+    [self.tabCollectionView reloadData];
+}
+
+#pragma mark - UICollectionViewDelegateFlowLayout
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+    MaterialTypeModel *m = self.types[indexPath.item];
+    NSString *title = [m displayName] ?: @"";
+    // 对齐安卓：文字大小 20pt（选中和未选中一样）
+    UIFont *font = [UIFont systemFontOfSize:20 weight:UIFontWeightRegular];
+    CGSize textSize = [title sizeWithAttributes:@{NSFontAttributeName: font}];
+    // 对齐安卓：左右 padding 各 25pt（paddingHorizontal="25dp"）
+    CGFloat horizontalPadding = 25.0 * 2;
+    // 对齐安卓：上下 padding 各 12pt（paddingVertical="12dp"）
+    CGFloat verticalPadding = 12.0 * 2;
+    CGFloat width = ceil(textSize.width) + horizontalPadding;
+    CGFloat height = ceil(textSize.height) + verticalPadding;
+    return CGSizeMake(width, MAX(44, height)); // 最小高度 44pt
+}
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
+    return 8; // Adjust as needed
+}
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
+    return 8; // Adjust as needed
+}
+
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
+    return UIEdgeInsetsMake(0, 0, 0, 0); // Adjust as needed
 }
 
 @end

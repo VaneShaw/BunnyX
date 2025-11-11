@@ -10,47 +10,50 @@
 #import "LanguageManager.h"
 #import "SettingsViewController.h"
 #import "UserInfoManager.h"
+#import "UserInfoModel.h"
 #import "BunnyxMacros.h"
 #import <SDWebImage/SDWebImage.h>
 #import "RechargeViewController.h"
+#import "SubscriptionViewController.h"
+#import "NetworkManager.h"
+#import "BunnyxNetworkMacros.h"
+#import <JXPagingView/JXPagerListRefreshView.h>
+#import "GenerateListViewController.h"
+#import "LikeListViewController.h"
 
-@interface ProfileViewController ()
+// MARK: - ProfileViewController
+@interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
 
-// Header区域
+// 顶部区域
 @property (nonatomic, strong) UIView *headerView;
+@property (nonatomic, strong) UIImageView *serviceImageView;
+@property (nonatomic, strong) UIImageView *settingsImageView;
 @property (nonatomic, strong) UIImageView *avatarImageView;
-@property (nonatomic, strong) UILabel *usernameLabel;
-@property (nonatomic, strong) UILabel *userIDLabel;
-@property (nonatomic, strong) UIButton *supportButton;
-@property (nonatomic, strong) UIButton *settingsButton;
-
-// 订阅卡片
-@property (nonatomic, strong) UIView *subscriptionCardView;
-@property (nonatomic, strong) CAGradientLayer *cardGradientLayer;
-@property (nonatomic, strong) UILabel *proLogoLabel;
-@property (nonatomic, strong) UIView *proBadgeView;
-@property (nonatomic, strong) UILabel *proBadgeLabel;
+@property (nonatomic, strong) UILabel *nicknameLabel;
+@property (nonatomic, strong) UILabel *userIdLabel;
+@property (nonatomic, strong) UIView *vipContainerView;
+@property (nonatomic, strong) UIImageView *logoImageView;
 @property (nonatomic, strong) UIButton *subscribeButton;
-@property (nonatomic, strong) CAGradientLayer *buttonGradientLayer;
-
-// Coins部分
-@property (nonatomic, strong) UIView *coinsView;
-@property (nonatomic, strong) UIImageView *coinIconView;
+@property (nonatomic, strong) UIView *coinContainerView;
+@property (nonatomic, strong) UIImageView *coinIconImageView;
 @property (nonatomic, strong) UILabel *coinsLabel;
-@property (nonatomic, strong) UIImageView *arrowIconView;
+@property (nonatomic, strong) UIImageView *arrowImageView;
 
-// 导航标签
-@property (nonatomic, strong) UIView *tabView;
+// Tab区域
+@property (nonatomic, strong) UIView *tabContainerView;
 @property (nonatomic, strong) UIButton *generateTabButton;
 @property (nonatomic, strong) UIButton *likeTabButton;
 @property (nonatomic, strong) UIView *tabIndicatorView;
 
-// 内容区域
-@property (nonatomic, strong) UIView *contentView;
-@property (nonatomic, strong) UIImageView *emptyStateIconView;
+// JXPagerView (使用 JXPagerListRefreshView 支持子列表下拉刷新)
+@property (nonatomic, strong) JXPagerListRefreshView *pagerView;
+@property (nonatomic, strong) GenerateListViewController *generateListVC;
+@property (nonatomic, strong) LikeListViewController *likeListVC;
+@property (nonatomic, assign) NSInteger currentTabIndex;
+@property (nonatomic, assign) BOOL isProgrammaticScroll; // 标记是否为程序化滚动
 
-// 背景渐变层
-@property (nonatomic, strong) CAGradientLayer *backgroundGradientLayer;
+// 数据
+@property (nonatomic, strong) UserInfoModel *userInfo;
 
 @end
 
@@ -59,21 +62,12 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // 设置深色渐变背景
-    [self setupGradientBackground];
+    self.view.backgroundColor = [UIColor colorWithRed:0.04 green:0.11 blue:0.11 alpha:1.0]; // #0A1C1B
     
-    // 使用宏定义记录日志
-    BUNNYX_LOG(@"ProfileViewController viewDidLoad");
+    self.currentTabIndex = 0;
     
-    // 设置UI
-    [self setupHeaderView];
-    [self setupSubscriptionCard];
-    [self setupCoinsView];
-    [self setupTabView];
-    [self setupContentView];
-    
-    // 加载本地用户信息（首次显示）
-    [self updateUserInfoUI];
+    [self setupUI];
+    [self setupJXPagerView];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -83,540 +77,609 @@
     [self refreshUserInfo];
 }
 
-#pragma mark - 背景设置
+#pragma mark - UI Setup
 
-- (void)setupGradientBackground {
-    // 创建渐变层
-    self.backgroundGradientLayer = [CAGradientLayer layer];
-    self.backgroundGradientLayer.frame = self.view.bounds;
+- (void)setupUI {
+    // 创建顶部区域
+    [self setupHeaderView];
     
-    // 深绿到黑色的渐变
-    UIColor *darkGreen = [UIColor colorWithRed:0.1 green:0.2 blue:0.1 alpha:1.0];
-    UIColor *black = [UIColor blackColor];
-    
-    self.backgroundGradientLayer.colors = @[(__bridge id)darkGreen.CGColor, (__bridge id)black.CGColor];
-    self.backgroundGradientLayer.startPoint = CGPointMake(0.5, 0);
-    self.backgroundGradientLayer.endPoint = CGPointMake(0.5, 1);
-    
-    [self.view.layer insertSublayer:self.backgroundGradientLayer atIndex:0];
-    self.view.backgroundColor = [UIColor blackColor];
+    // 创建Tab区域
+    [self setupTabView];
 }
-
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-    // 更新所有渐变层frame
-    if (self.backgroundGradientLayer) {
-        self.backgroundGradientLayer.frame = self.view.bounds;
-    }
-    if (self.cardGradientLayer) {
-        self.cardGradientLayer.frame = self.subscriptionCardView.bounds;
-    }
-    if (self.buttonGradientLayer) {
-        self.buttonGradientLayer.frame = self.subscribeButton.bounds;
-    }
-}
-
-#pragma mark - Header区域
 
 - (void)setupHeaderView {
-    // Header容器
+    // 顶部容器视图
     self.headerView = [[UIView alloc] init];
+    self.headerView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.headerView];
     
     [self.headerView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(MARGIN_20);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
-        make.height.mas_equalTo(60);
+        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(20);
+        make.left.right.equalTo(self.view);
+    }];
+    
+    // 顶部按钮容器
+    UIView *topButtonContainer = [[UIView alloc] init];
+    [self.headerView addSubview:topButtonContainer];
+    
+    [topButtonContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.left.right.equalTo(self.headerView);
+        make.height.mas_equalTo(44);
+    }];
+    
+    // 设置按钮
+    self.settingsImageView = [[UIImageView alloc] init];
+    self.settingsImageView.image = [UIImage imageNamed:@"icon_mine_set_default"];
+    self.settingsImageView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *settingsTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onSettingsClick)];
+    [self.settingsImageView addGestureRecognizer:settingsTap];
+    [topButtonContainer addSubview:self.settingsImageView];
+    
+    [self.settingsImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.equalTo(topButtonContainer).offset(-16);
+        make.centerY.equalTo(topButtonContainer);
+        make.width.height.mas_equalTo(44);
+    }];
+    
+    // 服务按钮
+    self.serviceImageView = [[UIImageView alloc] init];
+    self.serviceImageView.image = [UIImage imageNamed:@"icon_mine_service_default"];
+    self.serviceImageView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *serviceTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onServiceClick)];
+    [self.serviceImageView addGestureRecognizer:serviceTap];
+    [topButtonContainer addSubview:self.serviceImageView];
+    
+    [self.serviceImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.equalTo(self.settingsImageView.mas_left).offset(-8);
+        make.centerY.equalTo(topButtonContainer);
+        make.width.height.mas_equalTo(44);
+    }];
+    
+    // 用户信息区域
+    UIView *userInfoContainer = [[UIView alloc] init];
+    [self.headerView addSubview:userInfoContainer];
+    
+    [userInfoContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(topButtonContainer.mas_bottom).offset(16);
+        make.left.right.equalTo(self.headerView);
     }];
     
     // 头像
     self.avatarImageView = [[UIImageView alloc] init];
-    self.avatarImageView.image = [UIImage imageNamed:@"icon_login_account_back"]; // 使用默认头像，可以替换
-    self.avatarImageView.layer.cornerRadius = 25;
+    self.avatarImageView.image = [UIImage imageNamed:@"icon_mine_default_image"];
+    self.avatarImageView.contentMode = UIViewContentModeScaleAspectFill;
+    self.avatarImageView.layer.cornerRadius = 37.5;
     self.avatarImageView.layer.masksToBounds = YES;
-    self.avatarImageView.layer.borderWidth = 2;
-    self.avatarImageView.layer.borderColor = [UIColor whiteColor].CGColor;
-    self.avatarImageView.backgroundColor = [UIColor lightGrayColor];
-    [self.headerView addSubview:self.avatarImageView];
+    [userInfoContainer addSubview:self.avatarImageView];
     
     [self.avatarImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.headerView);
-        make.centerY.equalTo(self.headerView);
-        make.width.height.mas_equalTo(50);
+        make.left.equalTo(userInfoContainer).offset(16);
+        make.top.equalTo(userInfoContainer);
+        make.width.height.mas_equalTo(75);
     }];
     
-    // 用户名
-    self.usernameLabel = [[UILabel alloc] init];
-    self.usernameLabel.text = @"fdsw4r";
-    self.usernameLabel.font = BOLD_FONT(FONT_SIZE_18);
-    self.usernameLabel.textColor = [UIColor whiteColor];
-    [self.headerView addSubview:self.usernameLabel];
+    // 昵称
+    self.nicknameLabel = [[UILabel alloc] init];
+    self.nicknameLabel.text = LocalString(@"生成");
+    self.nicknameLabel.textColor = [UIColor whiteColor];
+    self.nicknameLabel.font = FONT(FONT_SIZE_18);
+    [userInfoContainer addSubview:self.nicknameLabel];
     
-    [self.usernameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.avatarImageView.mas_right).offset(MARGIN_15);
-        make.top.equalTo(self.headerView).offset(8);
-        make.right.equalTo(self.view.mas_right).offset(-MARGIN_20);
+    [self.nicknameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.avatarImageView.mas_right).offset(10);
+        make.top.equalTo(self.avatarImageView).offset(16);
+        make.right.lessThanOrEqualTo(userInfoContainer).offset(-16);
     }];
     
-    // 用户ID
-    self.userIDLabel = [[UILabel alloc] init];
-    self.userIDLabel.text = [NSString stringWithFormat:@"%@:388886", LocalString(@"ID")];
-    self.userIDLabel.font = FONT(FONT_SIZE_14);
-    self.userIDLabel.textColor = [UIColor colorWithWhite:0.8 alpha:1.0];
-    [self.headerView addSubview:self.userIDLabel];
+    // ID
+    self.userIdLabel = [[UILabel alloc] init];
+    self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), @""];
+    self.userIdLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
+    self.userIdLabel.font = FONT(13);
+    [userInfoContainer addSubview:self.userIdLabel];
     
-    [self.userIDLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.usernameLabel);
-        make.top.equalTo(self.usernameLabel.mas_bottom).offset(4);
+    [self.userIdLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.nicknameLabel);
+        make.top.equalTo(self.nicknameLabel.mas_bottom).offset(5);
+        make.right.lessThanOrEqualTo(userInfoContainer).offset(-16);
     }];
     
-    // 设置按钮（先创建，因为supportButton需要引用它）
-    self.settingsButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.settingsButton setImage:[UIImage systemImageNamed:@"gearshape"] forState:UIControlStateNormal];
-    [self.settingsButton setTintColor:[UIColor whiteColor]];
-    [self.settingsButton addTarget:self action:@selector(settingsButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.headerView addSubview:self.settingsButton];
+    // 会员状态区域
+    self.vipContainerView = [[UIView alloc] init];
+    self.vipContainerView.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+    self.vipContainerView.layer.cornerRadius = 12;
+    self.vipContainerView.layer.masksToBounds = YES;
+    // 设置背景图片
+    UIImage *vipBgImage = [UIImage imageNamed:@"bg_mine_pro"];
+    if (vipBgImage) {
+        UIImageView *bgImageView = [[UIImageView alloc] initWithImage:vipBgImage];
+        bgImageView.contentMode = UIViewContentModeScaleAspectFill;
+        bgImageView.clipsToBounds = YES;
+        bgImageView.layer.cornerRadius = 12;
+        [self.vipContainerView insertSubview:bgImageView atIndex:0];
+        [bgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(self.vipContainerView);
+        }];
+    }
+    [self.headerView addSubview:self.vipContainerView];
     
-    [self.settingsButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.headerView);
-        make.centerY.equalTo(self.headerView);
-        make.width.height.mas_equalTo(30);
+    [self.vipContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(userInfoContainer.mas_bottom).offset(24);
+        make.left.right.equalTo(self.headerView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
     }];
     
-    // 支持按钮（耳机图标）
-    self.supportButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.supportButton setImage:[UIImage systemImageNamed:@"headphones"] forState:UIControlStateNormal];
-    [self.supportButton setTintColor:[UIColor whiteColor]];
-    [self.supportButton addTarget:self action:@selector(supportButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.headerView addSubview:self.supportButton];
+    // Logo
+    self.logoImageView = [[UIImageView alloc] init];
+    self.logoImageView.image = [UIImage imageNamed:@"icon_mine_logo"];
+    self.logoImageView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.vipContainerView addSubview:self.logoImageView];
     
-    [self.supportButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.settingsButton.mas_left).offset(-MARGIN_15);
-        make.centerY.equalTo(self.headerView);
-        make.width.height.mas_equalTo(30);
-    }];
-}
-
-#pragma mark - 订阅卡片
-
-- (void)setupSubscriptionCard {
-    self.subscriptionCardView = [[UIView alloc] init];
-    self.subscriptionCardView.layer.cornerRadius = CORNER_RADIUS_16;
-    self.subscriptionCardView.layer.masksToBounds = YES;
-    
-    [self.view addSubview:self.subscriptionCardView];
-    
-    [self.subscriptionCardView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.headerView.mas_bottom).offset(MARGIN_20);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
-        make.height.mas_equalTo(140);
-    }];
-    
-    // 订阅卡片渐变背景
-    self.cardGradientLayer = [CAGradientLayer layer];
-    UIColor *cardDarkGreen = [UIColor colorWithRed:0.05 green:0.15 blue:0.05 alpha:1.0];
-    UIColor *cardBlack = [UIColor blackColor];
-    self.cardGradientLayer.colors = @[(__bridge id)cardDarkGreen.CGColor, (__bridge id)cardBlack.CGColor];
-    self.cardGradientLayer.cornerRadius = CORNER_RADIUS_16;
-    [self.subscriptionCardView.layer insertSublayer:self.cardGradientLayer atIndex:0];
-    
-    // BunnyX PRO Logo
-    UIView *logoContainer = [[UIView alloc] init];
-    [self.subscriptionCardView addSubview:logoContainer];
-    
-    [logoContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.subscriptionCardView);
-        make.top.equalTo(self.subscriptionCardView).offset(MARGIN_20);
-    }];
-    
-    self.proLogoLabel = [[UILabel alloc] init];
-    self.proLogoLabel.text = @"BunnyX";
-    self.proLogoLabel.font = BOLD_FONT(FONT_SIZE_24);
-    self.proLogoLabel.textColor = [UIColor whiteColor];
-    [logoContainer addSubview:self.proLogoLabel];
-    
-    [self.proLogoLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(logoContainer);
-        make.top.bottom.equalTo(logoContainer);
-    }];
-    
-    // PRO标签
-    self.proBadgeView = [[UIView alloc] init];
-    self.proBadgeView.backgroundColor = [UIColor colorWithRed:0.0 green:0.6 blue:0.2 alpha:1.0];
-    self.proBadgeView.layer.cornerRadius = 8;
-    self.proBadgeView.layer.masksToBounds = YES;
-    [logoContainer addSubview:self.proBadgeView];
-    
-    [self.proBadgeView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.proLogoLabel.mas_right).offset(MARGIN_10);
-        make.centerY.equalTo(self.proLogoLabel);
-        make.height.mas_equalTo(20);
-        make.right.equalTo(logoContainer);
-    }];
-    
-    self.proBadgeLabel = [[UILabel alloc] init];
-    self.proBadgeLabel.text = @"PRO";
-    self.proBadgeLabel.font = BOLD_FONT(FONT_SIZE_12);
-    self.proBadgeLabel.textColor = [UIColor whiteColor];
-    self.proBadgeLabel.textAlignment = NSTextAlignmentCenter;
-    [self.proBadgeView addSubview:self.proBadgeLabel];
-    
-    [self.proBadgeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.equalTo(self.proBadgeView).insets(UIEdgeInsetsMake(0, 8, 0, 8));
-        make.top.bottom.equalTo(self.proBadgeView).insets(UIEdgeInsetsMake(2, 0, 2, 0));
+    [self.logoImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.vipContainerView).offset(24);
+        make.centerX.equalTo(self.vipContainerView);
+        make.width.mas_equalTo(120);
+        make.height.mas_equalTo(22);
     }];
     
     // 订阅按钮
     self.subscribeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
-    [self.subscribeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.subscribeButton.titleLabel.font = BOLD_FONT(FONT_SIZE_16);
-    self.subscribeButton.layer.cornerRadius = 20;
+    [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+    self.subscribeButton.titleLabel.font = BOLD_FONT(17);
+    self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
+    self.subscribeButton.layer.cornerRadius = 8;
     self.subscribeButton.layer.masksToBounds = YES;
-    
-    [self.subscribeButton addTarget:self action:@selector(subscribeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.subscriptionCardView addSubview:self.subscribeButton];
+    // 设置背景图片
+    UIImage *subscribeBgImage = [UIImage imageNamed:@"bg_mine_subscribe_button"];
+    if (subscribeBgImage) {
+        [self.subscribeButton setBackgroundImage:subscribeBgImage forState:UIControlStateNormal];
+    }
+    [self.subscribeButton addTarget:self action:@selector(onSubscribeClick) forControlEvents:UIControlEventTouchUpInside];
+    [self.vipContainerView addSubview:self.subscribeButton];
     
     [self.subscribeButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.subscriptionCardView);
-        make.top.equalTo(logoContainer.mas_bottom).offset(MARGIN_20);
-        make.width.mas_equalTo(140);
-        make.height.mas_equalTo(40);
-    }];
-    
-    // 订阅按钮渐变背景
-    self.buttonGradientLayer = [CAGradientLayer layer];
-    UIColor *pink = [UIColor colorWithRed:1.0 green:0.4 blue:0.5 alpha:1.0];
-    UIColor *orange = [UIColor colorWithRed:1.0 green:0.6 blue:0.3 alpha:1.0];
-    self.buttonGradientLayer.colors = @[(__bridge id)pink.CGColor, (__bridge id)orange.CGColor];
-    self.buttonGradientLayer.cornerRadius = 20;
-    [self.subscribeButton.layer insertSublayer:self.buttonGradientLayer atIndex:0];
-}
-
-#pragma mark - Coins部分
-
-- (void)setupCoinsView {
-    self.coinsView = [[UIView alloc] init];
-    self.coinsView.backgroundColor = [UIColor colorWithWhite:0.05 alpha:1.0];
-    self.coinsView.layer.cornerRadius = CORNER_RADIUS_12;
-    self.coinsView.layer.masksToBounds = YES;
-    
-    // 添加点击手势
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(coinsViewTapped:)];
-    [self.coinsView addGestureRecognizer:tapGesture];
-    self.coinsView.userInteractionEnabled = YES;
-    
-    [self.view addSubview:self.coinsView];
-    
-    [self.coinsView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.subscriptionCardView.mas_bottom).offset(MARGIN_20);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
-        make.height.mas_equalTo(60);
-    }];
-    
-    // 硬币图标
-    self.coinIconView = [[UIImageView alloc] init];
-    self.coinIconView.backgroundColor = [UIColor colorWithRed:0.1 green:0.2 blue:0.1 alpha:1.0];
-    self.coinIconView.layer.cornerRadius = 20;
-    self.coinIconView.layer.masksToBounds = YES;
-    self.coinIconView.layer.borderWidth = 2;
-    self.coinIconView.layer.borderColor = [UIColor colorWithRed:1.0 green:0.8 blue:0.0 alpha:1.0].CGColor;
-    
-    // 创建钻石图标（使用系统图标或自定义）
-    UIImageView *diamondIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"diamond"]];
-    diamondIcon.tintColor = [UIColor colorWithRed:1.0 green:0.8 blue:0.0 alpha:1.0];
-    [self.coinIconView addSubview:diamondIcon];
-    
-    [self.coinsView addSubview:self.coinIconView];
-    
-    [self.coinIconView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.coinsView).offset(MARGIN_15);
-        make.centerY.equalTo(self.coinsView);
-        make.width.height.mas_equalTo(40);
-    }];
-    
-    [diamondIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.coinIconView);
-        make.width.height.mas_equalTo(24);
-    }];
-    
-    // 硬币数量
-    self.coinsLabel = [[UILabel alloc] init];
-    self.coinsLabel.text = @"- Coins";
-    self.coinsLabel.font = BOLD_FONT(FONT_SIZE_16);
-    self.coinsLabel.textColor = [UIColor whiteColor];
-    [self.coinsView addSubview:self.coinsLabel];
-    
-    [self.coinsLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.coinIconView.mas_right).offset(MARGIN_15);
-        make.centerY.equalTo(self.coinsView);
-    }];
-    
-    // 箭头图标
-    self.arrowIconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"chevron.right"]];
-    self.arrowIconView.tintColor = [UIColor whiteColor];
-    [self.coinsView addSubview:self.arrowIconView];
-    
-    [self.arrowIconView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.coinsView).offset(-MARGIN_15);
-        make.centerY.equalTo(self.coinsView);
-        make.width.height.mas_equalTo(20);
-    }];
-}
-
-#pragma mark - 导航标签
-
-- (void)setupTabView {
-    self.tabView = [[UIView alloc] init];
-    [self.view addSubview:self.tabView];
-    
-    [self.tabView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.coinsView.mas_bottom).offset(MARGIN_20);
-        make.left.right.equalTo(self.view);
+        make.top.equalTo(self.logoImageView.mas_bottom).offset(15);
+        make.centerX.equalTo(self.vipContainerView);
+        make.bottom.equalTo(self.vipContainerView).offset(-13);
         make.height.mas_equalTo(44);
     }];
     
-    // Generate标签
+    // 金币区域
+    self.coinContainerView = [[UIView alloc] init];
+    self.coinContainerView.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+    self.coinContainerView.layer.cornerRadius = 12;
+    self.coinContainerView.layer.masksToBounds = YES;
+    // 设置背景图片
+    UIImage *coinBgImage = [UIImage imageNamed:@"bg_mine_coin"];
+    if (coinBgImage) {
+        UIImageView *bgImageView = [[UIImageView alloc] initWithImage:coinBgImage];
+        bgImageView.contentMode = UIViewContentModeScaleAspectFill;
+        bgImageView.clipsToBounds = YES;
+        bgImageView.layer.cornerRadius = 12;
+        [self.coinContainerView insertSubview:bgImageView atIndex:0];
+        [bgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(self.coinContainerView);
+        }];
+    }
+    self.coinContainerView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *coinTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onCoinsClick)];
+    [self.coinContainerView addGestureRecognizer:coinTap];
+    [self.headerView addSubview:self.coinContainerView];
+    
+    [self.coinContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.vipContainerView.mas_bottom).offset(24);
+        make.left.right.equalTo(self.headerView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
+        make.bottom.equalTo(self.headerView).offset(0);
+        make.height.mas_equalTo(56);
+    }];
+    
+    // 金币图标
+    self.coinIconImageView = [[UIImageView alloc] init];
+    self.coinIconImageView.image = [UIImage imageNamed:@"icon_mine_coin_default"];
+    self.coinIconImageView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.coinContainerView addSubview:self.coinIconImageView];
+    
+    [self.coinIconImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.coinContainerView).offset(16);
+        make.centerY.equalTo(self.coinContainerView);
+        make.width.height.mas_equalTo(24);
+    }];
+    
+    // 金币数量
+    self.coinsLabel = [[UILabel alloc] init];
+    self.coinsLabel.text = [NSString stringWithFormat:LocalString(@"%d Coins"), 0];
+    self.coinsLabel.textColor = [UIColor whiteColor];
+    self.coinsLabel.font = FONT(17);
+    [self.coinContainerView addSubview:self.coinsLabel];
+    
+    [self.coinsLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.coinIconImageView.mas_right).offset(12);
+        make.centerY.equalTo(self.coinContainerView);
+    }];
+    
+    // 箭头
+    self.arrowImageView = [[UIImageView alloc] init];
+    self.arrowImageView.image = [UIImage imageNamed:@"icon_mine_enter_default"];
+    self.arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.coinContainerView addSubview:self.arrowImageView];
+    
+    [self.arrowImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.equalTo(self.coinContainerView).offset(-16);
+        make.centerY.equalTo(self.coinContainerView);
+        make.width.height.mas_equalTo(24);
+    }];
+}
+
+- (void)setupTabView {
+    self.tabContainerView = [[UIView alloc] init];
+    self.tabContainerView.backgroundColor = [UIColor clearColor];
+    // 注意：Tab区域不直接添加到view，而是作为pinSectionHeader
+    
+    // 生成Tab
     self.generateTabButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.generateTabButton setTitle:LocalString(@"生成") forState:UIControlStateNormal];
     [self.generateTabButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.generateTabButton.titleLabel.font = BOLD_FONT(FONT_SIZE_16);
-    [self.generateTabButton addTarget:self action:@selector(generateTabTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.tabView addSubview:self.generateTabButton];
+    self.generateTabButton.titleLabel.font = FONT(20);
+    [self.generateTabButton addTarget:self action:@selector(onGenerateTabClick) forControlEvents:UIControlEventTouchUpInside];
+    [self.tabContainerView addSubview:self.generateTabButton];
     
-    [self.generateTabButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.tabView).offset(SCREEN_WIDTH / 2 - 60);
-        make.centerY.equalTo(self.tabView);
-    }];
-    
-    // Like标签
+    // 点赞Tab
     self.likeTabButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.likeTabButton setTitle:LocalString(@"点赞") forState:UIControlStateNormal];
-    [self.likeTabButton setTitleColor:[UIColor colorWithWhite:0.6 alpha:1.0] forState:UIControlStateNormal];
-    self.likeTabButton.titleLabel.font = FONT(FONT_SIZE_16);
-    [self.likeTabButton addTarget:self action:@selector(likeTabTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.tabView addSubview:self.likeTabButton];
+    [self.likeTabButton setTitleColor:[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0] forState:UIControlStateNormal];
+    self.likeTabButton.titleLabel.font = FONT(17);
+    [self.likeTabButton addTarget:self action:@selector(onLikeTabClick) forControlEvents:UIControlEventTouchUpInside];
+    [self.tabContainerView addSubview:self.likeTabButton];
     
-    [self.likeTabButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.generateTabButton.mas_right).offset(MARGIN_30);
-        make.centerY.equalTo(self.tabView);
+    // Tab指示器
+    self.tabIndicatorView = [[UIView alloc] init];
+    self.tabIndicatorView.backgroundColor = [UIColor whiteColor];
+    self.tabIndicatorView.layer.cornerRadius = 2;
+    [self.tabContainerView addSubview:self.tabIndicatorView];
+    
+    // 布局Tab按钮（居中，间距固定）
+    // Tab区域总宽度250，两个按钮居中，间距125
+    [self.generateTabButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.tabContainerView).offset(-62.5);
+        make.bottom.equalTo(self.tabContainerView).offset(-20);
     }];
     
-    // 下划线指示器（Generate标签下）
-    self.tabIndicatorView = [[UIView alloc] init];
-    self.tabIndicatorView.backgroundColor = [UIColor colorWithRed:0.0 green:0.7 blue:0.3 alpha:1.0];
-    self.tabIndicatorView.layer.cornerRadius = 1.5;
-    [self.tabView addSubview:self.tabIndicatorView];
+    [self.likeTabButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.tabContainerView).offset(62.5);
+        make.top.equalTo(self.generateTabButton);
+    }];
     
+    // 指示器初始位置（在生成Tab下方）
     [self.tabIndicatorView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.equalTo(self.tabView);
         make.centerX.equalTo(self.generateTabButton);
-        make.width.mas_equalTo(40);
-        make.height.mas_equalTo(3);
+        make.bottom.equalTo(self.tabContainerView).offset(-8);
+        make.width.mas_equalTo(20);
+        make.height.mas_equalTo(4);
     }];
 }
 
-#pragma mark - 内容区域
-
-- (void)setupContentView {
-    self.contentView = [[UIView alloc] init];
-    [self.view addSubview:self.contentView];
+- (void)setupJXPagerView {
+    // 创建列表视图控制器
+    self.generateListVC = [[GenerateListViewController alloc] init];
+    self.likeListVC = [[LikeListViewController alloc] init];
     
-    [self.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.tabView.mas_bottom).offset(MARGIN_20);
+    // 创建JXPagerListRefreshView（支持子列表下拉刷新）
+    self.pagerView = [[JXPagerListRefreshView alloc] initWithDelegate:self];
+    self.pagerView.mainTableView.gestureDelegate = self;
+    self.pagerView.mainTableView.backgroundColor = [UIColor clearColor];
+    // 设置 contentInsetAdjustmentBehavior，确保在嵌套滚动中刷新能正常工作
+    if (@available(iOS 11.0, *)) {
+        self.pagerView.mainTableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    }
+    [self.view addSubview:self.pagerView];
+    
+    [self.pagerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.view);
         make.left.right.bottom.equalTo(self.view);
     }];
     
-    // 空状态图标（文件夹和星星）
-    UIView *emptyStateContainer = [[UIView alloc] init];
-    [self.contentView addSubview:emptyStateContainer];
+    // 监听列表容器的滚动，同步Tab状态
+    __weak typeof(self) weakSelf = self;
+    [self.pagerView.listContainerView.scrollView addObserver:self forKeyPath:@"contentOffset" options:NSKeyValueObservingOptionNew context:nil];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"contentOffset"] && object == self.pagerView.listContainerView.scrollView) {
+        // 如果是程序化滚动，跳过 KVO 更新，避免循环
+        if (self.isProgrammaticScroll) {
+            return;
+        }
+        CGFloat offsetX = self.pagerView.listContainerView.scrollView.contentOffset.x;
+        NSInteger newIndex = (NSInteger)(offsetX / SCREEN_WIDTH + 0.5);
+        if (newIndex >= 0 && newIndex < 2 && newIndex != self.currentTabIndex) {
+            self.currentTabIndex = newIndex;
+            [self updateTabState];
+        }
+    }
+}
+
+- (void)dealloc {
+    @try {
+        [self.pagerView.listContainerView.scrollView removeObserver:self forKeyPath:@"contentOffset"];
+    } @catch (NSException *exception) {
+        // 忽略移除观察者时的异常
+    }
+}
+
+#pragma mark - JXPagerViewDelegate
+
+- (NSUInteger)tableHeaderViewHeightInPagerView:(JXPagerView *)pagerView {
+    // 计算headerView的高度（不包括Tab区域）
+    // 顶部按钮区域: 44
+    // 用户信息区域: 75 (头像高度) + 16 (顶部间距)
+    // 会员状态区域: 24 + 22 + 15 + 44 + 13 = 118 (估算)
+    // 金币区域: 56
+    // 总间距: 20 + 16 + 24 + 24 + 24 = 108
+    // 总计: 44 + 91 + 118 + 56 + 108 = 417
+    return 417;
+}
+
+- (UIView *)tableHeaderViewInPagerView:(JXPagerView *)pagerView {
+    return self.headerView;
+}
+
+- (NSUInteger)heightForPinSectionHeaderInPagerView:(JXPagerView *)pagerView {
+    // Tab区域高度 + 上下间距
+    return 84; // 44 (Tab高度) + 20 (上方间距)
+}
+
+- (UIView *)viewForPinSectionHeaderInPagerView:(JXPagerView *)pagerView {
+    // Tab区域会由JXPagerView管理，不需要手动添加到view
+    return self.tabContainerView;
+}
+
+- (NSInteger)numberOfListsInPagerView:(JXPagerView *)pagerView {
+    return 2;
+}
+
+- (id<JXPagerViewListViewDelegate>)pagerView:(JXPagerView *)pagerView initListAtIndex:(NSInteger)index {
+    if (index == 0) {
+        return (id<JXPagerViewListViewDelegate>)self.generateListVC;
+    } else {
+        return (id<JXPagerViewListViewDelegate>)self.likeListVC;
+    }
+}
+
+#pragma mark - JXPagerMainTableViewGestureDelegate
+
+- (BOOL)mainTableViewGestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return YES;
+}
+
+#pragma mark - Tab Actions
+
+- (void)onGenerateTabClick {
+    if (self.currentTabIndex == 0) return;
     
-    [emptyStateContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.centerY.equalTo(self.contentView);
+    // 先触发初始化，确保视图控制器被加载
+    [self.pagerView.listContainerView didClickSelectedItemAtIndex:0];
+    // 标记为程序化滚动，避免 KVO 循环
+    self.isProgrammaticScroll = YES;
+    // 更新状态
+    self.currentTabIndex = 0;
+    [self updateTabState];
+    // 滚动到对应位置
+    [self.pagerView.listContainerView.scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
+    // 滚动完成后重置标志
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.isProgrammaticScroll = NO;
+    });
+}
+
+- (void)onLikeTabClick {
+    if (self.currentTabIndex == 1) return;
+    
+    // 先触发初始化，确保视图控制器被加载
+    [self.pagerView.listContainerView didClickSelectedItemAtIndex:1];
+    // 标记为程序化滚动，避免 KVO 循环
+    self.isProgrammaticScroll = YES;
+    // 更新状态
+    self.currentTabIndex = 1;
+    [self updateTabState];
+    // 滚动到对应位置
+    [self.pagerView.listContainerView.scrollView setContentOffset:CGPointMake(SCREEN_WIDTH, 0) animated:YES];
+    // 滚动完成后重置标志
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.isProgrammaticScroll = NO;
+    });
+}
+
+- (void)updateTabState {
+    if (self.currentTabIndex == 0) {
+        // 生成Tab选中
+        [self.generateTabButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        self.generateTabButton.titleLabel.font = FONT(20);
+        [self.likeTabButton setTitleColor:[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0] forState:UIControlStateNormal];
+        self.likeTabButton.titleLabel.font = FONT(17);
+        
+        [self.tabIndicatorView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(self.generateTabButton);
+            make.bottom.equalTo(self.tabContainerView).offset(-8);
+            make.width.mas_equalTo(20);
+            make.height.mas_equalTo(4);
+        }];
+    } else {
+        // 点赞Tab选中
+        [self.likeTabButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        self.likeTabButton.titleLabel.font = FONT(20);
+        [self.generateTabButton setTitleColor:[UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0] forState:UIControlStateNormal];
+        self.generateTabButton.titleLabel.font = FONT(17);
+        
+        [self.tabIndicatorView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(self.likeTabButton);
+            make.bottom.equalTo(self.tabContainerView).offset(-8);
+            make.width.mas_equalTo(20);
+            make.height.mas_equalTo(4);
+        }];
+    }
+    
+    [UIView animateWithDuration:0.3 animations:^{
+        [self.tabContainerView layoutIfNeeded];
     }];
-    
-    // 文件夹图标
-    self.emptyStateIconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"folder.fill"]];
-    self.emptyStateIconView.tintColor = [UIColor colorWithWhite:0.3 alpha:1.0];
-    [emptyStateContainer addSubview:self.emptyStateIconView];
-    
-    [self.emptyStateIconView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(emptyStateContainer);
-        make.width.height.mas_equalTo(80);
-    }];
-    
-    // 星星图标（在文件夹中心）
-    UIImageView *starIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"star.fill"]];
-    starIcon.tintColor = [UIColor whiteColor];
-    [emptyStateContainer addSubview:starIcon];
-    
-    [starIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.emptyStateIconView);
-        make.width.height.mas_equalTo(30);
-    }];
-    
-    // 装饰星星（文件夹周围）
-    UIImageView *sparkle1 = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"sparkle"]];
-    sparkle1.tintColor = [UIColor whiteColor];
-    [emptyStateContainer addSubview:sparkle1];
-    
-    [sparkle1 mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.emptyStateIconView).offset(-10);
-        make.right.equalTo(self.emptyStateIconView).offset(10);
-        make.width.height.mas_equalTo(20);
-    }];
-    
-    UIImageView *sparkle2 = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"sparkle"]];
-    sparkle2.tintColor = [UIColor whiteColor];
-    [emptyStateContainer addSubview:sparkle2];
-    
-    [sparkle2 mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.equalTo(self.emptyStateIconView).offset(10);
-        make.left.equalTo(self.emptyStateIconView).offset(-10);
-        make.width.height.mas_equalTo(20);
-    }];
 }
 
-#pragma mark - 按钮事件
+#pragma mark - Button Actions
 
-- (void)supportButtonTapped:(UIButton *)sender {
-    BUNNYX_LOG(@"支持按钮被点击");
-    // TODO: 实现支持功能
+- (void)onServiceClick {
+    // TODO: 跳转到联系客服页面
+    BUNNYX_LOG(@"点击服务按钮");
 }
 
-- (void)settingsButtonTapped:(UIButton *)sender {
-    BUNNYX_LOG(@"设置按钮被点击");
-    SettingsViewController *vc = [[SettingsViewController alloc] init];
-    vc.hidesBottomBarWhenPushed = YES;
-    [self.navigationController pushViewController:vc animated:YES];
+- (void)onSettingsClick {
+    SettingsViewController *settingsVC = [[SettingsViewController alloc] init];
+    [self.navigationController pushViewController:settingsVC animated:YES];
 }
 
-- (void)subscribeButtonTapped:(UIButton *)sender {
-    BUNNYX_LOG(@"订阅按钮被点击");
-    // TODO: 实现订阅功能
+- (void)onSubscribeClick {
+    // 跳转到订阅页面（第三个tab）
+    // 通过MainTabBarController切换
+    UITabBarController *tabBarController = self.tabBarController;
+    if (tabBarController && tabBarController.viewControllers.count > 2) {
+        tabBarController.selectedIndex = 2;
+    }
 }
 
-- (void)generateTabTapped:(UIButton *)sender {
-    BUNNYX_LOG(@"生成标签被点击");
-    [self switchToTab:sender];
-}
-
-- (void)likeTabTapped:(UIButton *)sender {
-    BUNNYX_LOG(@"点赞标签被点击");
-    [self switchToTab:sender];
-}
-
-- (void)coinsViewTapped:(UITapGestureRecognizer *)sender {
-    BUNNYX_LOG(@"Coins视图被点击，跳转到充值页面");
+- (void)onCoinsClick {
     RechargeViewController *rechargeVC = [[RechargeViewController alloc] init];
-    rechargeVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:rechargeVC animated:YES];
 }
 
-- (void)switchToTab:(UIButton *)selectedButton {
-    // 更新按钮样式
-    BOOL isGenerate = (selectedButton == self.generateTabButton);
-    
-    // Generate按钮
-    [self.generateTabButton setTitleColor:isGenerate ? [UIColor whiteColor] : [UIColor colorWithWhite:0.6 alpha:1.0] forState:UIControlStateNormal];
-    self.generateTabButton.titleLabel.font = isGenerate ? BOLD_FONT(FONT_SIZE_16) : FONT(FONT_SIZE_16);
-    
-    // Like按钮
-    [self.likeTabButton setTitleColor:!isGenerate ? [UIColor whiteColor] : [UIColor colorWithWhite:0.6 alpha:1.0] forState:UIControlStateNormal];
-    self.likeTabButton.titleLabel.font = !isGenerate ? BOLD_FONT(FONT_SIZE_16) : FONT(FONT_SIZE_16);
-    
-    // 移动下划线指示器
-    [self.tabIndicatorView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.equalTo(self.tabView);
-        make.centerX.equalTo(selectedButton);
-        make.width.mas_equalTo(40);
-        make.height.mas_equalTo(3);
-    }];
-    
-    [UIView animateWithDuration:0.3 animations:^{
-        [self.view layoutIfNeeded];
-    }];
-}
-
-#pragma mark - 刷新用户信息
+#pragma mark - Data Loading
 
 - (void)refreshUserInfo {
     [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
-        BUNNYX_LOG(@"刷新用户信息成功");
+        self.userInfo = userInfo;
         [self updateUserInfoUI];
     } failure:^(NSError *error) {
-        BUNNYX_LOG(@"刷新用户信息失败: %@", error.localizedDescription);
-        // 失败时也尝试使用本地缓存的用户信息更新UI
-        [self updateUserInfoUI];
+        BUNNYX_LOG(@"刷新用户信息失败: %@", error);
     }];
 }
 
 - (void)updateUserInfoUI {
-    UserInfoManager *userManager = [UserInfoManager sharedManager];
-    UserInfoModel *userInfo = [userManager getCurrentUserInfo];
-    
-    if (!userInfo) {
-        // 如果没有用户信息，显示默认值
-        self.usernameLabel.text = @"";
-        self.userIDLabel.text = [NSString stringWithFormat:@"%@:--", LocalString(@"ID")];
-        self.coinsLabel.text = @"0 Coins";
-        // 订阅状态保持默认
+    if (!self.userInfo) {
+        // 没有用户信息时的默认显示
+        self.avatarImageView.image = [UIImage imageNamed:@"icon_mine_default_image"];
+        self.nicknameLabel.text = LocalString(@"生成");
+        self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), @""];
+        self.coinsLabel.text = [NSString stringWithFormat:LocalString(@"%d Coins"), 0];
+        [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
         return;
     }
     
-    // 更新头像
-    NSString *avatarUrl = [userManager getAvatar];
-    if (avatarUrl && avatarUrl.length > 0) {
-        NSURL *url = [NSURL URLWithString:avatarUrl];
-        [self.avatarImageView sd_setImageWithURL:url 
-                                 placeholderImage:[UIImage imageNamed:@"icon_login_account_back"]
-                                          options:SDWebImageRetryFailed];
+    // 设置头像
+    NSString *avatar = [self.userInfo.avatar stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (avatar && avatar.length > 0) {
+        [self.avatarImageView sd_setImageWithURL:[NSURL URLWithString:avatar]
+                                 placeholderImage:[UIImage imageNamed:@"icon_mine_default_image"]
+                                        completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
+            if (error) {
+                self.avatarImageView.image = [UIImage imageNamed:@"icon_mine_default_image"];
+            }
+        }];
     } else {
-        self.avatarImageView.image = [UIImage imageNamed:@"icon_login_account_back"];
+        self.avatarImageView.image = [UIImage imageNamed:@"icon_mine_default_image"];
     }
     
-    // 更新昵称
-    NSString *nickname = [userManager getNickname];
+    // 设置昵称
+    NSString *nickname = [self.userInfo.nickname stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (nickname && nickname.length > 0) {
-        self.usernameLabel.text = nickname;
+        self.nicknameLabel.text = nickname;
     } else {
-        NSString *account = [userManager getAccount];
-        self.usernameLabel.text = account ?: @"";
+        self.nicknameLabel.text = LocalString(@"生成");
     }
     
-    // 更新用户ID
-    NSNumber *userId = [userManager getUserId];
-    if (userId) {
-        self.userIDLabel.text = [NSString stringWithFormat:@"%@:%@", LocalString(@"ID"), userId];
+    // 设置用户ID
+    NSString *account = [self.userInfo.account stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (account && account.length > 0) {
+        self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), account];
     } else {
-        self.userIDLabel.text = [NSString stringWithFormat:@"%@:--", LocalString(@"ID")];
+        self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), @""];
     }
     
-    // 更新金币
-    NSNumber *coins = [userManager getSurplusMxdDiamond];
-    NSInteger coinsValue = coins ? [coins integerValue] : 0;
-    self.coinsLabel.text = [NSString stringWithFormat:@"%ld Coins", (long)coinsValue];
+    // 设置金币数量
+    NSNumber *coins = self.userInfo.surplusMxdDiamond;
+    long coinsValue = coins ? [coins longValue] : 0;
+    self.coinsLabel.text = [NSString stringWithFormat:LocalString(@"%d Coins"), (int)coinsValue];
     
-    // 更新订阅状态
-    BOOL isVip = [userManager isVip];
-    if (isVip) {
-        // VIP用户：显示VIP状态，按钮改为"已订阅"或"续费"
-        self.proBadgeView.hidden = NO;
-        self.proBadgeLabel.text = @"PRO";
-        // 可以显示VIP到期时间
-        NSNumber *vipEndTime = [userManager getVipEndTime];
-        if (vipEndTime && [vipEndTime longLongValue] > 0) {
-            [self.subscribeButton setTitle:LocalString(@"续费") forState:UIControlStateNormal];
-        } else {
-            [self.subscribeButton setTitle:LocalString(@"已订阅") forState:UIControlStateNormal];
+    // 设置会员状态
+    [self updateVipStatus];
+}
+
+- (void)updateVipStatus {
+    if (!self.userInfo) {
+        [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
+        [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+        self.subscribeButton.titleLabel.font = BOLD_FONT(17);
+        self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
+        return;
+    }
+    
+    BOOL isVip = self.userInfo.isVip;
+    NSNumber *vipEndTime = self.userInfo.vipEndTime;
+    
+    if (isVip && vipEndTime && [vipEndTime longValue] > 0) {
+        // 是会员，显示有效期
+        NSString *formattedDate = [self formatVipEndTime:[vipEndTime longValue]];
+        NSString *title = [NSString stringWithFormat:LocalString(@"有效期至: %@"), formattedDate];
+        [self.subscribeButton setTitle:title forState:UIControlStateNormal];
+        [self.subscribeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        self.subscribeButton.titleLabel.font = FONT(14);
+        self.subscribeButton.backgroundColor = [UIColor clearColor];
+        // 设置VIP背景
+        UIImage *vipBgImage = [UIImage imageNamed:@"bg_vip_button"];
+        if (vipBgImage) {
+            [self.subscribeButton setBackgroundImage:vipBgImage forState:UIControlStateNormal];
         }
     } else {
-        // 非VIP用户：显示订阅按钮
-        self.proBadgeView.hidden = YES;
+        // 不是会员，显示订阅按钮
         [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
+        [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+        self.subscribeButton.titleLabel.font = BOLD_FONT(17);
+        self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
+        // 恢复默认背景
+        UIImage *subscribeBgImage = [UIImage imageNamed:@"bg_mine_subscribe_button"];
+        if (subscribeBgImage) {
+            [self.subscribeButton setBackgroundImage:subscribeBgImage forState:UIControlStateNormal];
+        }
     }
 }
 
-// 不再在此监听语言切换，文案通过 LocalString 宏从系统 .strings 获取
+- (NSString *)formatVipEndTime:(long)vipEndYmd {
+    // 后端返回形如 20261029（yyyyMMdd）
+    int year = (int)(vipEndYmd / 10000);
+    int month = (int)((vipEndYmd % 10000) / 100);
+    int day = (int)(vipEndYmd % 100);
+    
+    NSDateComponents *components = [[NSDateComponents alloc] init];
+    components.year = year;
+    components.month = month;
+    components.day = day;
+    
+    NSCalendar *calendar = [NSCalendar currentCalendar];
+    NSDate *date = [calendar dateFromComponents:components];
+    
+    if (date) {
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.dateStyle = NSDateFormatterMediumStyle;
+        formatter.timeStyle = NSDateFormatterNoStyle;
+        formatter.locale = [NSLocale currentLocale];
+        return [formatter stringFromDate:date];
+    } else {
+        // 兜底处理
+        NSString *raw = [NSString stringWithFormat:@"%ld", vipEndYmd];
+        if (raw.length == 8) {
+            NSString *y = [raw substringWithRange:NSMakeRange(0, 4)];
+            NSString *m = [raw substringWithRange:NSMakeRange(4, 2)];
+            NSString *d = [raw substringWithRange:NSMakeRange(6, 2)];
+            return [NSString stringWithFormat:@"%@-%@-%@", y, m, d];
+        }
+        return raw;
+    }
+}
 
 @end

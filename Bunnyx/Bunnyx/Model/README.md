@@ -9,7 +9,7 @@
 ```
 Model/
 ├── BaseModel.h/m              # 模型基类
-├── UserModel.h/m             # 用户模型示例
+├── UserInfoModel.h/m          # 用户信息模型
 ├── APIResponseModel.h/m       # API响应模型
 ├── PaginationModel.h/m        # 分页模型
 ├── ModelUsageExample.m        # 使用示例
@@ -48,26 +48,20 @@ Model/
 
 ### 子类模型
 
-#### UserModel - 用户模型
+#### UserInfoModel - 用户信息模型
 ```objc
 // 创建用户模型
 NSDictionary *userDict = @{
-    @"userId": @"12345",
-    @"username": @"testuser",
+    @"userId": @12345,
+    @"account": @"testuser",
     @"nickname": @"测试用户",
     @"email": @"test@example.com",
-    @"phone": @"13800138000",
-    @"gender": @1,
-    @"status": @0,
+    @"sex": @1,
+    @"userState": @0,
     @"isVip": @YES
 };
 
-UserModel *user = [UserModel modelWithDictionary:userDict];
-
-// 使用便利方法
-NSString *genderDesc = [user genderDescription];  // "男"
-NSString *statusDesc = [user statusDescription]; // "正常"
-BOOL isVip = [user isVipUser];                    // YES
+UserInfoModel *user = [UserInfoModel modelWithDictionary:userDict];
 ```
 
 #### APIResponseModel - API响应模型
@@ -117,7 +111,7 @@ NSString *desc = [pagination paginationDescription];  // "第 2/10 页，共 200
 
 ```objc
 // 1. 创建模型
-UserModel *user = [UserModel modelWithDictionary:userDict];
+UserInfoModel *user = [UserInfoModel modelWithDictionary:userDict];
 
 // 2. 验证模型
 if ([user isValid]) {
@@ -154,7 +148,7 @@ NSString *jsonString = [UserModel jsonStringWithModelArray:users];
     
     if ([response isSuccess]) {
         NSArray *userDicts = [response dataArray];
-        NSArray *users = [UserModel modelArrayWithDictionaryArray:userDicts];
+        NSArray *users = [UserInfoModel modelArrayWithDictionaryArray:userDicts];
         // 处理用户数据
     } else {
         NSString *errorMsg = [response errorMessage];

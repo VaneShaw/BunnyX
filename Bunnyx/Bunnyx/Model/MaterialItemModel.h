@@ -16,6 +16,7 @@
 @property (nonatomic, assign) NSInteger materialType;
 @property (nonatomic, assign) BOOL isFavorite;
 @property (nonatomic, strong) NSNumber *favoriteQty; // 可能为null
+@property (nonatomic, assign) NSInteger onlyVip; // 是否仅VIP，1表示是，0表示否
 
 + (NSArray<MaterialItemModel *> *)modelsFromResponse:(NSArray *)array;
 

@@ -5,8 +5,12 @@
 //  Created by 冯文骁 on 2025/10/20.
 //
 
-#import <UIKit/UIKit.h>
+#import "BaseViewController.h"
 
-@interface SubscriptionViewController : UIViewController
+NS_ASSUME_NONNULL_BEGIN
+
+@interface SubscriptionViewController : BaseViewController
 
 @end
+
+NS_ASSUME_NONNULL_END

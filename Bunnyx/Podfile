@@ -13,6 +13,7 @@ install! 'cocoapods',
 target 'Bunnyx' do
   pod 'AFNetworking', '~> 4.0'
   pod 'SDWebImage','5.19.2',:modular_headers => true
+  pod 'SDWebImageWebPCoder', '~> 0.9.0', :modular_headers => true  # 支持WebP格式图片
   pod 'Masonry'
   pod 'MJRefresh'
   pod 'ReactiveObjC'
@@ -31,6 +32,8 @@ target 'Bunnyx' do
   # AWSCore 包含了 AWSCognitoCredentialsProvider（用于 Cognito Identity Pool）
   pod 'AWSCore'
   pod 'AWSS3'
+  # JXPagingView - 用于实现嵌套滚动效果（类似CoordinatorLayout）
+  pod 'JXPagingView/Pager'
 end
 
 target 'BunnyxTests' do

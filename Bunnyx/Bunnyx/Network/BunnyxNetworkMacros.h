@@ -59,6 +59,10 @@
 #define BUNNYX_API_GENERATE_CREATE [NSString stringWithFormat:@"%@/aitool/generateCreate", BUNNYX_API_BASE_URL]
 // 根据createIds获取生成任务列表（轮询进度）
 #define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getGenerateTaskList", BUNNYX_API_BASE_URL]
+// 获取生成列表（我的页面）
+#define BUNNYX_API_GET_CREATE_LIST [NSString stringWithFormat:@"%@/aitool/getCreateList", BUNNYX_API_BASE_URL]
+// 获取收藏素材列表（我的页面）
+#define BUNNYX_API_GET_FAVORITE_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getFavoriteMaterialList", BUNNYX_API_BASE_URL]
 // 检查素材生成金币是否足够
 #define BUNNYX_API_CHECK_SURPLUS_MXD [NSString stringWithFormat:@"%@/aitool/checkSurplusMxd", BUNNYX_API_BASE_URL]
 
@@ -96,6 +100,9 @@
 #define BUNNYX_API_PAYMENT_VERIFY [NSString stringWithFormat:@"%@/payment/verify", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAYMENT_HISTORY [NSString stringWithFormat:@"%@/payment/history", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_RECHARGE_LIST [NSString stringWithFormat:@"%@/pay/rechargeList", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_VIP_LIST [NSString stringWithFormat:@"%@/pay/vipList", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_BUY_VIP [NSString stringWithFormat:@"%@/pay/buy/vip", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePayVerify", BUNNYX_API_BASE_URL]
 
 // MARK: - 设置相关接口
 #define BUNNYX_API_SETTINGS_GET [NSString stringWithFormat:@"%@/settings/get", BUNNYX_API_BASE_URL]

@@ -11,6 +11,7 @@
 #import "Manager/Config/AppConfigManager.h"
 #import "Manager/Config/SVProgressHUDConfig.h"
 #import <SVProgressHUD/SVProgressHUD.h>
+#import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 
 @interface AppDelegate ()
 
@@ -21,6 +22,10 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    // 注册WebP解码器（支持webp格式图片，对齐安卓）
+    SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
+    [[SDImageCodersManager sharedManager] addCoder:webPCoder];
     
     // 配置SVProgressHUD
     [SVProgressHUDConfig configureSVProgressHUD];

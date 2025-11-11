@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import "BaseModel.h"
-#import "UserModel.h"
+#import "UserInfoModel.h"
 #import "APIResponseModel.h"
 #import "PaginationModel.h"
 #import "BunnyxMacros.h"
@@ -26,17 +26,16 @@
     
     // 1. 通过字典创建模型
     NSDictionary *userDict = @{
-        @"userId": @"12345",
-        @"username": @"testuser",
+        @"userId": @12345,
+        @"account": @"testuser",
         @"nickname": @"测试用户",
         @"email": @"test@example.com",
-        @"phone": @"13800138000",
-        @"gender": @1,
-        @"status": @0,
+        @"sex": @1,
+        @"userState": @0,
         @"isVip": @YES
     };
     
-    UserModel *user = [UserModel modelWithDictionary:userDict];
+    UserInfoModel *user = [UserInfoModel modelWithDictionary:userDict];
     BUNNYX_LOG(@"创建的用户模型: %@", user);
     
     // 2. 转换为字典
@@ -64,21 +63,21 @@
     
     // 用户数组数据
     NSArray *userArray = @[
-        @{@"userId": @"1", @"username": @"user1", @"nickname": @"用户1"},
-        @{@"userId": @"2", @"username": @"user2", @"nickname": @"用户2"},
-        @{@"userId": @"3", @"username": @"user3", @"nickname": @"用户3"}
+        @{@"userId": @1, @"account": @"user1", @"nickname": @"用户1"},
+        @{@"userId": @2, @"account": @"user2", @"nickname": @"用户2"},
+        @{@"userId": @3, @"account": @"user3", @"nickname": @"用户3"}
     ];
     
     // 字典数组转模型数组
-    NSArray *modelArray = [UserModel modelArrayWithDictionaryArray:userArray];
+    NSArray *modelArray = [UserInfoModel modelArrayWithDictionaryArray:userArray];
     BUNNYX_LOG(@"模型数组: %@", modelArray);
     
     // 模型数组转字典数组
-    NSArray *dictArray = [UserModel dictionaryArrayWithModelArray:modelArray];
+    NSArray *dictArray = [UserInfoModel dictionaryArrayWithModelArray:modelArray];
     BUNNYX_LOG(@"字典数组: %@", dictArray);
     
     // 模型数组转JSON字符串
-    NSString *jsonString = [UserModel jsonStringWithModelArray:modelArray];
+    NSString *jsonString = [UserInfoModel jsonStringWithModelArray:modelArray];
     BUNNYX_LOG(@"JSON字符串: %@", jsonString);
 }
 
@@ -148,14 +147,14 @@
     BUNNYX_LOG(@"=== 归档和拷贝示例 ===");
     
     // 创建用户模型
-    UserModel *originalUser = [UserModel modelWithDictionary:@{
-        @"userId": @"12345",
-        @"username": @"testuser",
+    UserInfoModel *originalUser = [UserInfoModel modelWithDictionary:@{
+        @"userId": @12345,
+        @"account": @"testuser",
         @"nickname": @"测试用户"
     }];
     
     // 拷贝模型
-    UserModel *copiedUser = [originalUser copy];
+    UserInfoModel *copiedUser = [originalUser copy];
     BUNNYX_LOG(@"原始用户: %@", originalUser);
     BUNNYX_LOG(@"拷贝用户: %@", copiedUser);
     
@@ -164,7 +163,7 @@
     BUNNYX_LOG(@"归档数据大小: %lu bytes", (unsigned long)archivedData.length);
     
     // 解档模型
-    UserModel *unarchivedUser = [NSKeyedUnarchiver unarchiveObjectWithData:archivedData];
+    UserInfoModel *unarchivedUser = [NSKeyedUnarchiver unarchiveObjectWithData:archivedData];
     BUNNYX_LOG(@"解档用户: %@", unarchivedUser);
 }
 

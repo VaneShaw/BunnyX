@@ -21,6 +21,7 @@
         m.materialType = [dict[@"materialType"] integerValue];
         m.isFavorite = [dict[@"isFavorite"] boolValue];
         m.favoriteQty = dict[@"favoriteQty"];
+        m.onlyVip = [dict[@"onlyVip"] integerValue];
         [result addObject:m];
     }
     return result.copy;
