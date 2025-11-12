@@ -20,6 +20,7 @@
 #import <JXPagingView/JXPagerListRefreshView.h>
 #import "GenerateListViewController.h"
 #import "LikeListViewController.h"
+#import "GradientButton.h"
 
 // MARK: - ProfileViewController
 @interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
@@ -33,7 +34,7 @@
 @property (nonatomic, strong) UILabel *userIdLabel;
 @property (nonatomic, strong) UIView *vipContainerView;
 @property (nonatomic, strong) UIImageView *logoImageView;
-@property (nonatomic, strong) UIButton *subscribeButton;
+@property (nonatomic, strong) GradientButton *subscribeButton;
 @property (nonatomic, strong) UIView *coinContainerView;
 @property (nonatomic, strong) UIImageView *coinIconImageView;
 @property (nonatomic, strong) UILabel *coinsLabel;
@@ -104,7 +105,7 @@
     
     [topButtonContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.left.right.equalTo(self.headerView);
-        make.height.mas_equalTo(44);
+        make.height.mas_equalTo(STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT);
     }];
     
     // 设置按钮
@@ -117,8 +118,8 @@
     
     [self.settingsImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.right.equalTo(topButtonContainer).offset(-16);
-        make.centerY.equalTo(topButtonContainer);
-        make.width.height.mas_equalTo(44);
+        make.width.height.mas_equalTo(22);
+        make.top.offset(70);
     }];
     
     // 服务按钮
@@ -131,8 +132,8 @@
     
     [self.serviceImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.right.equalTo(self.settingsImageView.mas_left).offset(-8);
-        make.centerY.equalTo(topButtonContainer);
-        make.width.height.mas_equalTo(44);
+        make.centerY.equalTo(self.settingsImageView.mas_centerY);
+        make.width.height.offset(25);
     }];
     
     // 用户信息区域
@@ -140,8 +141,9 @@
     [self.headerView addSubview:userInfoContainer];
     
     [userInfoContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(topButtonContainer.mas_bottom).offset(16);
+        make.top.equalTo(topButtonContainer.mas_bottom).offset(10);
         make.left.right.equalTo(self.headerView);
+        make.height.offset(75);
     }];
     
     // 头像
@@ -186,16 +188,11 @@
     
     // 会员状态区域
     self.vipContainerView = [[UIView alloc] init];
-    self.vipContainerView.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
-    self.vipContainerView.layer.cornerRadius = 12;
-    self.vipContainerView.layer.masksToBounds = YES;
     // 设置背景图片
     UIImage *vipBgImage = [UIImage imageNamed:@"bg_mine_pro"];
     if (vipBgImage) {
         UIImageView *bgImageView = [[UIImageView alloc] initWithImage:vipBgImage];
-        bgImageView.contentMode = UIViewContentModeScaleAspectFill;
-        bgImageView.clipsToBounds = YES;
-        bgImageView.layer.cornerRadius = 12;
+//        bgImageView.contentMode = UIViewContentModeScaleAspectFill;
         [self.vipContainerView insertSubview:bgImageView atIndex:0];
         [bgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self.vipContainerView);
@@ -204,8 +201,9 @@
     [self.headerView addSubview:self.vipContainerView];
     
     [self.vipContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(userInfoContainer.mas_bottom).offset(24);
+        make.top.equalTo(userInfoContainer.mas_bottom).offset(10);
         make.left.right.equalTo(self.headerView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
+        make.height.offset(113);
     }];
     
     // Logo
@@ -221,19 +219,23 @@
         make.height.mas_equalTo(22);
     }];
     
-    // 订阅按钮
-    self.subscribeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
-    [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+    // 订阅按钮（对齐安卓：bg_mine_subscribe_button - 渐变背景 #F76E8C -> #FABDA9，圆角50dp）
+    // 使用GradientButton实现渐变效果
+    self.subscribeButton = [GradientButton buttonWithTitle:LocalString(@"订阅")
+                                                  startColor:HEX_COLOR(0xF76E8C)  // #F76E8C
+                                                    endColor:HEX_COLOR(0xFABDA9)]; // #FABDA9
+    
+    // 设置文字样式（对应安卓：textColor="#333333", textSize="17sp", textStyle="bold"）
+    [self.subscribeButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
     self.subscribeButton.titleLabel.font = BOLD_FONT(17);
-    self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
-    self.subscribeButton.layer.cornerRadius = 8;
+    
+    // 设置圆角（对应安卓：corners android:radius="50dp"）
+    self.subscribeButton.layer.cornerRadius = 20;
     self.subscribeButton.layer.masksToBounds = YES;
-    // 设置背景图片
-    UIImage *subscribeBgImage = [UIImage imageNamed:@"bg_mine_subscribe_button"];
-    if (subscribeBgImage) {
-        [self.subscribeButton setBackgroundImage:subscribeBgImage forState:UIControlStateNormal];
-    }
+    // 注意按钮高度：paddingTop 15 + paddingBottom 14 = 29，加上文字高度约17，总高度约46
+    // 但安卓是wrap_content，所以不设置固定高度，让按钮根据内容自适应
+    // 如果需要固定高度，可以设置：self.subscribeButton.buttonHeight = 46;
+    
     [self.subscribeButton addTarget:self action:@selector(onSubscribeClick) forControlEvents:UIControlEventTouchUpInside];
     [self.vipContainerView addSubview:self.subscribeButton];
     
@@ -241,7 +243,8 @@
         make.top.equalTo(self.logoImageView.mas_bottom).offset(15);
         make.centerX.equalTo(self.vipContainerView);
         make.bottom.equalTo(self.vipContainerView).offset(-13);
-        make.height.mas_equalTo(44);
+        make.height.offset(40);
+        make.width.offset(150);
     }];
     
     // 金币区域
@@ -267,7 +270,7 @@
     [self.headerView addSubview:self.coinContainerView];
     
     [self.coinContainerView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.vipContainerView.mas_bottom).offset(24);
+        make.top.equalTo(self.vipContainerView.mas_bottom).offset(10);
         make.left.right.equalTo(self.headerView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
         make.bottom.equalTo(self.headerView).offset(0);
         make.height.mas_equalTo(56);
@@ -416,7 +419,7 @@
     // 金币区域: 56
     // 总间距: 20 + 16 + 24 + 24 + 24 = 108
     // 总计: 44 + 91 + 118 + 56 + 108 = 417
-    return 417;
+    return 360;
 }
 
 - (UIView *)tableHeaderViewInPagerView:(JXPagerView *)pagerView {
@@ -612,10 +615,14 @@
 
 - (void)updateVipStatus {
     if (!self.userInfo) {
+        // 恢复订阅按钮样式（渐变背景）
         [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
-        [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+        [self.subscribeButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
         self.subscribeButton.titleLabel.font = BOLD_FONT(17);
-        self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
+        // 恢复渐变背景
+        self.subscribeButton.gradientStartColor = HEX_COLOR(0xF76E8C);
+        self.subscribeButton.gradientEndColor = HEX_COLOR(0xFABDA9);
+        self.subscribeButton.layer.cornerRadius = 20;
         return;
     }
     
@@ -629,23 +636,24 @@
         [self.subscribeButton setTitle:title forState:UIControlStateNormal];
         [self.subscribeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         self.subscribeButton.titleLabel.font = FONT(14);
-        self.subscribeButton.backgroundColor = [UIColor clearColor];
-        // 设置VIP背景
+        // 设置VIP背景（使用透明渐变，让背景图片显示）
+        self.subscribeButton.gradientStartColor = [UIColor clearColor];
+        self.subscribeButton.gradientEndColor = [UIColor clearColor];
+        // 设置VIP背景图片
         UIImage *vipBgImage = [UIImage imageNamed:@"bg_vip_button"];
         if (vipBgImage) {
             [self.subscribeButton setBackgroundImage:vipBgImage forState:UIControlStateNormal];
         }
     } else {
-        // 不是会员，显示订阅按钮
+        // 不是会员，显示订阅按钮（渐变背景）
         [self.subscribeButton setTitle:LocalString(@"订阅") forState:UIControlStateNormal];
-        [self.subscribeButton setTitleColor:[UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0] forState:UIControlStateNormal];
+        [self.subscribeButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
         self.subscribeButton.titleLabel.font = BOLD_FONT(17);
-        self.subscribeButton.backgroundColor = [UIColor colorWithRed:0.9 green:0.9 blue:0.9 alpha:1.0];
-        // 恢复默认背景
-        UIImage *subscribeBgImage = [UIImage imageNamed:@"bg_mine_subscribe_button"];
-        if (subscribeBgImage) {
-            [self.subscribeButton setBackgroundImage:subscribeBgImage forState:UIControlStateNormal];
-        }
+        // 恢复渐变背景
+        self.subscribeButton.gradientStartColor = HEX_COLOR(0xF76E8C);
+        self.subscribeButton.gradientEndColor = HEX_COLOR(0xFABDA9);
+        self.subscribeButton.cornerRadius = 20;
+        [self.subscribeButton setBackgroundImage:nil forState:UIControlStateNormal];
     }
 }
 

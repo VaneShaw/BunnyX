@@ -126,11 +126,11 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 #pragma mark - Data Loading
 
 - (void)loadMaterialList {
-    // 根据安卓代码，使用typeId=999（特定类别）
+    // 根据安卓代码，使用materialType=1
     NSDictionary *params = @{
         @"index": @(0),
         @"count": @(20),
-        @"materialType": @(3) // 特定类别，typeId=999
+        @"materialType": @(1) // 对齐安卓：materialType=1
     };
     
     [[NetworkManager sharedManager] GET:BUNNYX_API_MATERIAL_LIST
@@ -145,17 +145,20 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                 [self.materialList removeAllObjects];
                 [self.materialList addObjectsFromArray:models];
                 
-                // 设置默认选中第一个
+                // 对齐安卓：设置默认选中中间位置
                 if (self.materialList.count > 0) {
-                    NSInteger firstIndex = 0;
-                    MaterialItemModel *firstMaterial = self.materialList[firstIndex];
+                    // 预加载所有图片到缓存
+                    [self preloadImages];
+                    
+                    NSInteger middleIndex = self.materialList.count / 2;
+                    MaterialItemModel *middleMaterial = self.materialList[middleIndex];
                     
                     // 在主线程更新UI
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        self.selectedIndex = firstIndex;
-                        self.lastCenterPosition = firstIndex;
+                        self.selectedIndex = middleIndex;
+                        self.lastCenterPosition = middleIndex;
                         // 注意：updateBackgroundImage内部会设置currentBackgroundMaterial，这里不需要提前设置
-                        [self updateBackgroundImage:firstMaterial];
+                        [self updateBackgroundImage:middleMaterial];
                         
                         // 刷新数据并更新布局，确保选中状态正确显示
                         [self.materialCollectionView reloadData];
@@ -166,9 +169,9 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                             [self.materialCollectionView.collectionViewLayout invalidateLayout];
                             [self.materialCollectionView layoutIfNeeded];
                             
-                            // 滚动到第一个位置（如果需要的话，确保第一个可见）
-                            NSIndexPath *firstPath = [NSIndexPath indexPathForItem:firstIndex inSection:0];
-                            [self.materialCollectionView scrollToItemAtIndexPath:firstPath atScrollPosition:UICollectionViewScrollPositionLeft animated:NO];
+                            // 对齐安卓：滚动到中间位置
+                            NSIndexPath *middlePath = [NSIndexPath indexPathForItem:middleIndex inSection:0];
+                            [self.materialCollectionView scrollToItemAtIndexPath:middlePath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
                         });
                     });
                 }
@@ -180,10 +183,19 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)updateBackgroundImage:(MaterialItemModel *)material {
+    [self updateBackgroundImage:material forceUpdate:NO];
+}
+
+/**
+ * 更新背景图片（对齐安卓）
+ * @param material 素材对象
+ * @param forceUpdate 是否强制更新（即使URL相同也更新）
+ */
+- (void)updateBackgroundImage:(MaterialItemModel *)material forceUpdate:(BOOL)forceUpdate {
     // 确保在主线程执行
     if (![NSThread isMainThread]) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self updateBackgroundImage:material];
+            [self updateBackgroundImage:material forceUpdate:forceUpdate];
         });
         return;
     }
@@ -193,12 +205,13 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         return;
     }
     
-    // 避免重复加载同一张图片（参考安卓代码）
-    // 注意：在设置currentBackgroundMaterial之前先检查，避免误判
-    NSString *currentUrl = self.currentBackgroundMaterial ? self.currentBackgroundMaterial.materialUrl : nil;
-    if (currentUrl && [currentUrl isEqualToString:material.materialUrl]) {
-        BUNNYX_LOG(@"updateBackgroundImage: 跳过重复加载，URL: %@", material.materialUrl);
-        return;
+    // 对齐安卓：避免重复加载同一张图片（除非强制更新）
+    if (!forceUpdate) {
+        NSString *currentUrl = self.currentBackgroundMaterial ? self.currentBackgroundMaterial.materialUrl : nil;
+        if (currentUrl && [currentUrl isEqualToString:material.materialUrl]) {
+            BUNNYX_LOG(@"updateBackgroundImage: 跳过重复加载，URL: %@", material.materialUrl);
+            return;
+        }
     }
     
     BUNNYX_LOG(@"updateBackgroundImage: 加载图片，URL: %@", material.materialUrl);
@@ -212,23 +225,47 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     // 先更新currentBackgroundMaterial，然后加载图片
     self.currentBackgroundMaterial = material;
     
-    // 使用SDWebImage加载图片，参考安卓代码的缓存策略
+    // 对齐安卓：使用ALL缓存策略，同时缓存原始数据和解码后的图片
+    // 对于动态图（GIF/WebP），会优先使用SOURCE缓存，保持动态效果
     [self.backgroundImageView sd_setImageWithURL:url 
-                                 placeholderImage:nil 
+                                 placeholderImage:[UIImage imageNamed:@"image_loading_ic"]
                                           options:SDWebImageRetryFailed | SDWebImageScaleDownLargeImages
+                                          context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}
+                                         progress:nil
                                         completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
         if (error) {
             BUNNYX_ERROR(@"updateBackgroundImage: 图片加载失败，URL: %@, Error: %@", imageURL, error.localizedDescription);
+            // 对齐安卓：加载失败时显示错误图片
+            self.backgroundImageView.image = [UIImage imageNamed:@"image_error_ic"];
         } else {
             BUNNYX_LOG(@"updateBackgroundImage: 图片加载成功，URL: %@", imageURL);
         }
     }];
 }
 
+/**
+ * 预加载图片到缓存（对齐安卓）
+ */
+- (void)preloadImages {
+    if (self.materialList.count == 0) {
+        return;
+    }
+    
+    for (MaterialItemModel *material in self.materialList) {
+        if (material.materialUrl && material.materialUrl.length > 0) {
+            NSURL *url = [NSURL URLWithString:material.materialUrl];
+            if (url) {
+                // 使用SDWebImage预加载图片到缓存
+                [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:@[url]];
+            }
+        }
+    }
+}
+
 #pragma mark - Actions
 
 - (void)moreButtonTapped:(UIButton *)sender {
-    // 显示报告确认对话框
+    // 对齐安卓：显示底部弹窗（ActionSheet），包含举报和屏蔽选项
     if (!self.currentBackgroundMaterial) {
         // 如果当前背景未设置，尝试从列表中取一个可用的
         if (self.materialList.count > 0 && self.selectedIndex >= 0 && self.selectedIndex < self.materialList.count) {
@@ -240,39 +277,73 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         return;
     }
     
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"操作确认")
-                                                                   message:LocalString(@"确定要举报此素材吗？")
-                                                            preferredStyle:UIAlertControllerStyleAlert];
+    // 使用ActionSheet样式，对齐安卓的BottomSheetDialog
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
+                                                                   message:nil
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
     
-    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:LocalString(@"确定")
-                                                           style:UIAlertActionStyleDestructive
+    // 举报选项
+    UIAlertAction *reportAction = [UIAlertAction actionWithTitle:LocalString(@"举报")
+                                                           style:UIAlertActionStyleDefault
                                                          handler:^(UIAlertAction * _Nonnull action) {
-        [self reportMaterial];
+        [self reportMaterialWithType:0]; // 0: 举报
     }];
     
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
-                                                         style:UIAlertActionStyleCancel
-                                                       handler:nil];
+    // 屏蔽选项
+    UIAlertAction *blockAction = [UIAlertAction actionWithTitle:LocalString(@"屏蔽")
+                                                          style:UIAlertActionStyleDefault
+                                                        handler:^(UIAlertAction * _Nonnull action) {
+        [self reportMaterialWithType:1]; // 1: 屏蔽
+    }];
     
-    [alert addAction:confirmAction];
+    // 取消选项
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
+                                                           style:UIAlertActionStyleCancel
+                                                         handler:nil];
+    
+    [alert addAction:reportAction];
+    [alert addAction:blockAction];
     [alert addAction:cancelAction];
+    
+    // 适配iPad
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        alert.popoverPresentationController.sourceView = sender;
+        alert.popoverPresentationController.sourceRect = sender.bounds;
+    }
+    
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-- (void)reportMaterial {
+- (void)reportMaterialWithType:(NSInteger)type {
+    // 对齐安卓：type 0=举报, 1=屏蔽
     if (!self.currentBackgroundMaterial || self.currentBackgroundMaterial.materialId <= 0) {
         return;
     }
     
     NSInteger materialId = self.currentBackgroundMaterial.materialId;
-    NSInteger position = self.selectedIndex;
+    
+    // 找到当前素材在列表中的位置（对齐安卓逻辑）
+    NSInteger position = -1;
+    for (NSInteger i = 0; i < self.materialList.count; i++) {
+        if (self.materialList[i].materialId == materialId) {
+            position = i;
+            break;
+        }
+    }
+    
+    if (position == -1) {
+        return;
+    }
+    
+    // 使用局部变量，以便在block中使用
+    NSInteger finalPosition = position;
     
     [SVProgressHUD show];
     
-    // 调用举报接口（type: 0=举报, 1=屏蔽，这里使用0）
+    // 调用举报接口（type: 0=举报, 1=屏蔽）
     NSDictionary *params = @{
         @"materialId": @(materialId),
-        @"type": @(0)
+        @"type": @(type)
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_MATERIAL_REPORT
@@ -282,11 +353,12 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         NSDictionary *dict = (NSDictionary *)responseObject;
         NSInteger code = [dict[@"code"] integerValue];
         if (code == 0) {
-            [SVProgressHUD showSuccessWithStatus:LocalString(@"举报成功")];
+            NSString *successMessage = type == 0 ? LocalString(@"举报成功") : LocalString(@"屏蔽成功");
+            [SVProgressHUD showSuccessWithStatus:successMessage];
             
             // 从列表中删除对应数据
-            if (position >= 0 && position < self.materialList.count) {
-                [self removeMaterialFromList:position];
+            if (finalPosition >= 0 && finalPosition < self.materialList.count) {
+                [self removeMaterialFromList:finalPosition];
             }
         } else {
             [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
@@ -298,6 +370,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)removeMaterialFromList:(NSInteger)position {
+    // 对齐安卓：完善的删除逻辑，包括滚动监听器的临时移除和恢复
     if (position < 0 || position >= self.materialList.count) {
         return;
     }
@@ -305,43 +378,92 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     NSInteger oldSelectedIndex = self.selectedIndex;
     BOOL isRemovingSelected = (position == oldSelectedIndex);
     
+    // 从列表中删除
     [self.materialList removeObjectAtIndex:position];
     
-    // 更新选中索引
-    if (isRemovingSelected) {
-        // 删除的是选中项
+    // 调整选中位置（对齐安卓逻辑）
+    NSInteger newSelectedIndex = -1;
+    if (position < oldSelectedIndex) {
+        // 删除的位置在选中位置之前，选中位置减1
+        newSelectedIndex = oldSelectedIndex - 1;
+    } else if (isRemovingSelected) {
+        // 删除的是选中项，需要选择新的位置
         if (self.materialList.count > 0) {
-            // 选择新的位置（优先选择原位置，如果原位置无效则选择前一个）
-            NSInteger newIndex = position;
-            if (newIndex >= self.materialList.count) {
-                newIndex = self.materialList.count - 1;
+            // 选择原位置或前一个位置（如果原位置超出范围）
+            newSelectedIndex = position >= self.materialList.count ? self.materialList.count - 1 : position;
+            if (newSelectedIndex < 0) {
+                newSelectedIndex = 0;
             }
-            if (newIndex < 0) {
-                newIndex = 0;
-            }
-            self.selectedIndex = newIndex;
-            self.currentBackgroundMaterial = self.materialList[newIndex];
-            [self updateBackgroundImage:self.currentBackgroundMaterial];
-            
-            // 滚动到新位置
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.materialCollectionView reloadData];
-                NSIndexPath *newPath = [NSIndexPath indexPathForItem:newIndex inSection:0];
-                [self.materialCollectionView scrollToItemAtIndexPath:newPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
-            });
-        } else {
-            // 列表为空
-            self.currentBackgroundMaterial = nil;
-            self.selectedIndex = -1;
-            [self.materialCollectionView reloadData];
         }
-    } else if (position < oldSelectedIndex) {
-        // 删除的位置在选中位置之前，需要调整选中索引
-        self.selectedIndex = oldSelectedIndex - 1;
-        [self.materialCollectionView reloadData];
     } else {
         // 删除的位置在选中位置之后，不需要调整
-        [self.materialCollectionView reloadData];
+        newSelectedIndex = oldSelectedIndex;
+    }
+    
+    // 更新选中索引和背景
+    if (newSelectedIndex >= 0 && newSelectedIndex < self.materialList.count) {
+        self.selectedIndex = newSelectedIndex;
+        MaterialItemModel *newMaterial = self.materialList[newSelectedIndex];
+        // 对齐安卓：强制更新背景（因为列表已经变化）
+        [self updateBackgroundImage:newMaterial forceUpdate:YES];
+        
+        // 如果删除的是选中项或删除位置在选中位置之前，需要滚动到新位置
+        if (isRemovingSelected || (position < oldSelectedIndex)) {
+            // 对齐安卓：暂时移除滚动监听器，避免滚动过程中触发更新
+            // 注意：iOS的UICollectionView没有直接的方法移除delegate，我们需要用标志位来控制
+            self.isProgrammaticScroll = YES;
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.materialCollectionView reloadData];
+                
+                NSIndexPath *newPath = [NSIndexPath indexPathForItem:newSelectedIndex inSection:0];
+                [self.materialCollectionView scrollToItemAtIndexPath:newPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
+                
+                // 对齐安卓：等待滚动动画完成后再恢复监听器，并再次确认背景是正确的
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    // 再次检查并更新背景，确保滚动后背景正确
+                    if (self.selectedIndex >= 0 && self.selectedIndex < self.materialList.count) {
+                        MaterialItemModel *material = self.materialList[self.selectedIndex];
+                        [self updateBackgroundImage:material forceUpdate:YES];
+                    }
+                    self.isProgrammaticScroll = NO;
+                });
+            });
+        } else {
+            // 删除的位置在选中位置之后，只需要刷新数据
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.materialCollectionView reloadData];
+            });
+        }
+    } else if (self.materialList.count == 0) {
+        // 列表为空，清空背景
+        self.currentBackgroundMaterial = nil;
+        self.selectedIndex = -1;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.materialCollectionView reloadData];
+        });
+    } else {
+        // 列表不为空但选中位置无效，选择第一个
+        NSInteger fallbackIndex = 0;
+        self.selectedIndex = fallbackIndex;
+        MaterialItemModel *newMaterial = self.materialList[fallbackIndex];
+        [self updateBackgroundImage:newMaterial forceUpdate:YES];
+        
+        self.isProgrammaticScroll = YES;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.materialCollectionView reloadData];
+            
+            NSIndexPath *fallbackPath = [NSIndexPath indexPathForItem:fallbackIndex inSection:0];
+            [self.materialCollectionView scrollToItemAtIndexPath:fallbackPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if (self.selectedIndex >= 0 && self.selectedIndex < self.materialList.count) {
+                    MaterialItemModel *material = self.materialList[self.selectedIndex];
+                    [self updateBackgroundImage:material forceUpdate:YES];
+                }
+                self.isProgrammaticScroll = NO;
+            });
+        });
     }
 }
 
@@ -421,6 +543,10 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     MaterialCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kMaterialCellId forIndexPath:indexPath];
     MaterialItemModel *model = self.materialList[indexPath.item];
+    
+    // 隐藏点赞按钮
+    cell.showLikeButton = NO;
+    
     [cell configureWithModel:model];
     
     // 选中状态通过sizeForItemAtIndexPath来控制大小，这里不需要额外设置边框

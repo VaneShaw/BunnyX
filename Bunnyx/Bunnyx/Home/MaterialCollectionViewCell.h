@@ -16,6 +16,7 @@
 @interface MaterialCollectionViewCell : UICollectionViewCell
 
 @property (nonatomic, weak) id<MaterialCollectionViewCellDelegate> delegate;
+@property (nonatomic, assign) BOOL showLikeButton; // 是否显示点赞按钮，默认为YES
 
 - (void)configureWithModel:(MaterialItemModel *)model;
 

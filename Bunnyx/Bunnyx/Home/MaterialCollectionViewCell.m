@@ -81,6 +81,9 @@
         make.bottom.equalTo(self.containerView).offset(-10); // dp_10 = 10dp
     }];
     
+    // 默认显示点赞按钮
+    self.showLikeButton = YES;
+    
     // 点赞图标：16dp x 16dp，marginEnd 4dp
     self.likeIconView = [[UIImageView alloc] init];
     self.likeIconView.contentMode = UIViewContentModeScaleAspectFit;
@@ -118,6 +121,8 @@
     // 只清除其他UI状态
     self.likeCountLabel.text = @"";
     self.vipIconView.hidden = YES;
+    // 重置点赞按钮显示状态为默认值
+    self.showLikeButton = YES;
     // 取消可能存在的视图动画（对齐安卓：onViewDetachedFromWindow中的处理）
     [self.imageView.layer removeAllAnimations];
 }
@@ -145,6 +150,9 @@
             self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
         }
     }];
+    
+    // 根据showLikeButton属性控制点赞按钮的显示/隐藏
+    self.likeContainerView.hidden = !self.showLikeButton;
     
     // 设置点赞状态和图标（对齐安卓：选中时用light图标，未选中用dark图标）
     BOOL isFavorite = model.isFavorite;

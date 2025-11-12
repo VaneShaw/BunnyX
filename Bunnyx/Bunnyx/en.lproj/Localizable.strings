@@ -96,6 +96,7 @@
 "举报" = "Report";
 "确定要举报此素材吗？" = "Are you sure you want to report this material?";
 "举报成功" = "Report successful";
+"屏蔽成功" = "Block successful";
 "金币不足" = "Insufficient Coins";
 "您的金币不足，是否前往充值？" = "Your coins are insufficient. Would you like to recharge?";
 "去充值" = "Recharge";
@@ -139,6 +140,7 @@
 
 // MARK: - Hot Page
 "余额不足，是否前往充值？" = "Insufficient balance. Would you like to recharge?";
+"屏蔽" = "Block";
 
 // MARK: - Subscription Page
 "订阅标题" = "Subscribe";
