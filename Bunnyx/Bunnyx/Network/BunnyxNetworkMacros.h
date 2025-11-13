@@ -57,8 +57,8 @@
 #define BUNNYX_API_AWS_UPLOAD [NSString stringWithFormat:@"%@/oss/upload/aws", BUNNYX_API_BASE_URL]
 // 提交生成任务
 #define BUNNYX_API_GENERATE_CREATE [NSString stringWithFormat:@"%@/aitool/generateCreate", BUNNYX_API_BASE_URL]
-// 根据createIds获取生成任务列表（轮询进度）
-#define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getGenerateTaskList", BUNNYX_API_BASE_URL]
+// 根据createIds获取生成任务列表（轮询进度，对齐安卓：aitool/getCreateByIds）
+#define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getCreateByIds", BUNNYX_API_BASE_URL]
 // 获取生成列表（我的页面）
 #define BUNNYX_API_GET_CREATE_LIST [NSString stringWithFormat:@"%@/aitool/getCreateList", BUNNYX_API_BASE_URL]
 // 获取收藏素材列表（我的页面）

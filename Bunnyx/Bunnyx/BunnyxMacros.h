@@ -18,8 +18,8 @@
 #define SCREEN_BOUNDS [UIScreen mainScreen].bounds
 
 // MARK: - 设备判断宏
-#define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
-#define IS_IPAD (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+#define IS_IPHONE ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPhone)
+#define IS_IPAD ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad)
 #define IS_IPHONE_X (IS_IPHONE && SCREEN_HEIGHT >= 812.0)
 #define IS_IPHONE_XS (IS_IPHONE && SCREEN_HEIGHT == 812.0)
 #define IS_IPHONE_XR (IS_IPHONE && SCREEN_HEIGHT == 896.0)

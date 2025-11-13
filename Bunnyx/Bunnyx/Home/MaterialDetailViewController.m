@@ -26,7 +26,6 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 @property (nonatomic, assign) NSInteger materialId;
 @property (nonatomic, strong) MaterialDetailModel *detailModel;
 @property (nonatomic, strong) UIImageView *materialImageView;
-@property (nonatomic, strong) UIButton *backButton; // 返回按钮（对齐安卓：icon_home_detail_back_light）
 @property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（对齐安卓：icon_home_detail_more_light）
 @property (nonatomic, strong) UIButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
 @property (nonatomic, strong) GradientButton *generateButton; // 生成按钮
@@ -54,11 +53,11 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     [super viewDidAppear:animated];
     // 确保返回按钮和最上层控件在最上层
     // 注意：需要先找到 bottomContainer，然后确保按钮在最上层
+    [self bringBackButtonToFront];
     UIView *bottomContainer = self.generateButton.superview;
     if (bottomContainer) {
         [self.view bringSubviewToFront:bottomContainer];
     }
-    [self.view bringSubviewToFront:self.backButton];
     [self.view bringSubviewToFront:self.moreButton];
     [self.view bringSubviewToFront:self.favoriteButton];
     [self.view bringSubviewToFront:self.generateButton];
@@ -78,18 +77,7 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
         make.edges.equalTo(self.view);
     }];
     
-    // 返回按钮（对齐安卓：icon_home_detail_back_light，在TitleBar左侧）
-    self.backButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.backButton setImage:[UIImage imageNamed:@"icon_home_detail_back_light"] forState:UIControlStateNormal];
-    self.backButton.tintColor = [UIColor whiteColor];
-    [self.backButton addTarget:self action:@selector(backButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.backButton];
-    [self.backButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop);
-        make.left.equalTo(self.view);
-        make.width.height.mas_equalTo(44); // 标准导航栏按钮尺寸
-    }];
-    
+
     // 右上角更多按钮（对齐安卓：icon_home_detail_more_light，在TitleBar右侧）
     self.moreButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.moreButton setImage:[UIImage imageNamed:@"icon_home_detail_more_light"] forState:UIControlStateNormal];
@@ -97,9 +85,10 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     [self.moreButton addTarget:self action:@selector(moreButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.moreButton];
     [self.moreButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop);
-        make.right.equalTo(self.view);
-        make.width.height.mas_equalTo(44); // 标准导航栏按钮尺寸
+//        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop);
+        make.centerY.equalTo(self.customBackButton.mas_centerY);
+        make.right.equalTo(self.view).offset(-20);
+        make.width.height.mas_equalTo(22); // 标准导航栏按钮尺寸
     }];
     
     // 底部内容区域容器（对齐安卓：LinearLayout，layout_gravity="bottom"，marginBottom 30dp）
@@ -249,7 +238,7 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     [alert addAction:cancelAction];
     
     // iPad支持
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    if (IS_IPAD) {
         alert.popoverPresentationController.sourceView = sender;
         alert.popoverPresentationController.sourceRect = sender.bounds;
     }

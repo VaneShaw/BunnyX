@@ -74,11 +74,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     
     // 右上角报告按钮（三个点图标）
     self.moreButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.moreButton setImage:[UIImage systemImageNamed:@"ellipsis"] forState:UIControlStateNormal];
-    self.moreButton.tintColor = [UIColor whiteColor];
-    self.moreButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3];
-    self.moreButton.layer.cornerRadius = 12;
-    self.moreButton.layer.masksToBounds = YES;
+    [self.moreButton setImage:[UIImage imageNamed:@"icon_home_detail_more_light"] forState:UIControlStateNormal];
     [self.moreButton addTarget:self action:@selector(moreButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.moreButton];
     [self.moreButton mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -98,7 +94,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     [self.view addSubview:self.uploadButton];
     [self.uploadButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.right.equalTo(self.view).offset(-15);
-        make.bottom.equalTo(self.view).offset(-200);
+        make.bottom.equalTo(self.view).offset(-300);
         make.width.height.mas_equalTo(100);
     }];
     
@@ -306,7 +302,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     [alert addAction:cancelAction];
     
     // 适配iPad
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    if (IS_IPAD) {
         alert.popoverPresentationController.sourceView = sender;
         alert.popoverPresentationController.sourceRect = sender.bounds;
     }

@@ -13,49 +13,49 @@
 #import <TZImagePickerController/TZImagePickerController.h>
 #import "UploadingViewController.h"
 #import "UploadHistoryManager.h"
+#import "UploadHistoryDialog.h"
 #import "NetworkManager.h"
 #import "BunnyxNetworkMacros.h"
 #import <SDWebImage/SDWebImage.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import "ImageUploadManager.h"
 
-@interface UploadMaterialViewController () <TZImagePickerControllerDelegate>
+@interface UploadMaterialViewController () <TZImagePickerControllerDelegate, UploadHistoryDialogDelegate>
 
 @property (nonatomic, assign) NSInteger materialId;
 @property (nonatomic, strong) NSString *templateImageUrl; // 模板图片URL
 
-// 预览与指导
-@property (nonatomic, strong) UIImageView *previewImageView;
-@property (nonatomic, strong) UIView *checkBadgeView;
-@property (nonatomic, strong) UILabel *tipLine1Label;
-@property (nonatomic, strong) UILabel *tipLine2Label;
+// 上传相关
+@property (nonatomic, strong) NSString *selectedImagePath; // 选择的图片路径（用于历史记录）
+@property (nonatomic, strong) NSString *compressedImagePath; // 压缩后的图片路径（用于显示）
 
-// 无效示例（4个小图，带X标记）
-@property (nonatomic, strong) UIView *invalidExamplesContainer;
-@property (nonatomic, strong) NSMutableArray<UIView *> *invalidExampleViews;
+// ScrollView容器
+@property (nonatomic, strong) UIScrollView *scrollView;
+@property (nonatomic, strong) UIView *contentView;
 
-// 当前选择的图片（新增或历史）
-@property (nonatomic, strong) UIImage *currentSelectedImage;
-@property (nonatomic, strong) NSString *currentSelectedImageUrl; // 历史记录的URL
+// 顶部图标（对齐安卓：icon_photo_right，202x173dp）
+@property (nonatomic, strong) UIImageView *topIconView;
 
-// 历史记录
-@property (nonatomic, strong) UIView *historyContainer;
-@property (nonatomic, strong) UIScrollView *historyScrollView;
-@property (nonatomic, strong) NSArray<UploadHistoryItem *> *historyItems;
-@property (nonatomic, strong) UploadHistoryItem *selectedHistoryItem;
-@property (nonatomic, strong) UploadHistoryManager *historyManager;
+// 描述文字（对齐安卓：photo_upload_description）
+@property (nonatomic, strong) UILabel *descriptionLabel;
 
-// 缩略图列表（已选择的图片）
-@property (nonatomic, strong) UIScrollView *thumbsScrollView;
-@property (nonatomic, strong) NSMutableArray<UIImage *> *selectedImages;
+// 中间图片（对齐安卓：icon_photo_error）
+@property (nonatomic, strong) UIImageView *centerImageView;
 
-// 免责声明
+// 占位View（用于撑开空间，对齐安卓：layout_weight=1）
+@property (nonatomic, strong) UIView *spacerView;
+
+// 免责声明卡片（对齐安卓：ShapeLinearLayout，背景色#0DFFFFFF）
 @property (nonatomic, strong) UIView *disclaimerCardView;
 @property (nonatomic, strong) UILabel *disclaimerTitleLabel;
 @property (nonatomic, strong) UILabel *disclaimerContentLabel;
 
-// 按钮
+// 上传按钮（对齐安卓：渐变背景#0AEA6F到#1CB3C1，包含图标icon_photo_upload）
 @property (nonatomic, strong) GradientButton *uploadButton;
-@property (nonatomic, strong) GradientButton *generateButton;
+@property (nonatomic, strong) UIImageView *uploadIconView;
+
+// 历史记录管理器
+@property (nonatomic, strong) UploadHistoryManager *historyManager;
 
 @end
 
@@ -71,15 +71,11 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = LocalString(@"上传素材");
+    self.title = LocalString(@"上传");
     self.view.backgroundColor = [UIColor blackColor];
-    self.selectedImages = [NSMutableArray array];
-    self.historyItems = @[];
-    self.invalidExampleViews = [NSMutableArray array];
     self.historyManager = [UploadHistoryManager sharedManager];
     [self setupUI];
     [self loadDisclaimerFromConfig];
-    [self loadHistory];
     [self loadMaterialInfo]; // 加载素材信息，获取模板图片URL
 }
 
@@ -88,463 +84,254 @@
     [self bringBackButtonToFront];
 }
 
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    
+    // 调整上传按钮图标和文字的位置（对齐安卓：图标在文字左侧，间距8dp）
+    if (self.uploadButton && self.uploadIconView && self.uploadButton.titleLabel) {
+        CGSize textSize = [self.uploadButton.titleLabel.text sizeWithAttributes:@{NSFontAttributeName: self.uploadButton.titleLabel.font}];
+        CGFloat iconWidth = 20.0;
+        CGFloat spacing = 8.0;
+        CGFloat totalWidth = iconWidth + spacing + textSize.width;
+        
+        // 图标距离按钮中心的偏移量（负值表示向左偏移）
+        CGFloat iconOffset = -totalWidth / 2.0 + iconWidth / 2.0;
+        [self.uploadIconView mas_updateConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(self.uploadButton).offset(iconOffset);
+        }];
+        
+        // 文字距离按钮中心的偏移量（正值表示向右偏移）
+        CGFloat textOffset = totalWidth / 2.0 - textSize.width / 2.0;
+        self.uploadButton.titleEdgeInsets = UIEdgeInsetsMake(0, textOffset, 0, -textOffset);
+    }
+}
+
 #pragma mark - UI
 
 - (void)setupUI {
-    // 预览
-    self.previewImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"upload_preview_placeholder"] ?: [UIImage systemImageNamed:@"person.crop.square"]];
-    self.previewImageView.contentMode = UIViewContentModeScaleAspectFill;
-    self.previewImageView.layer.cornerRadius = 16;
-    self.previewImageView.layer.masksToBounds = YES;
-    [self.view addSubview:self.previewImageView];
+    // ScrollView容器（对齐安卓：ScrollView包裹所有内容）
+    self.scrollView = [[UIScrollView alloc] init];
+    self.scrollView.showsVerticalScrollIndicator = NO;
+    [self.view addSubview:self.scrollView];
     
-    [self.previewImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(MARGIN_20 + 10);
-        make.centerX.equalTo(self.view);
-        make.width.equalTo(self.view).multipliedBy(0.7);
-        make.height.equalTo(self.previewImageView.mas_width).multipliedBy(1.0);
+    self.contentView = [[UIView alloc] init];
+    [self.scrollView addSubview:self.contentView];
+    
+    [self.scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.view);
     }];
     
-    // 勾选徽章
-    self.checkBadgeView = [[UIView alloc] init];
-    self.checkBadgeView.backgroundColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.5 alpha:1.0];
-    self.checkBadgeView.layer.cornerRadius = 16;
-    self.checkBadgeView.layer.masksToBounds = YES;
-    UIImageView *checkIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"checkmark"]];
-    checkIcon.tintColor = [UIColor whiteColor];
-    [self.checkBadgeView addSubview:checkIcon];
-    [checkIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.checkBadgeView);
-        make.width.height.mas_equalTo(16);
-    }];
-    [self.view addSubview:self.checkBadgeView];
-    [self.checkBadgeView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.previewImageView.mas_right).offset(-10);
-        make.bottom.equalTo(self.previewImageView.mas_bottom).offset(-10);
-        make.width.height.mas_equalTo(32);
+    [self.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.scrollView);
+        make.width.equalTo(self.scrollView);
     }];
     
-    // 指导文案
-    self.tipLine1Label = [[UILabel alloc] init];
-    self.tipLine1Label.text = LocalString(@"使用单人正脸照片");
-    self.tipLine1Label.textColor = [UIColor whiteColor];
-    self.tipLine1Label.font = BOLD_FONT(FONT_SIZE_16);
-    self.tipLine1Label.textAlignment = NSTextAlignmentCenter;
-    [self.view addSubview:self.tipLine1Label];
+    // 顶部图标（对齐安卓：icon_photo_right，202x173dp，marginTop 20dp，marginBottom 16dp）
+    self.topIconView = [[UIImageView alloc] init];
+    self.topIconView.image = [UIImage imageNamed:@"icon_photo_right"];
+    self.topIconView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.contentView addSubview:self.topIconView];
     
-    self.tipLine2Label = [[UILabel alloc] init];
-    self.tipLine2Label.text = LocalString(@"确保清晰、正面、无遮挡");
-    self.tipLine2Label.textColor = [UIColor colorWithWhite:0.9 alpha:1.0];
-    self.tipLine2Label.font = FONT(FONT_SIZE_14);
-    self.tipLine2Label.textAlignment = NSTextAlignmentCenter;
-    [self.view addSubview:self.tipLine2Label];
-    
-    [self.tipLine1Label mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.previewImageView.mas_bottom).offset(MARGIN_15);
-        make.centerX.equalTo(self.view);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-    }];
-    [self.tipLine2Label mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.tipLine1Label.mas_bottom).offset(4);
-        make.centerX.equalTo(self.view);
-        make.left.right.equalTo(self.tipLine1Label);
+    [self.topIconView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.contentView).offset(STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT+ MARGIN_20);
+        make.centerX.equalTo(self.contentView);
+        make.width.mas_equalTo(202);
+        make.height.mas_equalTo(173);
     }];
     
-    // 无效示例容器（4个小图，带X标记）
-    [self setupInvalidExamples];
+    // 描述文字（对齐安卓：photo_upload_description，居中，marginBottom 32dp，17sp，白色）
+    self.descriptionLabel = [[UILabel alloc] init];
+    self.descriptionLabel.text = LocalString(@"使用一张单人照片\n使用一张正面且清晰的照片");
+    self.descriptionLabel.textColor = [UIColor whiteColor];
+    self.descriptionLabel.font = FONT(17);
+    self.descriptionLabel.textAlignment = NSTextAlignmentCenter;
+    self.descriptionLabel.numberOfLines = 0;
+    [self.contentView addSubview:self.descriptionLabel];
     
-    // 历史记录容器（在有历史记录时显示）
-    self.historyContainer = [[UIView alloc] init];
-    [self.view addSubview:self.historyContainer];
-    
-    self.historyScrollView = [[UIScrollView alloc] init];
-    self.historyScrollView.showsHorizontalScrollIndicator = NO;
-    [self.historyContainer addSubview:self.historyScrollView];
-    
-    [self.historyContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.invalidExamplesContainer.mas_bottom).offset(MARGIN_15);
-        make.left.right.equalTo(self.view);
-        make.height.mas_equalTo(76);
+    [self.descriptionLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.topIconView.mas_bottom).offset(16);
+        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
+        make.centerX.equalTo(self.contentView);
     }];
     
-    [self.historyScrollView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self.historyContainer);
+    // 中间图片（对齐安卓：icon_photo_error，居中，marginBottom 32dp）
+    self.centerImageView = [[UIImageView alloc] init];
+    self.centerImageView.image = [UIImage imageNamed:@"icon_photo_error"];
+    self.centerImageView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.contentView addSubview:self.centerImageView];
+    
+    [self.centerImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.descriptionLabel.mas_bottom).offset(32);
+        make.centerX.equalTo(self.contentView);
+        make.width.offset(375);
+        make.height.offset(66);
     }];
     
-    self.historyContainer.hidden = YES;
+    // 占位View（对齐安卓：layout_weight=1，用于撑开空间，让底部内容靠下）
+    self.spacerView = [[UIView alloc] init];
+    [self.contentView addSubview:self.spacerView];
     
-    // 缩略图横向列表（当前选择的图片）
-    self.thumbsScrollView = [[UIScrollView alloc] init];
-    self.thumbsScrollView.showsHorizontalScrollIndicator = NO;
-    [self.view addSubview:self.thumbsScrollView];
-    [self.thumbsScrollView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.invalidExamplesContainer.mas_bottom).offset(MARGIN_15);
-        make.left.right.equalTo(self.view);
-        make.height.mas_equalTo(76);
+    [self.spacerView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.centerImageView.mas_bottom).offset(32);
+        make.left.right.equalTo(self.contentView);
+        make.height.greaterThanOrEqualTo(@1); // 最小高度1，用于撑开空间
     }];
-    [self reloadThumbs];
     
-    // 免责声明卡片
+    // 免责声明卡片（对齐安卓：ShapeLinearLayout，padding 16dp，圆角12dp，背景色#0DFFFFFF，marginBottom 32dp）
     self.disclaimerCardView = [[UIView alloc] init];
-    self.disclaimerCardView.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.6];
-    self.disclaimerCardView.layer.cornerRadius = 12;
+    // 背景色#0DFFFFFF = RGB(13, 255, 255) = 13/255的白色，即alpha约0.05
+    self.disclaimerCardView.backgroundColor = RGBA(255, 255, 255, 13.0/255.0);
+    self.disclaimerCardView.layer.cornerRadius = CORNER_RADIUS_12;
     self.disclaimerCardView.layer.masksToBounds = YES;
-    [self.view addSubview:self.disclaimerCardView];
+    [self.contentView addSubview:self.disclaimerCardView];
     
+    // 免责声明标题（对齐安卓：居中，marginBottom 8dp，17sp，白色）
     self.disclaimerTitleLabel = [[UILabel alloc] init];
-    self.disclaimerTitleLabel.text = @"Disclaimer";
+    self.disclaimerTitleLabel.text = LocalString(@"免责声明");
     self.disclaimerTitleLabel.textColor = [UIColor whiteColor];
-    self.disclaimerTitleLabel.font = BOLD_FONT(FONT_SIZE_14);
+    self.disclaimerTitleLabel.font = FONT(17);
+    self.disclaimerTitleLabel.textAlignment = NSTextAlignmentCenter;
     [self.disclaimerCardView addSubview:self.disclaimerTitleLabel];
     
+    // 免责声明内容（对齐安卓：14sp，白色，行间距4dp）
     self.disclaimerContentLabel = [[UILabel alloc] init];
-    self.disclaimerContentLabel.textColor = [UIColor colorWithWhite:0.9 alpha:1.0];
-    self.disclaimerContentLabel.font = FONT(FONT_SIZE_12);
+    self.disclaimerContentLabel.textColor = [UIColor whiteColor];
+    self.disclaimerContentLabel.font = FONT(FONT_SIZE_14);
     self.disclaimerContentLabel.numberOfLines = 0;
+    // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+    NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+    paragraphStyle.lineSpacing = 4.0;
     [self.disclaimerCardView addSubview:self.disclaimerContentLabel];
     
     [self.disclaimerCardView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-90);
+        make.top.equalTo(self.spacerView.mas_bottom);
+        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
     }];
+    
     [self.disclaimerTitleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.disclaimerCardView).offset(12);
-        make.left.equalTo(self.disclaimerCardView).offset(12);
-        make.right.equalTo(self.disclaimerCardView).offset(-12);
+        make.top.equalTo(self.disclaimerCardView).offset(16);
+        make.left.right.equalTo(self.disclaimerCardView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
+        make.centerX.equalTo(self.disclaimerCardView);
     }];
+    
     [self.disclaimerContentLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.disclaimerTitleLabel.mas_bottom).offset(6);
-        make.left.right.equalTo(self.disclaimerTitleLabel);
-        make.bottom.equalTo(self.disclaimerCardView).offset(-12);
+        make.top.equalTo(self.disclaimerTitleLabel.mas_bottom).offset(8);
+        make.left.right.equalTo(self.disclaimerCardView).insets(UIEdgeInsetsMake(0, 16, 0, 16));
+        make.bottom.equalTo(self.disclaimerCardView).offset(-16);
     }];
     
-    // 上传按钮（带图标）
-    self.uploadButton = [GradientButton buttonWithTitle:LocalString(@"上传")];
-    [self.uploadButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.uploadButton.cornerRadius = 20;
-    // TODO: 添加上传图标（切图占位） - [self.uploadButton setImage:[UIImage imageNamed:@"icon_upload"] forState:UIControlStateNormal];
+    // 上传按钮（对齐安卓：高度48dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，marginBottom 15dp，包含图标icon_photo_upload）
+    // 渐变起始颜色：#0AEA6F (RGB: 10, 234, 111)
+    // 渐变结束颜色：#1CB3C1 (RGB: 28, 179, 193)
+    self.uploadButton = [GradientButton buttonWithTitle:LocalString(@"上传")
+                                               startColor:RGB(10, 234, 111)
+                                                 endColor:RGB(28, 179, 193)];
+    [self.uploadButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
+    self.uploadButton.titleLabel.font = FONT(16);
+    self.uploadButton.cornerRadius = CORNER_RADIUS_12;
+    self.uploadButton.buttonHeight = 48;
     [self.uploadButton addTarget:self action:@selector(uploadButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.uploadButton];
+    [self.contentView addSubview:self.uploadButton];
     
-    // 生成按钮（历史记录存在时显示）
-    self.generateButton = [GradientButton buttonWithTitle:LocalString(@"生成")];
-    [self.generateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.generateButton.cornerRadius = 20;
-    // TODO: 生成按钮使用不同的渐变色（切图占位）
-    [self.generateButton addTarget:self action:@selector(generateButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.generateButton];
-    self.generateButton.hidden = YES;
+    // 上传按钮图标（对齐安卓：icon_photo_upload，20x20dp，在文字左侧，marginEnd 8dp）
+    self.uploadIconView = [[UIImageView alloc] init];
+    self.uploadIconView.image = [UIImage imageNamed:@"icon_photo_upload"];
+    self.uploadIconView.contentMode = UIViewContentModeScaleAspectFit;
+    [self.uploadButton addSubview:self.uploadIconView];
     
-    [self updateButtonLayout];
-}
-
-- (void)updateButtonLayout {
-    if (self.historyItems.count > 0 && self.selectedHistoryItem) {
-        // 有历史记录且已选中，显示两个按钮
-        self.uploadButton.hidden = NO;
-        self.generateButton.hidden = NO;
-        
-        [self.uploadButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-70);
-            make.height.mas_equalTo(50);
-        }];
-        
-        [self.generateButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
-            make.height.mas_equalTo(50);
-        }];
-    } else {
-        // 没有历史记录，只显示上传按钮
-        self.uploadButton.hidden = NO;
-        self.generateButton.hidden = YES;
-        
-        [self.uploadButton mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-            make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
-            make.height.mas_equalTo(50);
-        }];
-    }
-}
-
-- (void)setupInvalidExamples {
-    self.invalidExamplesContainer = [[UIView alloc] init];
-    [self.view addSubview:self.invalidExamplesContainer];
-    
-    [self.invalidExamplesContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.tipLine2Label.mas_bottom).offset(MARGIN_15);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-        make.height.mas_equalTo(60);
+    [self.uploadButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.disclaimerCardView.mas_bottom).offset(32);
+        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
+        make.height.mas_equalTo(48);
+        make.bottom.equalTo(self.contentView).offset(-24);
     }];
     
-    // 创建4个无效示例
-    CGFloat itemSize = 50;
-    CGFloat spacing = (self.view.bounds.size.width - 40 - itemSize * 4) / 3;
-    
-    for (NSInteger i = 0; i < 4; i++) {
-        UIView *exampleView = [[UIView alloc] init];
-        exampleView.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
-        exampleView.layer.cornerRadius = 8;
-        exampleView.layer.masksToBounds = YES;
-        [self.invalidExamplesContainer addSubview:exampleView];
-        [self.invalidExampleViews addObject:exampleView];
-        
-        // 占位图片
-        UIImageView *placeholderIV = [[UIImageView alloc] init];
-        // TODO: 使用切图占位 - placeholderIV.image = [UIImage imageNamed:[NSString stringWithFormat:@"invalid_example_%ld", (long)i]];
-        placeholderIV.image = [UIImage systemImageNamed:@"person.crop.square"];
-        placeholderIV.contentMode = UIViewContentModeScaleAspectFill;
-        placeholderIV.clipsToBounds = YES;
-        placeholderIV.tintColor = [UIColor colorWithWhite:0.5 alpha:1.0];
-        [exampleView addSubview:placeholderIV];
-        
-        // X标记
-        UIImageView *xMark = [[UIImageView alloc] init];
-        // TODO: 使用切图占位 - xMark.image = [UIImage imageNamed:@"icon_invalid_x"];
-        xMark.image = [UIImage systemImageNamed:@"xmark.circle.fill"];
-        xMark.tintColor = [UIColor colorWithRed:1.0 green:0.3 blue:0.3 alpha:1.0];
-        [exampleView addSubview:xMark];
-        
-        [exampleView mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.left.equalTo(self.invalidExamplesContainer).offset(i * (itemSize + spacing));
-            make.top.equalTo(self.invalidExamplesContainer);
-            make.width.height.mas_equalTo(itemSize);
-        }];
-        
-        [placeholderIV mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.edges.equalTo(exampleView);
-        }];
-        
-        [xMark mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.right.equalTo(exampleView).insets(UIEdgeInsetsMake(-4, -4, 0, 0));
-            make.width.height.mas_equalTo(16);
-        }];
-    }
+    // 图标在文字左侧（对齐安卓布局：图标在文字左侧，间距8dp）
+    // 先设置图标约束，让它在按钮中心左侧
+    [self.uploadIconView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(self.uploadButton);
+        make.width.height.mas_equalTo(20);
+        // 图标位置会在viewDidLayoutSubviews中调整
+    }];
 }
 
-- (void)reloadThumbs {
-    // 清空
-    for (UIView *v in self.thumbsScrollView.subviews) { [v removeFromSuperview]; }
-    CGFloat margin = 16;
-    CGFloat x = margin;
-    CGFloat itemSize = 60;
-    NSInteger maxCount = 4;
-    
-    // 已选缩略图
-    for (NSInteger i = 0; i < self.selectedImages.count; i++) {
-        UIImage *img = self.selectedImages[i];
-        UIView *wrap = [[UIView alloc] initWithFrame:CGRectMake(x, 8, itemSize, itemSize)];
-        wrap.layer.cornerRadius = 10; wrap.layer.masksToBounds = YES;
-        wrap.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
-        UIImageView *iv = [[UIImageView alloc] initWithImage:img];
-        iv.contentMode = UIViewContentModeScaleAspectFill; iv.frame = wrap.bounds; iv.clipsToBounds = YES;
-        [wrap addSubview:iv];
-        
-        // 删除按钮
-        UIButton *del = [UIButton buttonWithType:UIButtonTypeCustom];
-        del.backgroundColor = [UIColor colorWithRed:1.0 green:0.25 blue:0.25 alpha:1.0];
-        del.layer.cornerRadius = 10; del.layer.masksToBounds = YES;
-        [del setTitle:@"✕" forState:UIControlStateNormal];
-        del.titleLabel.font = BOLD_FONT(12);
-        del.frame = CGRectMake(itemSize-18, -2, 20, 20);
-        del.tag = i; [del addTarget:self action:@selector(onDeleteThumb:) forControlEvents:UIControlEventTouchUpInside];
-        [wrap addSubview:del];
-        
-        [self.thumbsScrollView addSubview:wrap];
-        x += itemSize + margin;
-    }
-    
-    // 添加按钮
-    if (self.selectedImages.count < maxCount) {
-        UIButton *addBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        addBtn.frame = CGRectMake(x, 8, itemSize, itemSize);
-        addBtn.layer.cornerRadius = 10; addBtn.layer.masksToBounds = YES;
-        addBtn.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1.0];
-        [addBtn setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
-        addBtn.tintColor = [UIColor whiteColor];
-        [addBtn addTarget:self action:@selector(onAddTapped) forControlEvents:UIControlEventTouchUpInside];
-        [self.thumbsScrollView addSubview:addBtn];
-        x += itemSize + margin;
-    }
-    self.thumbsScrollView.contentSize = CGSizeMake(MAX(x, self.view.bounds.size.width), 76);
-}
 
 #pragma mark - Data
 
+/// 加载订阅VIP提示文字（对齐安卓：loadSubscribeVipTips方法）
 - (void)loadDisclaimerFromConfig {
-    AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
-    NSString *tips = config.disclaimerTips;
-    if (BUNNYX_IS_EMPTY_STRING(tips)) {
-        tips = LocalString(@"请上传本人照片，上传他人照片需获得其明确授权。未经授权上传可能侵犯他人隐私并承担法律责任。");
-    }
-    self.disclaimerContentLabel.text = tips;
-}
-
-- (void)loadHistory {
-    // 加载历史记录
-    self.historyItems = [self.historyManager getUploadHistoryList];
-    
-    // 默认选中最新的历史记录
-    if (self.historyItems.count > 0) {
-        self.selectedHistoryItem = self.historyItems.firstObject;
-    }
-    
-    // 更新UI
-    [self reloadHistoryUI];
-    [self updateButtonLayout];
-}
-
-- (void)reloadHistoryUI {
-    // 清空历史记录视图
-    for (UIView *view in self.historyScrollView.subviews) {
-        [view removeFromSuperview];
-    }
-    
-    if (self.historyItems.count == 0) {
-        self.historyContainer.hidden = YES;
-        return;
-    }
-    
-    self.historyContainer.hidden = NO;
-    
-    CGFloat margin = 16;
-    CGFloat x = margin;
-    CGFloat itemSize = 60;
-    
-    // 添加"+"按钮（添加新图片）
-    UIButton *addBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    addBtn.frame = CGRectMake(x, 8, itemSize, itemSize);
-    addBtn.layer.cornerRadius = 10;
-    addBtn.layer.masksToBounds = YES;
-    addBtn.backgroundColor = [UIColor colorWithWhite:0.15 alpha:1.0];
-    // TODO: 使用切图占位 - [addBtn setImage:[UIImage imageNamed:@"icon_add_history"] forState:UIControlStateNormal];
-    [addBtn setImage:[UIImage systemImageNamed:@"plus"] forState:UIControlStateNormal];
-    addBtn.tintColor = [UIColor whiteColor];
-    [addBtn addTarget:self action:@selector(selectPhoto) forControlEvents:UIControlEventTouchUpInside];
-    [self.historyScrollView addSubview:addBtn];
-    x += itemSize + margin;
-    
-    // 添加历史记录项
-    for (NSInteger i = 0; i < self.historyItems.count; i++) {
-        UploadHistoryItem *item = self.historyItems[i];
-        UIView *wrap = [[UIView alloc] initWithFrame:CGRectMake(x, 8, itemSize, itemSize)];
-        wrap.layer.cornerRadius = 10;
-        wrap.layer.masksToBounds = YES;
-        wrap.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
-        wrap.tag = i;
-        
-        // 添加点击手势
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onHistoryItemTapped:)];
-        [wrap addGestureRecognizer:tap];
-        
-        // 图片视图
-        UIImageView *iv = [[UIImageView alloc] init];
-        iv.frame = wrap.bounds;
-        iv.contentMode = UIViewContentModeScaleAspectFill;
-        iv.clipsToBounds = YES;
-        
-        // 加载图片（从Uri或URL）
-        if ([item.imageUri hasPrefix:@"http://"] || [item.imageUri hasPrefix:@"https://"]) {
-            [iv sd_setImageWithURL:[NSURL URLWithString:item.imageUri] 
-                   placeholderImage:[UIImage systemImageNamed:@"photo"]];
+    // 对齐安卓：先尝试从缓存获取配置
+    AppConfigModel *cachedConfig = [[AppConfigManager sharedManager] currentConfig];
+    if (cachedConfig) {
+        // 缓存中有配置，直接使用（对齐安卓逻辑）
+        NSString *subscribeVipTips = [self getSubscribeVipTips:cachedConfig];
+        if (subscribeVipTips && subscribeVipTips.length > 0) {
+            // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+            NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+            paragraphStyle.lineSpacing = 4.0;
+            NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
+            [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
+            self.disclaimerContentLabel.attributedText = attributedText;
         } else {
-            // 本地路径
-            UIImage *localImage = [UIImage imageWithContentsOfFile:item.imageUri];
-            if (localImage) {
-                iv.image = localImage;
+            // 缓存中没有订阅提示文字，使用默认文字（对齐安卓逻辑）
+            [self setDefaultDisclaimerContent];
+        }
+    } else {
+        // 缓存中没有配置，请求接口获取（对齐安卓逻辑）
+        [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *config) {
+            // 获取subscribe_vip_tips字段（对齐安卓逻辑）
+            NSString *subscribeVipTips = [self getSubscribeVipTips:config];
+            if (subscribeVipTips && subscribeVipTips.length > 0) {
+                // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+                NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+                paragraphStyle.lineSpacing = 4.0;
+                NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
+                [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
+                self.disclaimerContentLabel.attributedText = attributedText;
             } else {
-                iv.image = [UIImage systemImageNamed:@"photo"];
+                // 接口返回中没有订阅提示文字，使用默认文字（对齐安卓逻辑）
+                [self setDefaultDisclaimerContent];
             }
-        }
-        [wrap addSubview:iv];
-        
-        // 选中标记
-        if (item == self.selectedHistoryItem) {
-            wrap.layer.borderWidth = 2;
-            wrap.layer.borderColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.5 alpha:1.0].CGColor;
-        }
-        
-        // 删除按钮
-        UIButton *del = [UIButton buttonWithType:UIButtonTypeCustom];
-        del.backgroundColor = [UIColor colorWithRed:1.0 green:0.25 blue:0.25 alpha:1.0];
-        del.layer.cornerRadius = 10;
-        del.layer.masksToBounds = YES;
-        // TODO: 使用切图占位 - [del setImage:[UIImage imageNamed:@"icon_delete_history"] forState:UIControlStateNormal];
-        [del setTitle:@"✕" forState:UIControlStateNormal];
-        del.titleLabel.font = BOLD_FONT(12);
-        del.frame = CGRectMake(itemSize-18, -2, 20, 20);
-        del.tag = i;
-        [del addTarget:self action:@selector(onDeleteHistoryItem:) forControlEvents:UIControlEventTouchUpInside];
-        [wrap addSubview:del];
-        
-        [self.historyScrollView addSubview:wrap];
-        x += itemSize + margin;
+        } failure:^(NSError *error) {
+            // 接口请求失败，使用默认文字（对齐安卓逻辑）
+            [self setDefaultDisclaimerContent];
+        }];
     }
+}
+
+/// 获取订阅VIP提示文字（对齐安卓：getSubscribeVipTips方法）
+- (NSString *)getSubscribeVipTips:(AppConfigModel *)config {
+    // 对齐安卓：直接返回subscribe_vip_tips字段（安卓中返回tipsJson）
+    if (config && config.subscribeVipTips && config.subscribeVipTips.length > 0) {
+        return config.subscribeVipTips;
+    }
+    return nil;
+}
+
+/// 设置默认免责声明内容（对齐安卓：setDefaultDisclaimerContent方法）
+- (void)setDefaultDisclaimerContent {
+    // 对齐安卓：使用默认文案（disclaimer_content_default）
+    NSString *defaultTips = LocalString(@"请上传您自己的照片。如果您使用他人的照片，请先获得他们的明确许可。上传失败可能违反他们的隐私，并可能导致法律责任。感谢您的合作！");
     
-    self.historyScrollView.contentSize = CGSizeMake(MAX(x, self.view.bounds.size.width), 76);
-}
-
-- (void)onHistoryItemTapped:(UITapGestureRecognizer *)gesture {
-    NSInteger index = gesture.view.tag;
-    if (index >= 0 && index < self.historyItems.count) {
-        self.selectedHistoryItem = self.historyItems[index];
-        [self reloadHistoryUI];
-        [self updateButtonLayout];
-    }
-}
-
-- (void)onDeleteHistoryItem:(UIButton *)sender {
-    NSInteger index = sender.tag;
-    if (index >= 0 && index < self.historyItems.count) {
-        UploadHistoryItem *item = self.historyItems[index];
-        [self.historyManager removeUploadHistory:item.imageUri];
-        [self loadHistory];
-    }
+    // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+    NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+    paragraphStyle.lineSpacing = 4.0;
+    NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:defaultTips];
+    [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, defaultTips.length)];
+    self.disclaimerContentLabel.attributedText = attributedText;
 }
 
 #pragma mark - Actions
 
-- (void)onAddTapped {
-    TZImagePickerController *picker = [[TZImagePickerController alloc] initWithMaxImagesCount:(4 - self.selectedImages.count) delegate:self];
-    picker.allowPickingVideo = NO; picker.allowTakeVideo = NO; picker.allowTakePicture = YES;
-    [self presentViewController:picker animated:YES completion:nil];
-}
-
-- (void)onDeleteThumb:(UIButton *)sender {
-    NSInteger idx = sender.tag;
-    if (idx >= 0 && idx < self.selectedImages.count) {
-        [self.selectedImages removeObjectAtIndex:idx];
-        [self reloadThumbs];
-    }
-}
-
 - (void)uploadButtonTapped:(UIButton *)sender {
-    // 参考安卓逻辑：如果有历史记录，显示选择弹窗；否则直接打开相册
+    // 对齐安卓逻辑：如果有历史记录，显示选择弹窗；否则直接打开相册
     if ([self.historyManager hasHistory]) {
-        // 有历史记录，显示选择界面（iOS直接显示在页面上，不弹窗）
-        [self showHistorySelection];
+        // 有历史记录，显示历史记录选择弹窗（对齐安卓UploadHistoryDialog）
+        [UploadHistoryDialog showWithDelegate:self];
     } else {
         // 没有历史记录，直接打开相册
         [self selectPhoto];
     }
-}
-
-- (void)generateButtonTapped:(UIButton *)sender {
-    // 使用选中的历史记录直接生成
-    if (!self.selectedHistoryItem) {
-        // 如果没有选中，使用最新的历史记录
-        self.selectedHistoryItem = [self.historyManager getLatestHistoryItem];
-    }
-    
-    if (!self.selectedHistoryItem) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"没有可用的历史记录")];
-        return;
-    }
-    
-    // 使用历史记录的AWS路径直接生成
-    [self callGenerateCreateWithImagePath:self.selectedHistoryItem.awsRelativePath 
-                          compressedImagePath:self.selectedHistoryItem.imageUri];
 }
 
 - (void)selectPhoto {
@@ -555,12 +342,6 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
-- (void)showHistorySelection {
-    // iOS版本：直接在页面上显示历史记录，不弹窗
-    // 历史记录已经在loadHistory中加载并显示
-    // 用户点击历史记录项即可选择
-}
-
 #pragma mark - TZImagePickerControllerDelegate
 
 - (void)imagePickerController:(TZImagePickerController *)picker didFinishPickingPhotos:(NSArray<UIImage *> *)photos sourceAssets:(NSArray *)assets isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
@@ -568,31 +349,116 @@
         return;
     }
     
-    // 清空之前的选择，只保留新选择的图片
-    [self.selectedImages removeAllObjects];
-    [self.selectedImages addObject:photos.firstObject];
+    // 对齐安卓：选择图片后，保存图片路径用于历史记录
+    UIImage *image = photos.firstObject;
     
-    // 设置第一张作为预览
-    self.previewImageView.image = self.selectedImages.firstObject;
-    self.currentSelectedImage = self.selectedImages.firstObject;
-    self.currentSelectedImageUrl = nil; // 新选择的图片，不是历史记录
+    // 保存图片到临时目录，获取路径（对齐安卓：mSelectedImageUri）
+    NSString *tempDir = NSTemporaryDirectory();
+    NSString *fileName = [NSString stringWithFormat:@"selected_image_%ld.jpg", (long)[[NSDate date] timeIntervalSince1970]];
+    NSString *filePath = [tempDir stringByAppendingPathComponent:fileName];
+    NSData *imageData = UIImageJPEGRepresentation(image, 1.0);
+    if ([imageData writeToFile:filePath atomically:YES]) {
+        self.selectedImagePath = filePath;
+        BUNNYX_LOG(@"保存选择的图片路径: %@", self.selectedImagePath);
+    } else {
+        // 如果保存失败，使用时间戳作为标识
+        self.selectedImagePath = [NSString stringWithFormat:@"upload_%ld", (long)[[NSDate date] timeIntervalSince1970]];
+    }
     
-    [self reloadThumbs];
-    
-    // 选择图片后，直接开始上传流程（参考安卓逻辑）
-    UIImage *image = self.selectedImages.firstObject;
+    // 开始上传流程（对齐安卓：compressImage -> uploadToAws -> callGenerateCreate）
     [self startUploadWithImage:image];
 }
 
+/// 开始上传流程（对齐安卓：compressImage方法）
 - (void)startUploadWithImage:(UIImage *)image {
     if (!image) {
         return;
     }
     
-    // 跳转到上传中页面（传入模板图片URL）
-    UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId image:image];
-    uploadingVC.templateImageUrl = self.templateImageUrl; // 设置模板图片URL
-    [self.navigationController pushViewController:uploadingVC animated:YES];
+    // 显示加载提示（对齐安卓：showDialog）
+    [SVProgressHUD showWithStatus:LocalString(@"正在处理图片...")];
+    
+    // 对齐安卓：使用ImageUploadManager处理完整流程（压缩 -> 上传 -> 返回路径）
+    [[ImageUploadManager sharedManager] uploadImage:self.materialId
+                                              image:image
+                                            progress:^(CGFloat progress, NSString *status) {
+        // 更新进度（可选）
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SVProgressHUD showProgress:progress status:status];
+        });
+    } success:^(NSString *initImage) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // 上传成功，保存历史记录（对齐安卓：uploadToS3的onSuccess回调）
+            if (self.selectedImagePath) {
+                UploadHistoryManager *historyManager = [UploadHistoryManager sharedManager];
+                // 对齐安卓：使用selectedImagePath作为imageUri，initImage作为awsRelativePath
+                // 构造完整URL（如果需要的话，可以从relativePath构建）
+                NSString *awsFullPath = initImage; // 相对路径，完整URL需要从配置中获取
+                [historyManager addUploadHistory:self.selectedImagePath 
+                                 awsRelativePath:initImage 
+                                     awsFullPath:awsFullPath];
+                BUNNYX_LOG(@"保存历史记录 - 图片路径: %@, AWS路径: %@", self.selectedImagePath, initImage);
+            }
+            
+            // 调用生成接口（对齐安卓：callGenerateCreate方法）
+            [self callGenerateCreate:initImage];
+        });
+    } failure:^(NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // 上传失败（对齐安卓：uploadToS3的onError回调）
+            [SVProgressHUD dismiss];
+            [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: LocalString(@"图片上传失败")];
+            BUNNYX_ERROR(@"图片上传失败: %@", error.localizedDescription);
+        });
+    }];
+}
+
+/// 调用生成接口（对齐安卓：callGenerateCreate方法）
+- (void)callGenerateCreate:(NSString *)relativePath {
+    NSDictionary *parameters = @{
+        @"materialId": @(self.materialId),
+        @"initImage": relativePath
+    };
+    
+    [[NetworkManager sharedManager] POST:BUNNYX_API_GENERATE_CREATE
+                                parameters:parameters
+                                   success:^(id responseObject) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SVProgressHUD dismiss];
+            
+            NSDictionary *dict = (NSDictionary *)responseObject;
+            NSInteger code = [dict[@"code"] integerValue];
+            
+            if (code == 0) {
+                NSString *createIds = dict[@"data"];
+                if (createIds && createIds.length > 0) {
+                    BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
+                    
+                    // 对齐安卓：跳转到上传中页面，传递createIds、压缩图片路径、模板图片URL、materialId
+                    // 注意：iOS中compressedImagePath用于显示，实际使用selectedImagePath
+                    UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
+                                                                                                         image:nil 
+                                                                                                    createIds:createIds 
+                                                                                              uploadedImagePath:self.selectedImagePath 
+                                                                                               templateImageUrl:self.templateImageUrl];
+                    [self.navigationController pushViewController:uploadingVC animated:YES];
+                } else {
+                    [SVProgressHUD showErrorWithStatus:LocalString(@"提交生成任务失败")];
+                }
+            } else {
+                // 对齐安卓：显示promptType
+                NSString *promptType = dict[@"promptType"];
+                NSString *errorMessage = promptType ?: dict[@"message"] ?: LocalString(@"提交生成任务失败");
+                [SVProgressHUD showErrorWithStatus:errorMessage];
+            }
+        });
+    } failure:^(NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SVProgressHUD dismiss];
+            [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+            BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
+        });
+    }];
 }
 
 - (void)loadMaterialInfo {
@@ -620,11 +486,25 @@
     }];
 }
 
-- (void)callGenerateCreateWithImagePath:(NSString *)imagePath compressedImagePath:(NSString *)compressedImagePath {
-    // 使用历史记录的AWS路径直接生成（参考安卓逻辑）
+#pragma mark - UploadHistoryDialogDelegate
+
+- (void)uploadHistoryDialog:(UploadHistoryDialog *)dialog didSelectImage:(NSString *)imagePath {
+    // 对齐安卓：选择了新图片，直接开始上传流程
+    // 注意：iOS中通过TZImagePickerController选择，这里不需要处理
+    // 图片选择会通过TZImagePickerControllerDelegate回调处理
+}
+
+- (void)uploadHistoryDialog:(UploadHistoryDialog *)dialog didGenerateFromHistory:(UploadHistoryItem *)historyItem {
+    // 对齐安卓：从历史记录生成，使用历史记录的AWS路径
+    if (!historyItem || !historyItem.awsRelativePath || historyItem.awsRelativePath.length == 0) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"历史记录无效")];
+        return;
+    }
+    
+    // 调用生成接口（对齐安卓逻辑）
     NSDictionary *parameters = @{
         @"materialId": @(self.materialId),
-        @"initImage": imagePath
+        @"initImage": historyItem.awsRelativePath
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_GENERATE_CREATE
@@ -638,11 +518,11 @@
             if (createIds && createIds.length > 0) {
                 BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
                 
-                // 跳转到上传中页面（使用历史记录的图片路径）
+                // 跳转到上传中页面（使用历史记录的图片路径，对齐安卓逻辑）
                 UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
                                                                                                      image:nil 
                                                                                             createIds:createIds 
-                                                                                      uploadedImagePath:compressedImagePath 
+                                                                                      uploadedImagePath:historyItem.imageUri 
                                                                                        templateImageUrl:self.templateImageUrl];
                 [self.navigationController pushViewController:uploadingVC animated:YES];
             } else {
@@ -658,6 +538,12 @@
         BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
     }];
 }
+
+- (void)uploadHistoryDialogDidRequestImageSelection:(UploadHistoryDialog *)dialog {
+    // 对齐安卓：请求图片选择，打开相册
+    [self selectPhoto];
+}
+
 
 @end
 

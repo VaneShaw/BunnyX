@@ -45,6 +45,7 @@ static NSString *const kLikeCellId = @"LikeListCell";
 }
 
 - (void)setupUI {
+    self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
     // 网格布局
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.minimumLineSpacing = 12;

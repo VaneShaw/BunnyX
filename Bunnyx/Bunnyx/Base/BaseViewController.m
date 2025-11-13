@@ -85,19 +85,8 @@
     // 创建自定义返回按钮
     self.customBackButton = [UIButton buttonWithType:UIButtonTypeCustom];
     
-    // 设置返回按钮图标
-    UIImage *backImage = [UIImage imageNamed:@"icon_login_account_back"];
-    if (!backImage) {
-        // 如果没有自定义图标，使用系统默认的返回图标
-        backImage = [self createDefaultBackImage];
-    }
-    [self.customBackButton setImage:backImage forState:UIControlStateNormal];
-    
-    // 设置按钮样式
-    self.customBackButton.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.3];
-    self.customBackButton.layer.cornerRadius = 15;
-    self.customBackButton.layer.masksToBounds = YES;
-    
+    [self.customBackButton setImage:[UIImage imageNamed:@"icon_login_account_back"] forState:UIControlStateNormal];
+
     // 添加点击事件
     [self.customBackButton addTarget:self action:@selector(customBackButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     
@@ -108,7 +97,7 @@
     [self.customBackButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.view).offset(20);
         make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(20);
-        make.width.height.mas_equalTo(30);
+        make.width.height.mas_equalTo(23);
     }];
     
     // 根据showBackButton属性控制显示/隐藏
