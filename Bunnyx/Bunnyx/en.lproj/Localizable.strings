@@ -170,3 +170,15 @@
 "ID:%@" = "ID:%@";
 "%d Coins" = "%d Coins";
 "有效期至: %@" = "Valid until: %@";
+
+// MARK: - Contact Us Page
+"联系我们" = "Contact Us";
+"描述:" = "Description:";
+"上传图片(%@)" = "Upload Image(%@)";
+"提交" = "Submit";
+"请输入您的问题或建议" = "Please enter your questions or suggestions";
+"最多只能上传3张图片" = "Maximum 3 images allowed";
+"图片正在上传中，请稍候" = "Images are uploading, please wait";
+"处理图片失败" = "Failed to process image";
+"图片加载失败" = "Failed to load image";
+"提交成功" = "Submission successful";

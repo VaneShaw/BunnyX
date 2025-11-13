@@ -65,6 +65,8 @@
 #define BUNNYX_API_GET_FAVORITE_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getFavoriteMaterialList", BUNNYX_API_BASE_URL]
 // 检查素材生成金币是否足够
 #define BUNNYX_API_CHECK_SURPLUS_MXD [NSString stringWithFormat:@"%@/aitool/checkSurplusMxd", BUNNYX_API_BASE_URL]
+// 提交工单接口
+#define BUNNYX_API_WORK_ORDER_SUBMIT [NSString stringWithFormat:@"%@/workOrder/submit", BUNNYX_API_BASE_URL]
 
 // MARK: - 内容相关接口
 #define BUNNYX_API_CONTENT_LIST [NSString stringWithFormat:@"%@/content/list", BUNNYX_API_BASE_URL]

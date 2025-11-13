@@ -21,6 +21,7 @@
 #import "GenerateListViewController.h"
 #import "LikeListViewController.h"
 #import "GradientButton.h"
+#import "ContactUsViewController.h"
 
 // MARK: - ProfileViewController
 @interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
@@ -529,8 +530,9 @@
 #pragma mark - Button Actions
 
 - (void)onServiceClick {
-    // TODO: 跳转到联系客服页面
-    BUNNYX_LOG(@"点击服务按钮");
+    // 跳转到联系客服页面
+    ContactUsViewController *contactUsVC = [[ContactUsViewController alloc] init];
+    [self.navigationController pushViewController:contactUsVC animated:YES];
 }
 
 - (void)onSettingsClick {
