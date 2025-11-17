@@ -8,7 +8,6 @@
 #import "AppDelegate.h"
 #import "MainTabBarController.h"
 #import "LaunchViewController.h"
-#import "Manager/Config/AppConfigManager.h"
 #import "Manager/Config/SVProgressHUDConfig.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
@@ -30,11 +29,6 @@
     // 配置SVProgressHUD
     [SVProgressHUDConfig configureSVProgressHUD];
     
-    [[AppConfigManager sharedManager]getAppConfigWithSuccess:^(AppConfigModel * _Nonnull configModel) {
-            
-        } failure:^(NSError * _Nonnull error) {
-            
-        }];
     // 只在iOS 12及以下版本中设置启动页
     if (@available(iOS 13.0, *)) {
         // iOS 13+ 由 SceneDelegate 处理

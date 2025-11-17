@@ -18,7 +18,7 @@
 #endif
 
 // MARK: - API版本
-#define BUNNYX_API_VERSION @"v1"
+#define BUNNYX_API_VERSION @"1.0"
 #define BUNNYX_API_VERSION_V2 @"v2"
 
 // MARK: - 完整API基础地址
@@ -251,7 +251,7 @@
 #define BUNNYX_DEVICE_UUID_KEY @"BunnyxDeviceUUID"
 #define BUNNYX_APP_VERSION @"1.0.0"
 #define BUNNYX_SYSTEM_NAME @"ios"
-#define BUNNYX_API_VERSION @"v1"
+#define BUNNYX_API_VERSION @"1.0"
 #define BUNNYX_CHANNEL @"AppStore"
 
 // MARK: - 认证相关宏
@@ -274,5 +274,7 @@
 #define BUNNYX_HEADER_CHANNEL @"channel"
 #define BUNNYX_HEADER_EFFECTIVE_IMEI @"Effective-imei"
 #define BUNNYX_HEADER_EQUIPMENT_BRAND @"Equipment-brand"
+#define BUNNYX_HEADER_VERSION_NAME @"versionName"
+#define BUNNYX_HEADER_VERSION_CODE @"versionCode"
 
 #endif /* BunnyxNetworkMacros_h */

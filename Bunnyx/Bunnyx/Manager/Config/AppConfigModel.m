@@ -6,6 +6,7 @@
 //
 
 #import "AppConfigModel.h"
+#import "NewAppInfo.h"
 #import "BunnyxMacros.h"
 
 @implementation AppConfigModel
@@ -60,7 +61,14 @@
         @"ipMaxLogin": @"ip_max_login",
         @"privacyPolicyUrl": @"privacy_policy_url",
         @"subscribeVipTips": @"subscribe_vip_tips",
-        @"vipDiscountTips": @"vip_discount_tips"
+        @"vipDiscountTips": @"vip_discount_tips",
+        @"latestAppInfo": @"new_app_info"
+    };
+}
+
++ (NSDictionary *)modelContainerPropertyGenericClass {
+    return @{
+        @"latestAppInfo": [NewAppInfo class]
     };
 }
 

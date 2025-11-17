@@ -339,11 +339,30 @@
 
 - (void)loadSubscribeTips {
     AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
+    if ([self updateSubscribeTipsWithConfig:config]) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *configModel) {
+        if (![weakSelf updateSubscribeTipsWithConfig:configModel]) {
+            [weakSelf setDefaultSubscribeTips];
+        }
+    } failure:^(NSError *error) {
+        [weakSelf setDefaultSubscribeTips];
+    }];
+}
+
+- (BOOL)updateSubscribeTipsWithConfig:(AppConfigModel *)config {
     if (config && config.subscribeVipTips && config.subscribeVipTips.length > 0) {
         self.tipsLabel.text = config.subscribeVipTips;
-    } else {
-        self.tipsLabel.text = LocalString(@"订阅提示默认");
+        return YES;
     }
+    return NO;
+}
+
+- (void)setDefaultSubscribeTips {
+    self.tipsLabel.text = LocalString(@"订阅提示默认");
 }
 
 - (void)loadVipList {

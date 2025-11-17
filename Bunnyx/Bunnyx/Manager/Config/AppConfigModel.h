@@ -9,6 +9,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class NewAppInfo;
+
 /**
  * 应用配置模型
  * 用于处理服务器返回的应用配置信息
@@ -202,6 +204,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSString *subscribeVipTips;
 /// VIP折扣提示
 @property (nonatomic, strong) NSString *vipDiscountTips;
+
+/// 新版本信息（对齐安卓：new_app_info）
+@property (nonatomic, strong) NewAppInfo *latestAppInfo;
 
 #pragma mark - 便利方法
 

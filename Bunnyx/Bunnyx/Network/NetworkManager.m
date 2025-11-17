@@ -10,6 +10,7 @@
 #import <Toast/Toast.h>
 #import "DeviceIdentifierManager.h"
 #import "UserManager.h"
+#import "LanguageManager.h"
 
 @interface NetworkManager ()
 
@@ -56,60 +57,53 @@
 #pragma mark - Setup Common Headers
 
 - (void)setupCommonHeaders {
-    // 获取设备信息
+    [self updateCommonHeaders];
+}
+
+- (void)updateCommonHeaders {
+    AFHTTPRequestSerializer *serializer = self.sessionManager.requestSerializer;
     NSDictionary *deviceInfo = [[DeviceIdentifierManager sharedManager] getDeviceInfo];
     UIDevice *device = [UIDevice currentDevice];
+    NSBundle *bundle = [NSBundle mainBundle];
     
-    // Accept-Language: 根据系统语言设置
-    [self.sessionManager.requestSerializer setValue:[self getCurrentLanguageCode] forHTTPHeaderField:BUNNYX_HEADER_ACCEPT_LANGUAGE];
+    NSString *shortVersion = [bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"";
+    NSString *buildVersion = [bundle objectForInfoDictionaryKey:@"CFBundleVersion"] ?: @"";
+    NSString *deviceId = deviceInfo[@"uuid"] ?: @"";
     
-    // App-Version: 应用版本
-    [self.sessionManager.requestSerializer setValue:BUNNYX_APP_VERSION forHTTPHeaderField:BUNNYX_HEADER_APP_VERSION];
+    [serializer setValue:[self getCurrentLanguageCode] forHTTPHeaderField:BUNNYX_HEADER_ACCEPT_LANGUAGE];
+    [serializer setValue:shortVersion forHTTPHeaderField:BUNNYX_HEADER_APP_VERSION];
+    [serializer setValue:shortVersion forHTTPHeaderField:BUNNYX_HEADER_VERSION_NAME];
+    [serializer setValue:buildVersion forHTTPHeaderField:BUNNYX_HEADER_VERSION_CODE];
+    [serializer setValue:BUNNYX_SYSTEM_NAME forHTTPHeaderField:BUNNYX_HEADER_SYSTEM_NAME];
+    [serializer setValue:device.systemVersion ?: @"" forHTTPHeaderField:BUNNYX_HEADER_SYSTEM_VERSION];
+    [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_DEVICE_ID];
+    [serializer setValue:device.model ?: @"" forHTTPHeaderField:BUNNYX_HEADER_DEVICE_MODEL];
+    [serializer setValue:BUNNYX_API_VERSION forHTTPHeaderField:BUNNYX_HEADER_API_VERSION];
+    [serializer setValue:BUNNYX_CHANNEL forHTTPHeaderField:BUNNYX_HEADER_CHANNEL];
+    [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_EFFECTIVE_IMEI];
+    [serializer setValue:@"Apple" forHTTPHeaderField:BUNNYX_HEADER_EQUIPMENT_BRAND];
     
-    // System-Name: 系统名称
-    [self.sessionManager.requestSerializer setValue:BUNNYX_SYSTEM_NAME forHTTPHeaderField:BUNNYX_HEADER_SYSTEM_NAME];
-    
-    // System-Version: 系统版本
-    [self.sessionManager.requestSerializer setValue:device.systemVersion forHTTPHeaderField:BUNNYX_HEADER_SYSTEM_VERSION];
-    
-    // Device-Id: 设备唯一标识
-    NSString *deviceId = deviceInfo[@"uuid"];
-    [self.sessionManager.requestSerializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_DEVICE_ID];
-    
-    // Device-Model: 设备型号
-    [self.sessionManager.requestSerializer setValue:device.model forHTTPHeaderField:BUNNYX_HEADER_DEVICE_MODEL];
-    
-    // Api-Version: 接口版本
-    [self.sessionManager.requestSerializer setValue:BUNNYX_API_VERSION forHTTPHeaderField:BUNNYX_HEADER_API_VERSION];
-    
-    // channel: 渠道
-    [self.sessionManager.requestSerializer setValue:BUNNYX_CHANNEL forHTTPHeaderField:BUNNYX_HEADER_CHANNEL];
-    
-    // Effective-imei: iOS使用设备标识符
-    [self.sessionManager.requestSerializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_EFFECTIVE_IMEI];
-    
-    // Equipment-brand: 设备品牌 (iOS统一为Apple)
-    [self.sessionManager.requestSerializer setValue:@"Apple" forHTTPHeaderField:BUNNYX_HEADER_EQUIPMENT_BRAND];
-    
-    NSLog(@"[NetworkManager] 设置通用请求头完成");
+    NSLog(@"[NetworkManager] 更新通用请求头完成");
     NSLog(@"[NetworkManager] 设备信息: %@", deviceInfo);
 }
 
 - (NSString *)getCurrentLanguageCode {
-    NSArray *languages = [NSLocale preferredLanguages];
-    NSString *currentLanguage = [languages firstObject];
-    
-    // 根据系统语言返回对应的语言代码
-    if ([currentLanguage hasPrefix:@"zh-Hans"]) {
-        return BUNNYX_LANGUAGE_ZH_CN;
-    } else if ([currentLanguage hasPrefix:@"zh-Hant"]) {
-        return BUNNYX_LANGUAGE_ZH_TW;
-    } else if ([currentLanguage hasPrefix:@"en"]) {
-        return BUNNYX_LANGUAGE_EN_US;
-    } else {
-        // 默认返回中文简体
-        return BUNNYX_LANGUAGE_ZH_CN;
+    NSString *languageCode = [LanguageManager sharedManager].currentLanguageCode;
+    if (languageCode.length == 0) {
+        languageCode = [NSLocale preferredLanguages].firstObject;
     }
+    return [self languageHeaderValueForCode:languageCode];
+}
+
+- (NSString *)languageHeaderValueForCode:(NSString *)languageCode {
+    NSString *normalized = [(languageCode ? languageCode : @"") lowercaseString];
+    if ([normalized containsString:@"zh-hant"] || [normalized containsString:@"zh_tw"]) {
+        return BUNNYX_LANGUAGE_ZH_TW;
+    }
+    if ([normalized hasPrefix:@"en"]) {
+        return BUNNYX_LANGUAGE_EN_US;
+    }
+    return BUNNYX_LANGUAGE_ZH_CN;
 }
 
 #pragma mark - Authentication Methods
@@ -213,6 +207,8 @@
     success:(NetworkSuccessBlock)success
     failure:(NetworkFailureBlock)failure {
     
+    [self updateCommonHeaders];
+    
     // GET 请求使用默认格式，不需要设置 Content-Type
     // GET 请求的参数会作为 URL 查询参数发送
     
@@ -272,6 +268,8 @@
   parameters:(NSDictionary *)parameters
      success:(NetworkSuccessBlock)success
      failure:(NetworkFailureBlock)failure {
+    
+    [self updateCommonHeaders];
     
     // POST 请求使用 x-www-form-urlencoded 格式
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];

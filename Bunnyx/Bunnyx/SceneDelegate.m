@@ -11,8 +11,11 @@
 #import "UserManager.h"
 #import "NetworkManager.h"
 #import "UserInfoManager.h"
+#import "AppConfigManager.h"
 
 @interface SceneDelegate ()
+
+@property (nonatomic, assign) BOOL hasScheduledNavigation;
 
 @end
 
@@ -35,10 +38,8 @@
         // 显示窗口
         [self.window makeKeyAndVisible];
         
-        // 延迟检查用户登录状态，让启动页有时间显示（2.5秒，包含动画时间）
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self checkUserLoginStatusAndNavigate];
-        });
+        // 对齐安卓：启动页请求应用配置，控制跳转时机
+        [self loadAppConfigAndNavigate];
     }
 }
 
@@ -185,5 +186,24 @@
     // to restore the scene back to its current state.
 }
 
+
+- (void)loadAppConfigAndNavigate {
+    __weak typeof(self) weakSelf = self;
+    [[AppConfigManager sharedManager] getAppConfigWithForceRefresh:YES success:^(AppConfigModel *configModel) {
+        [weakSelf scheduleNavigationAfterDelay:1.0];
+    } failure:^(NSError *error) {
+        [weakSelf scheduleNavigationAfterDelay:1.5];
+    }];
+}
+
+- (void)scheduleNavigationAfterDelay:(NSTimeInterval)delay {
+    if (self.hasScheduledNavigation) {
+        return;
+    }
+    self.hasScheduledNavigation = YES;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self checkUserLoginStatusAndNavigate];
+    });
+}
 
 @end
