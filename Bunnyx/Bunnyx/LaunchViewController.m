@@ -51,25 +51,20 @@
 }
 
 - (void)startLaunchAnimation {
-    // 设置初始状态
-    self.logoImageView.alpha = 0;
-    self.logoImageView.transform = CGAffineTransformMakeScale(0.5, 0.5);
-    self.appNameLabel.alpha = 0;
-    self.appNameLabel.transform = CGAffineTransformMakeTranslation(0, 30);
-    
-    // 执行动画
-    [UIView animateWithDuration:1.0 delay:0.5 options:UIViewAnimationOptionCurveEaseOut animations:^{
-        // Logo动画
+    // Logo直接以正常大小显示，不进行放大动画
+    if (self.logoImageView) {
         self.logoImageView.alpha = 1.0;
-        self.logoImageView.transform = CGAffineTransformIdentity;
-        
-        // 应用名称动画
+        self.logoImageView.transform = CGAffineTransformIdentity; // 直接设置为正常大小，不进行缩放动画
+    }
+    
+    // 应用名称也直接显示，不进行动画
+    if (self.appNameLabel) {
         self.appNameLabel.alpha = 1.0;
-        self.appNameLabel.transform = CGAffineTransformIdentity;
-    } completion:^(BOOL finished) {
-        // 动画完成，不自动跳转，等待外部控制
-        NSLog(@"[LaunchViewController] 启动动画完成");
-    }];
+        self.appNameLabel.transform = CGAffineTransformIdentity; // 直接设置为正常状态，不进行动画
+    }
+    
+    // 动画完成，不自动跳转，等待外部控制
+    NSLog(@"[LaunchViewController] 启动动画完成");
 }
 
 - (void)transitionToMainInterface {

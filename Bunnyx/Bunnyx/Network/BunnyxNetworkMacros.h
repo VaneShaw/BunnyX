@@ -38,6 +38,7 @@
 #define BUNNYX_API_USER_UPDATE [NSString stringWithFormat:@"%@/user/update", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_AVATAR [NSString stringWithFormat:@"%@/user/avatar", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_PASSWORD [NSString stringWithFormat:@"%@/user/password", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_USER_DELETE [NSString stringWithFormat:@"%@/user/del/user", BUNNYX_API_BASE_URL] // 对齐安卓：删除账号接口
 
 // MARK: - 服务器相关接口
 #define BUNNYX_API_SERVER_GET_APP_CONFIG [NSString stringWithFormat:@"%@/server/getAppConfig", BUNNYX_API_BASE_URL]

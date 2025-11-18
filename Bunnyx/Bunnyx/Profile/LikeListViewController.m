@@ -69,34 +69,26 @@ static NSString *const kLikeCellId = @"LikeListCell";
         make.edges.equalTo(self.view);
     }];
     
-    // 空状态视图
+    // 空状态视图（对齐安卓的layout_empty）
     self.emptyView = [[UIView alloc] init];
     self.emptyView.hidden = YES;
+    self.emptyView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.emptyView];
     
     [self.emptyView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(self.view);
-        make.width.height.mas_equalTo(100);
+        make.top.left.right.equalTo(self.view);
+        make.height.offset(350);
     }];
     
-    // 空状态图标（文件夹+星星）
-    UIImageView *folderIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"folder.fill"]];
-    folderIcon.tintColor = [UIColor colorWithWhite:0.3 alpha:1.0];
-    [self.emptyView addSubview:folderIcon];
+    // 空状态图标（对应安卓的icon_mine_default_image，80dp x 80dp）
+    UIImageView *emptyIcon = [[UIImageView alloc] init];
+    emptyIcon.image = [UIImage imageNamed:@"icon_mine_default_image"];
+    emptyIcon.contentMode = UIViewContentModeScaleAspectFit;
+    [self.emptyView addSubview:emptyIcon];
     
-    [folderIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.emptyView);
-        make.centerY.equalTo(self.emptyView).offset(-10);
-        make.width.height.mas_equalTo(60);
-    }];
-    
-    UIImageView *starIcon = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"star.fill"]];
-    starIcon.tintColor = [UIColor whiteColor];
-    [self.emptyView addSubview:starIcon];
-    
-    [starIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.center.equalTo(folderIcon);
-        make.width.height.mas_equalTo(24);
+    [emptyIcon mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self.emptyView);
+        make.width.height.mas_equalTo(80);
     }];
 }
 

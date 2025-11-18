@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
  * 语言设置视图控制器
  * 用于显示和切换应用语言
  */
-@interface LanguageSettingsViewController : UIViewController
+@interface LanguageSettingsViewController : BaseViewController
 
 @end
 

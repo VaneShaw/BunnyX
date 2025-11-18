@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "bg_startup page@2x.png",
+      "filename" : "熊猫压缩的 2.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "bg_startup page@2x.png",
+      "filename" : "熊猫压缩的 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "bg_startup page@3x.png",
+      "filename" : "熊猫压缩的.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

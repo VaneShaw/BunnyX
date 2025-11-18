@@ -29,7 +29,7 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 @property (nonatomic, strong) UIImageView *materialImageView;
 @property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（对齐安卓：icon_home_detail_more_light）
 @property (nonatomic, strong) GradientButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
-@property (nonatomic, strong) GradientButton *saveToAlbumButton; // 保存到相册按钮（对齐安卓：mBtnSaveToAlbum）
+@property (nonatomic, strong) UIButton *saveToAlbumButton; // 保存到相册按钮（对齐安卓：mBtnSaveToAlbum，使用黑色半透明背景）
 @property (nonatomic, strong) GradientButton *generateButton; // 生成按钮
 @property (nonatomic, assign) BOOL hasFavoriteAction; // 标记是否有收藏操作（对齐安卓：mHasFavoriteAction）
 
@@ -154,14 +154,14 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     // 对齐安卓：保存到相册按钮（生成详情模式显示，素材详情模式隐藏）
     // 注意：在安卓布局中，保存到相册按钮在LinearLayout中位于生成按钮之后（下方），但实际显示时应该在生成按钮上方
     // 对齐安卓布局：btn_video_detail_save_to_album 在 btn_video_detail_generate 之后，但通过约束让它显示在生成按钮上方
-    self.saveToAlbumButton = [GradientButton buttonWithTitle:LocalString(@"保存到相册")];
-    // 对齐安卓：保存到相册按钮也是绿色渐变（#0AEA6F到#1CB3C1），圆角12dp
-    self.saveToAlbumButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
-    self.saveToAlbumButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
+    // 对齐安卓：保存到相册按钮在生成详情模式下使用黑色半透明背景（like_count_bg: #80000000），圆角10dp
+    self.saveToAlbumButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    self.saveToAlbumButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5]; // like_count_bg: #80000000
+    self.saveToAlbumButton.layer.cornerRadius = 10.0; // dp_10 = 10dp（对齐安卓：like_count_bg的圆角）
+    self.saveToAlbumButton.layer.masksToBounds = YES;
+    [self.saveToAlbumButton setTitle:LocalString(@"保存到相册") forState:UIControlStateNormal];
     [self.saveToAlbumButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     self.saveToAlbumButton.titleLabel.font = BOLD_FONT(17); // 17sp，bold（对齐安卓：sp_17）
-    self.saveToAlbumButton.layer.cornerRadius = 12.0; // dp_12 = 12dp（对齐安卓：shape_radius="@dimen/dp_12"）
-    self.saveToAlbumButton.layer.masksToBounds = YES;
     self.saveToAlbumButton.userInteractionEnabled = YES;
     [self.saveToAlbumButton addTarget:self action:@selector(saveToAlbumButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [bottomContainer addSubview:self.saveToAlbumButton];

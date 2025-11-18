@@ -6,6 +6,8 @@
 //
 
 #import "LanguageSettingsViewController.h"
+#import <Masonry/Masonry.h>
+#import "BunnyxMacros.h"
 
 // 声明通知名称
 extern NSString * const LanguageDidChangeNotification;
@@ -36,25 +38,25 @@ extern NSString * const LanguageDidChangeNotification;
 #pragma mark - 初始化
 
 - (void)setupUI {
-    self.view.backgroundColor = BUNNYX_BACKGROUND_COLOR;
+    // 对齐安卓：background="#0A1C1B"
+    self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
     self.title = LocalString(@"语言设置");
     
-    // 创建表格视图
-    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStyleGrouped];
+    // 对齐安卓：使用和设置页面一样的TableView样式
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
+    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    self.tableView.backgroundColor = BUNNYX_BACKGROUND_COLOR;
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone; // 对齐安卓：使用CardView，不需要分隔线
+    self.tableView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.tableView];
     
-    // 设置约束
-    self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
-    [NSLayoutConstraint activateConstraints:@[
-        [self.tableView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
-        [self.tableView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.tableView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.tableView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
-    ]];
+    // 对齐安卓：RecyclerView layout_weight=1，占据剩余空间
+    [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.customBackButton.mas_bottom).offset(18);
+        make.left.right.equalTo(self.view);
+        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom);
+    }];
 }
 
 - (void)loadData {
@@ -101,24 +103,81 @@ extern NSString * const LanguageDidChangeNotification;
     
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
-        cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone; // 去掉点击时的颜色效果
+        cell.backgroundColor = [UIColor clearColor]; // 透明背景，让CardView样式显示
+        
+        // 对齐安卓：CardView样式，cardBackgroundColor=#0DFFFFFF (半透明白色), cardCornerRadius=dp_15
+        UIView *cardView = [[UIView alloc] init];
+        cardView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.05]; // #0DFFFFFF 转换为 RGBA
+        cardView.layer.cornerRadius = 15.0; // dp_15
+        cardView.layer.masksToBounds = YES;
+        cardView.tag = 1000; // 用于后续查找
+        [cell.contentView addSubview:cardView];
+        
+        // 对齐安卓：paddingVertical=dp_16, paddingHorizontal=dp_16, marginBottom=dp_16
+        // 对齐设置页面：cardView左右边距16（对齐安卓：RecyclerView paddingHorizontal=dp_16）
+        [cardView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(cell.contentView).offset(16);
+            make.right.equalTo(cell.contentView).offset(-16);
+            make.top.equalTo(cell.contentView);
+            make.height.mas_equalTo(52); // 固定高度52dp（CardView内容高度）
+        }];
+        
+        // 对齐安卓：自定义标题Label（textSize=sp_15, textStyle=bold, textColor=white）
+        UILabel *titleLabel = [[UILabel alloc] init];
+        titleLabel.textColor = [UIColor whiteColor];
+        titleLabel.font = BOLD_FONT(15);
+        titleLabel.tag = 1001; // 用于后续查找
+        [cardView addSubview:titleLabel];
+        [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(cardView).offset(16); // paddingHorizontal=dp_16
+            make.centerY.equalTo(cardView);
+            make.right.lessThanOrEqualTo(cardView).offset(-50); // 为checkmark留出空间
+        }];
+        
+        // 对齐安卓：选中状态图标（checkmark）
+        UIImageView *checkmarkImageView = [[UIImageView alloc] init];
+        // 使用系统checkmark图标，如果没有则使用箭头图标
+        if (@available(iOS 13.0, *)) {
+            UIImage *checkmarkImage = [UIImage systemImageNamed:@"checkmark"];
+            if (checkmarkImage) {
+                checkmarkImageView.image = [checkmarkImage imageWithTintColor:[UIColor whiteColor] renderingMode:UIImageRenderingModeAlwaysTemplate];
+            } else {
+                checkmarkImageView.image = [UIImage imageNamed:@"icon_mine_enter_default"];
+            }
+        } else {
+            checkmarkImageView.image = [UIImage imageNamed:@"icon_mine_enter_default"];
+        }
+        checkmarkImageView.contentMode = UIViewContentModeScaleAspectFit;
+        checkmarkImageView.tag = 1002; // 用于后续查找
+        checkmarkImageView.hidden = YES; // 默认隐藏，选中时显示
+        [cardView addSubview:checkmarkImageView];
+        [checkmarkImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.right.equalTo(cardView).offset(-16); // paddingHorizontal=dp_16
+            make.centerY.equalTo(cardView);
+            make.width.height.mas_equalTo(24); // 图标大小
+        }];
     }
+    
+    // 获取自定义视图（通过tag查找）
+    UIView *cardView = [cell.contentView viewWithTag:1000];
+    UILabel *titleLabel = [cardView viewWithTag:1001];
+    UIImageView *checkmarkImageView = [cardView viewWithTag:1002];
     
     NSDictionary *language = self.languages[indexPath.row];
     LanguageType languageType = [language[@"type"] integerValue];
     
     // 设置语言名称
-    cell.textLabel.text = language[@"displayName"];
-    cell.textLabel.font = FONT(16);
-    cell.textLabel.textColor = BUNNYX_TEXT_COLOR;
+    titleLabel.text = language[@"displayName"];
     
     // 设置选中状态
     if (languageType == self.currentLanguage) {
-        cell.accessoryType = UITableViewCellAccessoryCheckmark;
-        cell.textLabel.textColor = BUNNYX_MAIN_COLOR;
+        checkmarkImageView.hidden = NO; // 显示checkmark
+        // 对齐安卓：选中状态可以使用不同颜色，但这里保持白色（对齐安卓没有特殊颜色）
+        titleLabel.textColor = [UIColor whiteColor];
     } else {
-        cell.accessoryType = UITableViewCellAccessoryNone;
-        cell.textLabel.textColor = BUNNYX_TEXT_COLOR;
+        checkmarkImageView.hidden = YES; // 隐藏checkmark
+        titleLabel.textColor = [UIColor whiteColor];
     }
     
     return cell;
@@ -143,15 +202,30 @@ extern NSString * const LanguageDidChangeNotification;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 50.0;
+    // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+    return 53.0;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 53.0; // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+}
+
+// 对齐安卓：每个CardView有marginBottom=dp_16，通过section间距实现
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 30.0;
+    return 0.01; // 最小高度（对齐安卓：没有section header）
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return LocalString(@"选择语言");
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return 0.01; // 最小高度
+}
+
+// 对齐安卓：列表项之间的间距（marginBottom=dp_16）
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    return [[UIView alloc] init];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    return [[UIView alloc] init];
 }
 
 #pragma mark - 辅助方法

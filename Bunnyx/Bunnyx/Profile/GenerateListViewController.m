@@ -119,7 +119,8 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     [self.view addSubview:self.emptyView];
     
     [self.emptyView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self.view);
+        make.top.left.right.equalTo(self.view);
+        make.height.offset(350);
     }];
     
     // 空状态图标（对应安卓的icon_mine_default_image，80dp x 80dp）

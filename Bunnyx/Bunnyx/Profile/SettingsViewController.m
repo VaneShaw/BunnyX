@@ -10,7 +10,10 @@
 #import "GradientButton.h"
 #import "UserManager.h"
 #import "LoginViewController.h"
-#import <SafariServices/SafariServices.h>
+#import "BrowserViewController.h"
+#import "AppConfigManager.h"
+#import "NetworkManager.h"
+#import "BunnyxNetworkMacros.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 
 typedef NS_ENUM(NSInteger, SettingsRow) {
@@ -36,6 +39,9 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
     [super viewDidLoad];
     self.title = LocalString(@"设置");
     
+    // 对齐安卓：background="#0A1C1B"
+    self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
+    
     self.titles = @[
         LocalString(@"语言"),
         LocalString(@"用户协议"),
@@ -51,14 +57,17 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
 #pragma mark - UI
 - (void)setupLogoutButton {
     self.logoutButton = [GradientButton buttonWithTitle:LocalString(@"退出登录")];
+    // 对齐安卓：文字大小 sp_16
+    self.logoutButton.titleLabel.font = FONT(FONT_SIZE_16);
     [self.logoutButton addTarget:self action:@selector(logoutButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.logoutButton];
     
+    // 对齐安卓：marginHorizontal=dp_16, marginTop=dp_30, marginBottom=dp_60, height=dp_48
     [self.logoutButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(MARGIN_20);
-        make.right.equalTo(self.view).offset(-MARGIN_20);
-        make.bottom.equalTo(self.view).offset(-(SAFE_AREA_BOTTOM + MARGIN_20));
-        make.height.mas_equalTo(self.logoutButton.buttonHeight);
+        make.left.equalTo(self.view).offset(16); // dp_16
+        make.right.equalTo(self.view).offset(-16); // dp_16
+        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-60); // marginBottom=dp_60
+        make.height.mas_equalTo(48); // dp_48
     }];
 }
 
@@ -67,13 +76,15 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
     self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    self.tableView.backgroundColor = [UIColor clearColor];
-    self.tableView.separatorColor = [UIColor colorWithWhite:0.2 alpha:1.0];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone; // 对齐安卓：使用CardView，不需要分隔线
+    // 对齐安卓：paddingHorizontal=dp_16, paddingTop=dp_20
     [self.view addSubview:self.tableView];
+    self.tableView.backgroundColor = [UIColor clearColor];
+    // 对齐安卓：RecyclerView layout_weight=1，占据剩余空间
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.offset(NAVIGATION_BAR_HEIGHT+STATUS_BAR_HEIGHT+SAFE_AREA_TOP);
+        make.top.equalTo(self.customBackButton.mas_bottom).offset(18);
         make.left.right.equalTo(self.view);
-        make.bottom.equalTo(self.logoutButton.mas_top).offset(-MARGIN_20);
+        make.bottom.equalTo(self.logoutButton.mas_top).offset(-30); // marginTop=dp_30（相对于退出登录按钮）
     }];
 }
 
@@ -91,35 +102,101 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
     static NSString *cellId = @"SettingsCell";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
     if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:cellId];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone; // 去掉点击时的颜色效果
+        cell.backgroundColor = [UIColor clearColor]; // 透明背景，让CardView样式显示
+        
+        // 对齐安卓：CardView样式，cardBackgroundColor=#0DFFFFFF (半透明白色), cardCornerRadius=dp_15
+        UIView *cardView = [[UIView alloc] init];
+        cardView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.05]; // #0DFFFFFF 转换为 RGBA
+        cardView.layer.cornerRadius = 15.0; // dp_15
+        cardView.layer.masksToBounds = YES;
+        cardView.tag = 1000; // 用于后续查找
+        [cell.contentView addSubview:cardView];
+        
+        // 对齐安卓：paddingVertical=dp_16, paddingHorizontal=dp_16, marginBottom=dp_16
+        [cardView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(cell.contentView).offset(15);
+            make.right.offset(-15);
+            make.top.equalTo(cell.contentView);
+            make.height.mas_equalTo(52); // 固定高度52dp（CardView内容高度）
+        }];
+        
+        // 对齐安卓：自定义标题Label（textSize=sp_15, textStyle=bold, textColor=white）
+        UILabel *titleLabel = [[UILabel alloc] init];
+        titleLabel.textColor = [UIColor whiteColor];
+        titleLabel.font = BOLD_FONT(15);
+        titleLabel.tag = 1001; // 用于后续查找
+        [cardView addSubview:titleLabel];
+        [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(cardView).offset(16); // paddingHorizontal=dp_16
+            make.centerY.equalTo(cardView);
+            make.right.lessThanOrEqualTo(cardView).offset(-100); // 为副标题和箭头留出空间
+        }];
+        
+        // 对齐安卓：自定义副标题Label（textSize=sp_15, textColor=black9）
+        UILabel *subtitleLabel = [[UILabel alloc] init];
+        subtitleLabel.textColor = HEX_COLOR(0x999999); // black9 对应 #999999
+        subtitleLabel.font = FONT(15);
+        subtitleLabel.textAlignment = NSTextAlignmentRight;
+        subtitleLabel.tag = 1002; // 用于后续查找
+        [cardView addSubview:subtitleLabel];
+        [subtitleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.right.equalTo(cardView).offset(-40); // 为箭头留出空间（箭头宽度约24dp + padding 16dp）
+            make.centerY.equalTo(cardView);
+            make.left.greaterThanOrEqualTo(titleLabel.mas_right).offset(12); // marginEnd=dp_12（相对于标题）
+        }];
+        
+        // 对齐安卓：箭头图标（icon_mine_enter_default）
+        UIImageView *arrowImageView = [[UIImageView alloc] init];
+        arrowImageView.image = [UIImage imageNamed:@"icon_mine_enter_default"];
+        arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
+        arrowImageView.tag = 1003; // 用于后续查找
+        [cardView addSubview:arrowImageView];
+        [arrowImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.right.equalTo(cardView).offset(-16); // paddingHorizontal=dp_16
+            make.centerY.equalTo(cardView);
+            make.width.height.mas_equalTo(24); // 箭头图标大小
+        }];
     }
-    cell.backgroundColor = [UIColor colorWithWhite:0.06 alpha:1.0];
-    cell.textLabel.textColor = [UIColor whiteColor];
-    cell.detailTextLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
-    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     
+    // 获取自定义视图（通过tag查找）
+    UIView *cardView = [cell.contentView viewWithTag:1000];
+    UILabel *titleLabel = [cardView viewWithTag:1001];
+    UILabel *subtitleLabel = [cardView viewWithTag:1002];
+    UIImageView *arrowImageView = [cardView viewWithTag:1003];
+    
+    // 设置标题
     NSString *title = self.titles[indexPath.row];
-    cell.textLabel.text = title;
-    cell.detailTextLabel.text = nil;
+    titleLabel.text = title;
+    subtitleLabel.text = nil;
+    subtitleLabel.hidden = YES;
     
     switch (indexPath.row) {
         case SettingsRowLanguage: {
             // 显示当前语言（来源于 LanguageManager）
-            cell.detailTextLabel.text = [LanguageManager sharedManager].currentLanguageName;
+            subtitleLabel.text = [LanguageManager sharedManager].currentLanguageName;
+            subtitleLabel.hidden = NO;
+            arrowImageView.hidden = NO; // 对齐安卓：有箭头
         } break;
         case SettingsRowAgreement: {
+            arrowImageView.hidden = NO; // 对齐安卓：有箭头
         } break;
         case SettingsRowPrivacy: {
+            arrowImageView.hidden = NO; // 对齐安卓：有箭头
         } break;
         case SettingsRowVersion: {
-            cell.accessoryType = UITableViewCellAccessoryNone;
             NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"]; 
             NSString *build = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]; 
-            cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ (%@)", shortVersion ?: @"1.0", build ?: @"1"]; 
+            subtitleLabel.text = [NSString stringWithFormat:@"%@ (%@)", shortVersion ?: @"1.0", build ?: @"1"]; 
+            subtitleLabel.hidden = NO;
+            arrowImageView.hidden = YES; // 对齐安卓：没有箭头
             cell.selectionStyle = UITableViewCellSelectionStyleNone;
         } break;
         case SettingsRowDelete: {
-            cell.textLabel.textColor = [UIColor colorWithRed:1.0 green:0.3 blue:0.3 alpha:1.0];
+            arrowImageView.hidden = NO; // 对齐安卓：有箭头
+            // 对齐安卓：删除账号保持白色文字（安卓中没有特殊颜色）
+            titleLabel.textColor = [UIColor whiteColor];
         } break;
         default: break;
     }
@@ -129,7 +206,30 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
 #pragma mark - UITableViewDelegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 52.0;
+    // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+    return 53.0;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 68.0; // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+}
+
+// 对齐安卓：每个CardView有marginBottom=dp_16，通过section间距实现
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return 0.01; // 最小高度
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
+    return 0.01; // 最小高度
+}
+
+// 对齐安卓：列表项之间的间距（marginBottom=dp_16）
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    return [[UIView alloc] init];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    return [[UIView alloc] init];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -140,10 +240,10 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
             [self.navigationController pushViewController:vc animated:YES];
         } break;
         case SettingsRowAgreement: {
-            [self openURLString:@"https://example.com/user-agreement" title:LocalString(@"用户协议")];
+            [self openUserAgreement];
         } break;
         case SettingsRowPrivacy: {
-            [self openURLString:@"https://example.com/privacy" title:LocalString(@"隐私政策")];
+            [self openPrivacyPolicy];
         } break;
         case SettingsRowVersion: {
             // 无动作
@@ -157,31 +257,80 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
 
 #pragma mark - Actions
 
-- (void)openURLString:(NSString *)urlString title:(NSString *)title {
-    NSURL *url = [NSURL URLWithString:urlString];
-    if (!url) { return; }
-    if (@available(iOS 9.0, *)) {
-        SFSafariViewController *safari = [[SFSafariViewController alloc] initWithURL:url];
-        safari.preferredBarTintColor = [UIColor blackColor];
-        safari.preferredControlTintColor = [UIColor whiteColor];
-        [self presentViewController:safari animated:YES completion:nil];
+// 对齐安卓：打开用户协议
+- (void)openUserAgreement {
+    AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
+    if (config && config.userAgreementUrl && config.userAgreementUrl.length > 0) {
+        BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.userAgreementUrl];
+        browserVC.title = LocalString(@"用户协议");
+        browserVC.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:browserVC animated:YES];
     } else {
-        [[UIApplication sharedApplication] openURL:url];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"用户协议链接暂不可用")];
     }
 }
 
+// 对齐安卓：打开隐私政策
+- (void)openPrivacyPolicy {
+    AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
+    if (config && config.privacyPolicyUrl && config.privacyPolicyUrl.length > 0) {
+        BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.privacyPolicyUrl];
+        browserVC.title = LocalString(@"隐私政策");
+        browserVC.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:browserVC animated:YES];
+    } else {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"隐私政策链接暂不可用")];
+    }
+}
+
+// 对齐安卓：显示删除账号确认对话框
 - (void)confirmDeleteAccount {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"确认注销")
                                                                    message:LocalString(@"此操作不可撤销，是否继续？")
-                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+                                                            preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:LocalString(@"注销账号") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        // TODO: 接入后端注销流程
-        NSLog(@"Delete account confirmed");
+        [self performDeleteAccount];
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") style:UIAlertActionStyleCancel handler:nil];
     [alert addAction:deleteAction];
     [alert addAction:cancelAction];
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+// 对齐安卓：调用删除账号接口
+- (void)performDeleteAccount {
+    [SVProgressHUD showWithStatus:LocalString(@"加载中")];
+    
+    // 对齐安卓：调用删除账号接口 user/del/user
+    [[NetworkManager sharedManager] POST:BUNNYX_API_USER_DELETE
+                               parameters:nil
+                                  success:^(id responseObject) {
+        [SVProgressHUD dismiss];
+        NSInteger code = [responseObject[@"code"] integerValue];
+        if (code == 0) {
+            // 对齐安卓：删除成功，清理本地数据并返回登录页
+            [self clearUserData];
+            [self navigateToLoginPage];
+        } else {
+            // 即使接口返回失败，也清理本地数据并跳转（对齐安卓逻辑）
+            [self clearUserData];
+            [self navigateToLoginPage];
+        }
+    } failure:^(NSError *error) {
+        [SVProgressHUD dismiss];
+        // 对齐安卓：失败也清理并回到登录
+        [self clearUserData];
+        [self navigateToLoginPage];
+    }];
+}
+
+// 对齐安卓：清除用户数据
+- (void)clearUserData {
+    // 清除Token信息（对齐安卓：TokenManager.getInstance(this).clearLoginInfo()）
+    [[UserManager sharedManager] logout];
+    
+    // 清除用户信息（对齐安卓：UserInfoManager.getInstance(this).clearUserInfo()）
+    // UserManager的logout方法已经包含了清除用户信息的逻辑
 }
 
 - (void)logoutButtonTapped:(UIButton *)sender {

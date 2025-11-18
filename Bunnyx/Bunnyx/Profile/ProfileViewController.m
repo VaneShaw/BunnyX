@@ -532,11 +532,13 @@
 - (void)onServiceClick {
     // 跳转到联系客服页面
     ContactUsViewController *contactUsVC = [[ContactUsViewController alloc] init];
+    contactUsVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:contactUsVC animated:YES];
 }
 
 - (void)onSettingsClick {
     SettingsViewController *settingsVC = [[SettingsViewController alloc] init];
+    settingsVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:settingsVC animated:YES];
 }
 
