@@ -67,9 +67,44 @@
 }
 
 + (NSDictionary *)modelContainerPropertyGenericClass {
-    return @{
-        @"latestAppInfo": [NewAppInfo class]
-    };
+    // modelContainerPropertyGenericClass 主要用于数组类型
+    // 对于单个嵌套对象，我们使用modelCustomTransformFromDictionary手动处理
+    return @{};
+}
+
+// 手动处理new_app_info字段到latestAppInfo的转换
+// 确保嵌套对象能正确解析
+- (BOOL)modelCustomTransformFromDictionary:(NSDictionary *)dic {
+    // 手动解析new_app_info字段
+    id newAppInfoData = dic[@"new_app_info"];
+    if (newAppInfoData && [newAppInfoData isKindOfClass:[NSDictionary class]]) {
+        // 打印原始数据，用于调试
+        BUNNYX_LOG(@"new_app_info原始数据: %@", newAppInfoData);
+        
+        // 尝试解析
+        self.latestAppInfo = [NewAppInfo modelWithDictionary:newAppInfoData];
+        
+        // 打印解析结果
+        if (self.latestAppInfo) {
+            BUNNYX_LOG(@"成功解析new_app_info:");
+            BUNNYX_LOG(@"  forceType: %ld", (long)self.latestAppInfo.forceType);
+            BUNNYX_LOG(@"  appVersion: %@", self.latestAppInfo.appVersion);
+            BUNNYX_LOG(@"  updateMsg: %@", self.latestAppInfo.updateMsg);
+            BUNNYX_LOG(@"  appUrl: %@", self.latestAppInfo.appUrl);
+            BUNNYX_LOG(@"  appCode: %@", self.latestAppInfo.appCode);
+            BUNNYX_LOG(@"  appSize: %@", self.latestAppInfo.appSize);
+            BUNNYX_LOG(@"完整对象: %@", [self.latestAppInfo toDictionary]);
+        } else {
+            BUNNYX_ERROR(@"NewAppInfo解析失败，原始数据: %@", newAppInfoData);
+        }
+    } else if (newAppInfoData == nil || newAppInfoData == [NSNull null]) {
+        self.latestAppInfo = nil;
+        BUNNYX_LOG(@"new_app_info字段为空或NSNull");
+    } else {
+        BUNNYX_ERROR(@"new_app_info字段类型错误: %@", [newAppInfoData class]);
+        self.latestAppInfo = nil;
+    }
+    return YES;
 }
 
 

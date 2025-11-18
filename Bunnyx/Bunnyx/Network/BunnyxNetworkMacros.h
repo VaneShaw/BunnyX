@@ -28,6 +28,7 @@
 // MARK: - 用户相关接口
 #define BUNNYX_API_USER_LOGIN_ACCOUNT [NSString stringWithFormat:@"%@/user/login/account", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGIN_QUICK [NSString stringWithFormat:@"%@/user/login/quick", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_USER_LOGIN_APPLE [NSString stringWithFormat:@"%@/user/login/apple", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REGISTER [NSString stringWithFormat:@"%@/user/register", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGOUT [NSString stringWithFormat:@"%@/user/logout", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REFRESH_TOKEN [NSString stringWithFormat:@"%@/user/refresh/token", BUNNYX_API_BASE_URL]
@@ -102,6 +103,8 @@
 #define BUNNYX_API_PAYMENT_VERIFY [NSString stringWithFormat:@"%@/payment/verify", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAYMENT_HISTORY [NSString stringWithFormat:@"%@/payment/history", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_RECHARGE_LIST [NSString stringWithFormat:@"%@/pay/rechargeList", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_RECHARGE_HISTORY [NSString stringWithFormat:@"%@/pay/rechargeHistory", BUNNYX_API_BASE_URL] // 已废弃，使用 BUNNYX_API_USER_BUDGET_LIST
+#define BUNNYX_API_USER_BUDGET_LIST [NSString stringWithFormat:@"%@/user/getUserBudgetList", BUNNYX_API_BASE_URL] // 对齐安卓：钱包明细列表接口
 #define BUNNYX_API_PAY_VIP_LIST [NSString stringWithFormat:@"%@/pay/vipList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_BUY_VIP [NSString stringWithFormat:@"%@/pay/buy/vip", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePayVerify", BUNNYX_API_BASE_URL]

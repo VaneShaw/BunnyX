@@ -40,15 +40,38 @@
 
 + (VersionUpdateDialog *)showWithAppInfo:(VersionUpdateInfo *)appInfo onDismiss:(OnDismissListener)onDismissListener {
     if (!appInfo) {
+        BUNNYX_ERROR(@"VersionUpdateDialog: appInfo 为 nil，无法显示弹窗");
         return nil;
     }
+    
+    BUNNYX_LOG(@"VersionUpdateDialog: 开始显示版本更新弹窗");
+    BUNNYX_LOG(@"  forceType: %ld", (long)appInfo.forceType);
+    BUNNYX_LOG(@"  appVersion: %@", appInfo.appVersion);
+    BUNNYX_LOG(@"  updateMsg: %@", appInfo.updateMsg);
+    BUNNYX_LOG(@"  appUrl: %@", appInfo.appUrl);
     
     VersionUpdateDialog *dialog = [[VersionUpdateDialog alloc] init];
     dialog.appInfo = appInfo;
     dialog.onDismissListener = onDismissListener;
     // 判断是否强制更新（对齐安卓：forceType == 1）
     dialog.isForceUpdate = (appInfo.forceType == 1);
-    [dialog setupUI];
+    BUNNYX_LOG(@"  isForceUpdate: %@", dialog.isForceUpdate ? @"YES" : @"NO");
+    
+    // 确保在主线程显示，并且延迟一帧确保视图层级正确（防止被 TabBarController 遮挡）
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [dialog setupUI];
+        // 再次确保弹窗在最上层（防止被其他视图遮挡）
+        dispatch_async(dispatch_get_main_queue(), ^{
+            UIWindow *window = [UIApplication sharedApplication].keyWindow;
+            if (window && dialog.superview == window) {
+                [window bringSubviewToFront:dialog];
+                BUNNYX_LOG(@"VersionUpdateDialog: 已确保弹窗在最上层");
+            }
+        });
+    });
+    
+    BUNNYX_LOG(@"VersionUpdateDialog: setupUI 完成");
+    
     return dialog;
 }
 
@@ -61,9 +84,19 @@
 }
 
 - (void)setupUI {
+    // 对齐签到弹窗：直接使用 keyWindow
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    if (!window) {
+        BUNNYX_ERROR(@"无法找到有效的 window，弹窗无法显示");
+        return;
+    }
+    
+    BUNNYX_LOG(@"找到 window: %@, bounds: %@", window, NSStringFromCGRect(window.bounds));
+    
     self.frame = window.bounds;
     [window addSubview:self];
+    // 确保弹窗显示在最上层，不被其他视图遮挡
+    [window bringSubviewToFront:self];
     
     // 背景遮罩（对齐安卓：paddingBottom 35dp）
     self.backgroundView = [[UIView alloc] init];
@@ -128,7 +161,7 @@
     [self.laterButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
     self.laterButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
     self.laterButton.backgroundColor = [UIColor clearColor]; // 对齐安卓：#00FFFFFF
-    self.laterButton.layer.cornerRadius = 50.0; // 对齐安卓：50dp
+    self.laterButton.layer.cornerRadius = 25.0; // 对齐安卓：50dp
     self.laterButton.layer.borderWidth = 1.0; // 对齐安卓：1dp
     self.laterButton.layer.borderColor = HEX_COLOR(0x0AEA6F).CGColor; // 对齐安卓：#0AEA6F
     [self.laterButton addTarget:self action:@selector(laterButtonTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -144,7 +177,7 @@
     self.updateButton = [GradientButton buttonWithTitle:LocalString(@"立即更新")
                                                startColor:HEX_COLOR(0x0AEA6F) // 对齐安卓：#0AEA6F
                                                  endColor:HEX_COLOR(0x1CB3C1)]; // 对齐安卓：#1CB3C1
-    self.updateButton.cornerRadius = 50.0; // 对齐安卓：50dp
+    self.updateButton.cornerRadius = 25.0; // 对齐安卓：50dp
     self.updateButton.buttonHeight = 48.0; // 对齐安卓：48dp
     [self.updateButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
     self.updateButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
@@ -182,8 +215,10 @@
     [self addSubview:self.closeButton];
     
     [self.closeButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.bottom.equalTo(self.containerView.mas_bottom).offset(-35); // 对齐安卓：marginBottom -35dp
+//        make.bottom.equalTo(self.containerView.mas_bottom).offset(-35);
+        make.top.equalTo(self.containerView.mas_bottom).offset(30);
         make.centerX.equalTo(self.containerView);
+        make.width.height.offset(30);
     }];
     
     // 根据是否强制更新设置关闭按钮的显示（对齐安卓）
@@ -191,6 +226,12 @@
     
     // 设置内容
     [self updateContent];
+    
+    BUNNYX_LOG(@"VersionUpdateDialog: UI 设置完成，弹窗已添加到 window");
+    BUNNYX_LOG(@"  self.frame: %@", NSStringFromCGRect(self.frame));
+    BUNNYX_LOG(@"  self.superview: %@", self.superview);
+    BUNNYX_LOG(@"  self.hidden: %@", self.hidden ? @"YES" : @"NO");
+    BUNNYX_LOG(@"  self.alpha: %.2f", self.alpha);
 }
 
 - (void)updateContent {

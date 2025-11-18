@@ -551,6 +551,7 @@
 
 - (void)onCoinsClick {
     RechargeViewController *rechargeVC = [[RechargeViewController alloc] init];
+    rechargeVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:rechargeVC animated:YES];
 }
 

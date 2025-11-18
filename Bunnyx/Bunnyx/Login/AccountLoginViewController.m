@@ -13,9 +13,12 @@
 #import "DeviceIdentifierManager.h"
 #import "UserManager.h"
 #import "UserInfoManager.h"
+#import "BrowserViewController.h"
+#import "AppConfigManager.h"
 
 @interface AccountLoginViewController ()
 
+@property (nonatomic, assign) BOOL isAgreedToTerms; // 对齐安卓：是否同意用户协议和隐私政策
 
 @property (nonatomic, strong) UIView *accountContainer;
 @property (nonatomic, strong) UILabel *accountLabel;
@@ -33,7 +36,29 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    // 默认勾选协议
+    self.isAgreedToTerms = YES;
     [self setupUI];
+    
+    // 对齐安卓：加载上次登录的账号
+    [self loadLastLoginAccount];
+}
+
+- (void)loadLastLoginAccount {
+    // 对齐安卓：从本地读取上次登录的账号
+    NSString *lastAccount = [[NSUserDefaults standardUserDefaults] objectForKey:@"BunnyxLastLoginAccount"];
+    if (lastAccount && lastAccount.length > 0) {
+        self.accountTextField.text = lastAccount;
+    }
+}
+
+- (void)saveLastLoginAccount {
+    // 对齐安卓：保存登录成功的账号
+    NSString *account = self.accountTextField.text;
+    if (account && account.length > 0) {
+        [[NSUserDefaults standardUserDefaults] setObject:account forKey:@"BunnyxLastLoginAccount"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
 }
 
 - (void)setupUI {
@@ -77,8 +102,7 @@
     self.accountTextField = [[UITextField alloc] init];
     self.accountTextField.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.1];
     self.accountTextField.layer.cornerRadius = 8;
-    self.accountTextField.layer.borderWidth = 1;
-    self.accountTextField.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
+    self.accountTextField.layer.borderWidth = 0; // 去掉边框
     self.accountTextField.textColor = [UIColor whiteColor];
     self.accountTextField.font = [UIFont systemFontOfSize:16];
     self.accountTextField.placeholder =  LocalString(@"Please enter your account");
@@ -146,8 +170,7 @@
     self.passwordTextField = [[UITextField alloc] init];
     self.passwordTextField.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.1];
     self.passwordTextField.layer.cornerRadius = 8;
-    self.passwordTextField.layer.borderWidth = 1;
-    self.passwordTextField.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.3].CGColor;
+    self.passwordTextField.layer.borderWidth = 0; // 去掉边框
     self.passwordTextField.textColor = [UIColor whiteColor];
     self.passwordTextField.font = [UIFont systemFontOfSize:16];
     self.passwordTextField.placeholder = LocalString(@"Please enter your password");
@@ -185,7 +208,8 @@
 - (void)setupLoginButton {
     self.loginButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.loginButton setTitle:@"Login" forState:UIControlStateNormal];
-    [self.loginButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    // 按钮标题颜色使用#333333
+    [self.loginButton setTitleColor:[UIColor colorWithRed:0x33/255.0 green:0x33/255.0 blue:0x33/255.0 alpha:1.0] forState:UIControlStateNormal];
     self.loginButton.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
     
     // 设置渐变背景
@@ -202,19 +226,32 @@
     self.loginButton.layer.cornerRadius = 10;
     self.loginButton.layer.masksToBounds = YES;
     [self.loginButton addTarget:self action:@selector(loginButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    
+    // 根据协议勾选状态设置按钮可用性
+    [self updateLoginButtonState];
+    
     [self.view addSubview:self.loginButton];
 }
 
+- (void)updateLoginButtonState {
+    // 未勾选协议时禁用登录按钮
+    self.loginButton.enabled = self.isAgreedToTerms;
+    self.loginButton.alpha = self.isAgreedToTerms ? 1.0 : 0.5;
+}
+
 - (void)setupAgreement {
+    // 对齐安卓：复选框18dp x 18dp，文字12sp，复选框和文字间距8dp
     self.agreementCheckbox = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.agreementCheckbox setImage:[UIImage imageNamed:@"icon_login_bottom_box_checked"] forState:UIControlStateNormal];
+    [self.agreementCheckbox setImage:[UIImage imageNamed:@"icon_login_bottom_box_default"] forState:UIControlStateNormal];
+    [self.agreementCheckbox setImage:[UIImage imageNamed:@"icon_login_bottom_box_selected"] forState:UIControlStateSelected];
+    // 默认勾选
     self.agreementCheckbox.selected = YES;
     [self.agreementCheckbox addTarget:self action:@selector(agreementCheckboxTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.agreementCheckbox];
     
+    // 对齐安卓：协议文字分为多个部分，支持点击
     self.agreementLabel = [[UILabel alloc] init];
-    self.agreementLabel.text = @"If you login, it means you agree to the User Agreement and Privacy Policy";
-    self.agreementLabel.textColor = [UIColor lightGrayColor];
+    self.agreementLabel.textColor = HEX_COLOR(0x999999); // 对齐安卓：#999999
     self.agreementLabel.font = [UIFont systemFontOfSize:12];
     self.agreementLabel.numberOfLines = 0;
     self.agreementLabel.textAlignment = NSTextAlignmentLeft;
@@ -225,25 +262,32 @@
 }
 
 - (void)setupAgreementText {
-    NSString *fullText = @"If you login, it means you agree to the User Agreement and Privacy Policy";
+    // 对齐安卓：协议文字分为前缀、用户协议、和、隐私政策
+    NSString *prefix = LocalString(@"如果你登录，即表示你同意用");
+    NSString *userAgreement = LocalString(@"用户协议");
+    NSString *and = LocalString(@"和");
+    NSString *privacyPolicy = LocalString(@"隐私政策");
+    NSString *fullText = [NSString stringWithFormat:@"%@%@%@%@", prefix, userAgreement, and, privacyPolicy];
+    
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:fullText];
     
-    // 设置整体样式
-    [attributedString addAttribute:NSForegroundColorAttributeName value:[UIColor lightGrayColor] range:NSMakeRange(0, fullText.length)];
+    // 设置整体样式（对齐安卓：#999999）
+    UIColor *tipsColor = HEX_COLOR(0x999999);
+    [attributedString addAttribute:NSForegroundColorAttributeName value:tipsColor range:NSMakeRange(0, fullText.length)];
     [attributedString addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:12] range:NSMakeRange(0, fullText.length)];
     
-    // 设置"User Agreement"为绿色并添加点击链接
-    NSRange userAgreementRange = [fullText rangeOfString:@"User Agreement"];
+    // 设置"用户协议"为链接颜色（对齐安卓：#2BD7B4）
+    NSRange userAgreementRange = [fullText rangeOfString:userAgreement];
     if (userAgreementRange.location != NSNotFound) {
-        [attributedString addAttribute:NSForegroundColorAttributeName value:[UIColor colorWithRed:0.0 green:0.8 blue:0.4 alpha:1.0] range:userAgreementRange];
-        [attributedString addAttribute:NSLinkAttributeName value:@"userAgreement://" range:userAgreementRange];
+        UIColor *linkColor = [UIColor colorWithRed:0x2B/255.0 green:0xD7/255.0 blue:0xB4/255.0 alpha:1.0]; // #2BD7B4
+        [attributedString addAttribute:NSForegroundColorAttributeName value:linkColor range:userAgreementRange];
     }
     
-    // 设置"Privacy Policy"为绿色并添加点击链接
-    NSRange privacyPolicyRange = [fullText rangeOfString:@"Privacy Policy"];
+    // 设置"隐私政策"为链接颜色（对齐安卓：#2BD7B4）
+    NSRange privacyPolicyRange = [fullText rangeOfString:privacyPolicy];
     if (privacyPolicyRange.location != NSNotFound) {
-        [attributedString addAttribute:NSForegroundColorAttributeName value:[UIColor colorWithRed:0.0 green:0.8 blue:0.4 alpha:1.0] range:privacyPolicyRange];
-        [attributedString addAttribute:NSLinkAttributeName value:@"privacyPolicy://" range:privacyPolicyRange];
+        UIColor *linkColor = [UIColor colorWithRed:0x2B/255.0 green:0xD7/255.0 blue:0xB4/255.0 alpha:1.0]; // #2BD7B4
+        [attributedString addAttribute:NSForegroundColorAttributeName value:linkColor range:privacyPolicyRange];
     }
     
     self.agreementLabel.attributedText = attributedString;
@@ -279,15 +323,17 @@
         make.height.mas_equalTo(50);
     }];
     
+    // 协议复选框（对齐安卓：18dp x 18dp，底部间距20dp，左侧padding 20dp，顶部间距14dp）
     [self.agreementCheckbox mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(40);
-        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-30);
-        make.width.height.mas_equalTo(20);
+        make.left.equalTo(self.view).offset(20);
+        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-20);
+        make.width.height.mas_equalTo(18);
     }];
     
+    // 协议文字（对齐安卓：复选框和文字间距8dp，文字12sp）
     [self.agreementLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.agreementCheckbox.mas_right).offset(10);
-        make.right.equalTo(self.view).offset(-40);
+        make.left.equalTo(self.agreementCheckbox.mas_right).offset(8);
+        make.right.equalTo(self.view).offset(-20);
         make.centerY.equalTo(self.agreementCheckbox);
     }];
 }
@@ -323,66 +369,76 @@
         return;
     }
     
-    if (!self.agreementCheckbox.selected) {
-        [self showAlert:@"请同意用户协议和隐私政策"];
-        return;
-    }
-    
     // 执行登录逻辑
     [self performLogin];
 }
 
 - (void)agreementCheckboxTapped:(UIButton *)sender {
-    sender.selected = !sender.selected;
-    UIImage *image = sender.selected ? [UIImage imageNamed:@"icon_login_bottom_box_checked"] : [UIImage imageNamed:@"icon_login_bottom_box_default"];
-    [sender setImage:image forState:UIControlStateNormal];
-    NSLog(@"协议复选框被点击，选中状态: %@", sender.selected ? @"是" : @"否");
+    // 对齐安卓：切换复选框状态
+    self.isAgreedToTerms = !self.isAgreedToTerms;
+    sender.selected = self.isAgreedToTerms;
+    // 更新登录按钮状态
+    [self updateLoginButtonState];
+    NSLog(@"协议复选框被点击，选中状态: %@", self.isAgreedToTerms ? @"是" : @"否");
 }
 
 - (void)agreementLabelTapped:(UITapGestureRecognizer *)gesture {
     CGPoint location = [gesture locationInView:self.agreementLabel];
     
-    // 获取文本的边界框
-    NSString *fullText = self.agreementLabel.text;
-    NSRange userAgreementRange = [fullText rangeOfString:@"User Agreement"];
-    NSRange privacyPolicyRange = [fullText rangeOfString:@"Privacy Policy"];
+    // 获取文本内容（对齐安卓：使用国际化字符串）
+    NSString *userAgreement = LocalString(@"用户协议");
+    NSString *privacyPolicy = LocalString(@"隐私政策");
+    NSString *fullText = self.agreementLabel.attributedText.string;
     
-    // 计算文本的字体和大小
-    UIFont *font = self.agreementLabel.font;
-    CGSize textSize = [fullText sizeWithAttributes:@{NSFontAttributeName: font}];
+    NSRange userAgreementRange = [fullText rangeOfString:userAgreement];
+    NSRange privacyPolicyRange = [fullText rangeOfString:privacyPolicy];
     
+    // 使用更精确的方法计算点击位置（对齐安卓：点击协议文字打开浏览器）
     // 计算每个字符的宽度
+    UIFont *font = self.agreementLabel.font;
+    NSDictionary *attributes = @{NSFontAttributeName: font};
+    CGSize textSize = [fullText sizeWithAttributes:attributes];
     CGFloat charWidth = textSize.width / fullText.length;
     
     // 计算点击位置对应的字符索引
     NSUInteger characterIndex = (NSUInteger)(location.x / charWidth);
     
     // 检查点击位置是否在链接范围内
-    if (NSLocationInRange(characterIndex, userAgreementRange)) {
+    if (userAgreementRange.location != NSNotFound && NSLocationInRange(characterIndex, userAgreementRange)) {
         [self showUserAgreement];
-    } else if (NSLocationInRange(characterIndex, privacyPolicyRange)) {
+    } else if (privacyPolicyRange.location != NSNotFound && NSLocationInRange(characterIndex, privacyPolicyRange)) {
         [self showPrivacyPolicy];
     }
 }
 
 - (void)showUserAgreement {
-    NSLog(@"显示用户协议");
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"用户协议" 
-                                                                   message:@"这里是用户协议的内容..." 
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil];
-    [alert addAction:okAction];
-    [self presentViewController:alert animated:YES completion:nil];
+    // 对齐安卓：从配置中获取用户协议URL并打开浏览器
+    AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
+    if (config && config.userAgreementUrl && config.userAgreementUrl.length > 0) {
+        BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.userAgreementUrl];
+        browserVC.title = LocalString(@"用户协议");
+        UINavigationController *navVC = [[UINavigationController alloc] initWithRootViewController:browserVC];
+        navVC.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:navVC animated:YES completion:nil];
+    } else {
+        NSLog(@"[AccountLoginViewController] 用户协议链接暂不可用");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"用户协议链接暂不可用")];
+    }
 }
 
 - (void)showPrivacyPolicy {
-    NSLog(@"显示隐私政策");
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"隐私政策" 
-                                                                   message:@"这里是隐私政策的内容..." 
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil];
-    [alert addAction:okAction];
-    [self presentViewController:alert animated:YES completion:nil];
+    // 对齐安卓：从配置中获取隐私政策URL并打开浏览器
+    AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
+    if (config && config.privacyPolicyUrl && config.privacyPolicyUrl.length > 0) {
+        BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.privacyPolicyUrl];
+        browserVC.title = LocalString(@"隐私政策");
+        UINavigationController *navVC = [[UINavigationController alloc] initWithRootViewController:browserVC];
+        navVC.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:navVC animated:YES completion:nil];
+    } else {
+        NSLog(@"[AccountLoginViewController] 隐私政策链接暂不可用");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"隐私政策链接暂不可用")];
+    }
 }
 
 - (void)performLogin {
@@ -441,6 +497,9 @@
             
             // 保存用户信息
             [[UserManager sharedManager] saveUserInfo:data];
+            
+            // 对齐安卓：保存登录成功的账号
+            [self saveLastLoginAccount];
             
             NSLog(@"Token保存成功: %@ %@", tokenType, accessToken);
             
