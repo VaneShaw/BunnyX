@@ -304,10 +304,10 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     // 2. pageType (PAGE_TYPE_GENERATE = 1)
     // 3. materialId (createTask.materialId)
     
-    // 暂时使用MaterialDetailViewController，通过materialId跳转
-    // 后续可能需要扩展MaterialDetailViewController来支持生成详情模式
+    // 使用MaterialDetailViewController，传递pageType参数（对齐安卓）
     if (createTask.materialId > 0) {
-        MaterialDetailViewController *vc = [[MaterialDetailViewController alloc] initWithMaterialId:createTask.materialId];
+        MaterialDetailViewController *vc = [[MaterialDetailViewController alloc] initWithMaterialId:createTask.materialId 
+                                                                                            pageType:MaterialDetailPageTypeGenerate];
         vc.hidesBottomBarWhenPushed = YES;
         
         // 使用block回调来处理详情页返回后的删除操作

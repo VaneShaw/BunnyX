@@ -24,10 +24,12 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 @interface MaterialDetailViewController ()
 
 @property (nonatomic, assign) NSInteger materialId;
+@property (nonatomic, assign) MaterialDetailPageType pageType; // 页面类型（对齐安卓：mPageType）
 @property (nonatomic, strong) MaterialDetailModel *detailModel;
 @property (nonatomic, strong) UIImageView *materialImageView;
 @property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（对齐安卓：icon_home_detail_more_light）
-@property (nonatomic, strong) UIButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
+@property (nonatomic, strong) GradientButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
+@property (nonatomic, strong) GradientButton *saveToAlbumButton; // 保存到相册按钮（对齐安卓：mBtnSaveToAlbum）
 @property (nonatomic, strong) GradientButton *generateButton; // 生成按钮
 @property (nonatomic, assign) BOOL hasFavoriteAction; // 标记是否有收藏操作（对齐安卓：mHasFavoriteAction）
 
@@ -36,9 +38,14 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 @implementation MaterialDetailViewController
 
 - (instancetype)initWithMaterialId:(NSInteger)materialId {
+    return [self initWithMaterialId:materialId pageType:MaterialDetailPageTypeMaterial];
+}
+
+- (instancetype)initWithMaterialId:(NSInteger)materialId pageType:(MaterialDetailPageType)pageType {
     self = [super init];
     if (self) {
         _materialId = materialId;
+        _pageType = pageType;
     }
     return self;
 }
@@ -60,6 +67,7 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     }
     [self.view bringSubviewToFront:self.moreButton];
     [self.view bringSubviewToFront:self.favoriteButton];
+    [self.view bringSubviewToFront:self.saveToAlbumButton];
     [self.view bringSubviewToFront:self.generateButton];
 }
 
@@ -142,6 +150,28 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
         make.bottom.equalTo(self.generateButton.mas_top).offset(-20); // marginBottom 20dp（相对于生成按钮）
         make.height.mas_equalTo(48); // dp_48 = 48dp
     }];
+    
+    // 对齐安卓：保存到相册按钮（生成详情模式显示，素材详情模式隐藏）
+    // 注意：在安卓布局中，保存到相册按钮在LinearLayout中位于生成按钮之后（下方），但实际显示时应该在生成按钮上方
+    // 对齐安卓布局：btn_video_detail_save_to_album 在 btn_video_detail_generate 之后，但通过约束让它显示在生成按钮上方
+    self.saveToAlbumButton = [GradientButton buttonWithTitle:LocalString(@"保存到相册")];
+    // 对齐安卓：保存到相册按钮也是绿色渐变（#0AEA6F到#1CB3C1），圆角12dp
+    self.saveToAlbumButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
+    self.saveToAlbumButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
+    [self.saveToAlbumButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.saveToAlbumButton.titleLabel.font = BOLD_FONT(17); // 17sp，bold（对齐安卓：sp_17）
+    self.saveToAlbumButton.layer.cornerRadius = 12.0; // dp_12 = 12dp（对齐安卓：shape_radius="@dimen/dp_12"）
+    self.saveToAlbumButton.layer.masksToBounds = YES;
+    self.saveToAlbumButton.userInteractionEnabled = YES;
+    [self.saveToAlbumButton addTarget:self action:@selector(saveToAlbumButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [bottomContainer addSubview:self.saveToAlbumButton];
+    [self.saveToAlbumButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.equalTo(bottomContainer).insets(UIEdgeInsetsMake(0, 30, 0, 30)); // marginHorizontal 30dp
+        make.bottom.equalTo(self.generateButton.mas_top).offset(-20); // marginBottom 20dp（相对于生成按钮，在生成按钮上方）
+        make.height.mas_equalTo(48); // dp_48 = 48dp
+    }];
+    // 初始状态隐藏（根据pageType在updateUI中显示/隐藏）
+    self.saveToAlbumButton.hidden = YES;
 }
 
 - (void)backButtonTapped:(UIButton *)sender {
@@ -177,30 +207,62 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 - (void)updateUI {
     if (!self.detailModel) { return; }
     
+    // 对齐安卓：根据页面类型显示/隐藏按钮
+    if (self.pageType == MaterialDetailPageTypeMaterial) {
+        // 素材详情模式：显示点赞按钮，隐藏保存到相册按钮
+        self.favoriteButton.hidden = NO;
+        self.saveToAlbumButton.hidden = YES;
+        
+        // 更新收藏数量和状态（使用按钮自带的image和title）
+        NSInteger favoriteCount = self.detailModel.favoriteQty ? [self.detailModel.favoriteQty integerValue] : 0;
+        NSString *favoriteCountText = [NSString stringWithFormat:@"%ld", (long)favoriteCount];
+        [self.favoriteButton setTitle:favoriteCountText forState:UIControlStateNormal];
+        
+        // 对齐安卓：已点赞使用icon_home_collection_light，未点赞使用icon_home_collection_dark
+        UIImage *heartImage = nil;
+        if (self.detailModel.isFavorite) {
+            heartImage = [UIImage imageNamed:@"icon_home_collection_light"];
+        } else {
+            heartImage = [UIImage imageNamed:@"icon_home_collection_dark"];
+        }
+        // 调整图片大小为20x20
+        heartImage = [self resizeImage:heartImage toSize:CGSizeMake(20, 20)];
+        [self.favoriteButton setImage:heartImage forState:UIControlStateNormal];
+    } else {
+        // 生成详情模式：隐藏点赞按钮，显示保存到相册按钮
+        self.favoriteButton.hidden = YES;
+        self.saveToAlbumButton.hidden = NO;
+        
+        // 对齐安卓：生成按钮保持绿色渐变（不改变颜色）
+        // 注意：虽然安卓代码中设置了like_count_bg，但用户要求生成按钮保持绿色
+        // 保持原有的绿色渐变颜色
+        self.generateButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
+        self.generateButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
+    }
+    
     // 加载图片（对齐安卓：支持WebP动图，使用AUTOMATIC缓存策略）
-    if (self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
+    // 注意：只有从"我的"生成列表进入（PAGE_TYPE_GENERATE）时才判断materialMode == 2
+    // 从其他列表进入（PAGE_TYPE_MATERIAL）时默认执行图片逻辑
+    BOOL shouldCheckVideoMode = (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading);
+    
+    if (shouldCheckVideoMode && self.detailModel.materialMode == 2 && self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
+        // 视频类型，materialUrl就是视频URL（对齐安卓：materialMode == 2）
+        // TODO: 实现视频播放功能（暂时先显示图片）
         NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
         [self.materialImageView sd_setImageWithURL:url 
                                     placeholderImage:[UIImage imageNamed:@"image_error_ic"]
                                              options:SDWebImageRetryFailed
                                              context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
-    }
-    
-    // 更新收藏数量和状态（使用按钮自带的image和title）
-    NSInteger favoriteCount = self.detailModel.favoriteQty ? [self.detailModel.favoriteQty integerValue] : 0;
-    NSString *favoriteCountText = [NSString stringWithFormat:@"%ld", (long)favoriteCount];
-    [self.favoriteButton setTitle:favoriteCountText forState:UIControlStateNormal];
-    
-    // 对齐安卓：已点赞使用icon_home_collection_light，未点赞使用icon_home_collection_dark
-    UIImage *heartImage = nil;
-    if (self.detailModel.isFavorite) {
-        heartImage = [UIImage imageNamed:@"icon_home_collection_light"];
     } else {
-        heartImage = [UIImage imageNamed:@"icon_home_collection_dark"];
+        // 非视频类型，按图片处理（包括从其他列表进入的情况）
+        if (self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
+            NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
+            [self.materialImageView sd_setImageWithURL:url 
+                                        placeholderImage:[UIImage imageNamed:@"image_error_ic"]
+                                                 options:SDWebImageRetryFailed
+                                                 context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
+        }
     }
-    // 调整图片大小为20x20
-    heartImage = [self resizeImage:heartImage toSize:CGSizeMake(20, 20)];
-    [self.favoriteButton setImage:heartImage forState:UIControlStateNormal];
     
     // 更新生成按钮（对齐安卓：Generate(XXCoins)，17sp，bold）
     NSString *generateTitle = [NSString stringWithFormat:@"Generate(%ldCoins)", (long)self.detailModel.generatePrice];
@@ -210,40 +272,46 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 #pragma mark - Actions
 
 - (void)moreButtonTapped:(UIButton *)sender {
-    // 对齐安卓：显示底部弹窗，包含举报和屏蔽两个选项
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil 
-                                                                     message:nil 
-                                                              preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    // 举报选项（type: 0）
-    UIAlertAction *reportAction = [UIAlertAction actionWithTitle:LocalString(@"举报") 
-                                                           style:UIAlertActionStyleDestructive 
-                                                         handler:^(UIAlertAction * _Nonnull action) {
-        [self reportMaterialWithType:0]; // 0: report
-    }];
-    
-    // 屏蔽选项（type: 1）
-    UIAlertAction *blockAction = [UIAlertAction actionWithTitle:LocalString(@"屏蔽") 
-                                                          style:UIAlertActionStyleDestructive 
-                                                        handler:^(UIAlertAction * _Nonnull action) {
-        [self reportMaterialWithType:1]; // 1: block
-    }];
-    
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") 
-                                                           style:UIAlertActionStyleCancel 
-                                                         handler:nil];
-    
-    [alert addAction:reportAction];
-    [alert addAction:blockAction];
-    [alert addAction:cancelAction];
-    
-    // iPad支持
-    if (IS_IPAD) {
-        alert.popoverPresentationController.sourceView = sender;
-        alert.popoverPresentationController.sourceRect = sender.bounds;
+    // 对齐安卓：根据页面类型显示不同的弹窗
+    if (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading) {
+        // 生成详情模式：显示删除底部弹窗
+        [self showDeleteActionSheet];
+    } else {
+        // 素材详情模式：显示底部弹窗（举报和屏蔽）
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil 
+                                                                         message:nil 
+                                                                  preferredStyle:UIAlertControllerStyleActionSheet];
+        
+        // 举报选项（type: 0）
+        UIAlertAction *reportAction = [UIAlertAction actionWithTitle:LocalString(@"举报") 
+                                                                   style:UIAlertActionStyleDestructive 
+                                                                 handler:^(UIAlertAction * _Nonnull action) {
+            [self reportMaterialWithType:0]; // 0: report
+        }];
+        
+        // 屏蔽选项（type: 1）
+        UIAlertAction *blockAction = [UIAlertAction actionWithTitle:LocalString(@"屏蔽") 
+                                                                  style:UIAlertActionStyleDestructive 
+                                                                handler:^(UIAlertAction * _Nonnull action) {
+            [self reportMaterialWithType:1]; // 1: block
+        }];
+        
+        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") 
+                                                                   style:UIAlertActionStyleCancel 
+                                                                 handler:nil];
+        
+        [alert addAction:reportAction];
+        [alert addAction:blockAction];
+        [alert addAction:cancelAction];
+        
+        // iPad支持
+        if (IS_IPAD) {
+            alert.popoverPresentationController.sourceView = sender;
+            alert.popoverPresentationController.sourceRect = sender.bounds;
+        }
+        
+        [self presentViewController:alert animated:YES completion:nil];
     }
-    
-    [self presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)reportMaterialWithType:(NSInteger)type {
@@ -478,6 +546,115 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 // 对齐安卓：继续生成流程
 - (void)proceedToGenerate {
     [self navigateToUploadMaterial];
+}
+
+#pragma mark - Save to Album
+
+// 对齐安卓：保存到相册
+- (void)saveToAlbumButtonTapped:(UIButton *)sender {
+    // 对齐安卓：从CreateTask获取videoUrl或imageUrl
+    // 注意：iOS中需要从detailModel获取materialUrl，但生成详情应该使用生成结果的URL
+    // 暂时使用materialUrl，后续可能需要从CreateTask获取
+    if (!self.detailModel || !self.detailModel.materialUrl || self.detailModel.materialUrl.length == 0) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"URL无效")];
+        return;
+    }
+    
+    [SVProgressHUD showWithStatus:LocalString(@"保存中...")];
+    
+    // 判断是视频还是图片（对齐安卓：materialMode == 2 表示视频）
+    BOOL isVideo = (self.detailModel.materialMode == 2);
+    
+    if (isVideo) {
+        // 保存视频（TODO: 实现视频保存功能）
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"视频保存功能暂未实现")];
+    } else {
+        // 保存图片
+        NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
+        [[SDWebImageManager sharedManager] loadImageWithURL:url
+                                                     options:SDWebImageRetryFailed
+                                                    progress:nil
+                                                   completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+            [SVProgressHUD dismiss];
+            if (image && finished) {
+                UIImageWriteToSavedPhotosAlbum(image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
+            } else {
+                [SVProgressHUD showErrorWithStatus:LocalString(@"保存失败")];
+            }
+        }];
+    }
+}
+
+- (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
+    if (error) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"保存失败")];
+    } else {
+        [SVProgressHUD showSuccessWithStatus:LocalString(@"保存成功")];
+    }
+}
+
+#pragma mark - Delete Action
+
+// 对齐安卓：显示删除底部弹窗
+- (void)showDeleteActionSheet {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil 
+                                                                     message:nil 
+                                                              preferredStyle:UIAlertControllerStyleActionSheet];
+    
+    // 删除选项
+    UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:LocalString(@"删除") 
+                                                           style:UIAlertActionStyleDestructive 
+                                                         handler:^(UIAlertAction * _Nonnull action) {
+        [self showDeleteConfirmDialog];
+    }];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") 
+                                                           style:UIAlertActionStyleCancel 
+                                                         handler:nil];
+    
+    [alert addAction:deleteAction];
+    [alert addAction:cancelAction];
+    
+    // iPad支持
+    if (IS_IPAD) {
+        alert.popoverPresentationController.sourceView = self.moreButton;
+        alert.popoverPresentationController.sourceRect = self.moreButton.bounds;
+    }
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+// 对齐安卓：显示删除确认对话框
+- (void)showDeleteConfirmDialog {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"删除素材")
+                                                                     message:LocalString(@"确定要删除这个素材吗？")
+                                                              preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction *confirmAction = [UIAlertAction actionWithTitle:LocalString(@"确定") 
+                                                             style:UIAlertActionStyleDestructive 
+                                                           handler:^(UIAlertAction * _Nonnull action) {
+        [self deleteGenerateMaterial];
+    }];
+    
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") 
+                                                           style:UIAlertActionStyleCancel 
+                                                         handler:nil];
+    
+    [alert addAction:confirmAction];
+    [alert addAction:cancelAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+// 对齐安卓：删除生成的素材
+- (void)deleteGenerateMaterial {
+    // TODO: 需要从CreateTask获取createId，暂时先提示
+    [SVProgressHUD showErrorWithStatus:LocalString(@"删除功能需要createId，暂未实现")];
+    // 对齐安卓：删除成功后返回并通知列表刷新
+    // 发送通知（对应安卓的ActivityResultLauncher）
+    // [[NSNotificationCenter defaultCenter] postNotificationName:kGenerateDetailDeletedNotification object:nil userInfo:@{kGenerateDetailDeletedCreateIdKey: createId}];
+    // [self.navigationController popViewControllerAnimated:YES];
 }
 
 #pragma mark - Helper Methods

@@ -13,11 +13,14 @@
 #import "BunnyxNetworkMacros.h"
 #import "RechargeItemModel.h"
 #import "UserInfoManager.h"
+#import "UserInfoModel.h"
+#import "ApplePayManager.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import "GradientButton.h"
+#import <StoreKit/StoreKit.h>
 #import <objc/runtime.h>
 
-@interface RechargeViewController ()
+@interface RechargeViewController () <ApplePayManagerDelegate>
 
 // 标题栏
 @property (nonatomic, strong) UILabel *titleLabel;
@@ -40,6 +43,11 @@
 @property (nonatomic, strong) NSArray<RechargeItemModel *> *rechargeList;
 @property (nonatomic, strong) RechargeItemModel *selectedItem;
 
+// 支付
+@property (nonatomic, strong) ApplePayManager *applePayManager;
+@property (nonatomic, copy) NSString *currentServerOrderSn;
+@property (nonatomic, assign) NSInteger currentRechargeId;
+
 @end
 
 @implementation RechargeViewController
@@ -51,6 +59,9 @@
     
     // 设置UI
     [self setupUI];
+    
+    // 初始化支付能力
+    [self setupApplePay];
     
     // 加载充值列表
     [self loadRechargeList];
@@ -80,6 +91,11 @@
     
     // 设置充值套餐容器（在购买按钮之后，可以依赖购买按钮的约束）
     [self setupPackagesContainer];
+}
+
+- (void)setupApplePay {
+    self.applePayManager = [ApplePayManager sharedManager];
+    [self.applePayManager initializeWithDelegate:self];
 }
 
 - (void)setupGradientBackground {
@@ -277,6 +293,10 @@
     if (self.rechargeList.count == 0) {
         BUNNYX_ERROR(@"充值列表为空，无法显示套餐");
         return;
+    }
+    
+    if (!self.selectedItem) {
+        self.selectedItem = self.rechargeList.firstObject;
     }
     
     // 对齐安卓：计算布局参数（paddingHorizontal 20dp，itemSpacing 15dp，3列）
@@ -531,9 +551,116 @@
     }
     
     BUNNYX_LOG(@"购买按钮被点击，选中套餐ID: %ld", (long)self.selectedItem.rechargeId);
-    // TODO: 实现支付逻辑
-    // 1. 调用充值API获取productId和订单号
-    // 2. 调用Apple Pay或Google Pay进行支付
+    [self startPurchaseWithItem:self.selectedItem];
+}
+
+#pragma mark - Purchase Flow
+
+- (void)startPurchaseWithItem:(RechargeItemModel *)item {
+    if (!self.applePayManager) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"支付服务未初始化")];
+        return;
+    }
+    
+    NSDictionary *params = @{ @"rechargeId": @(item.rechargeId) };
+    [SVProgressHUD show];
+    [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_BUY_VIP
+                              parameters:params
+                                 success:^(id responseObject) {
+        [SVProgressHUD dismiss];
+        NSInteger code = [responseObject[@"code"] integerValue];
+        if (code != 0) {
+            NSString *msg = responseObject[@"message"] ?: LocalString(@"充值失败");
+            [SVProgressHUD showErrorWithStatus:msg];
+            return;
+        }
+        
+        NSDictionary *data = responseObject[@"data"];
+        if (data) {
+            NSString *productId = data[@"product_id"];
+            NSString *orderSn = data[@"order_sn"];
+            if (productId.length == 0 || orderSn.length == 0) {
+                [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+                return;
+            }
+            self.currentServerOrderSn = orderSn;
+            self.currentRechargeId = item.rechargeId;
+            NSString *timestamp = [NSString stringWithFormat:@"%lld", (long long)([[NSDate date] timeIntervalSince1970] * 1000)];
+            [self launchApplePaymentWithProductId:productId orderId:orderSn timestamp:timestamp rechargeId:item.rechargeId];
+        } else {
+            [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+        }
+    } failure:^(NSError *error) {
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+    }];
+}
+
+- (void)launchApplePaymentWithProductId:(NSString *)productId
+                                 orderId:(NSString *)orderId
+                               timestamp:(NSString *)timestamp
+                              rechargeId:(NSInteger)rechargeId {
+    [self.applePayManager purchaseProductWithId:productId orderId:orderId timestamp:timestamp];
+}
+
+- (void)verifyRechargePaymentWithTransaction:(SKPaymentTransaction *)transaction {
+    if (!transaction) {
+        return;
+    }
+    
+    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+    NSData *receiptData = [NSData dataWithContentsOfURL:receiptURL];
+    if (!receiptData) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+        return;
+    }
+    
+    NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
+    NSDictionary *params = @{
+        @"token": transaction.transactionIdentifier ?: @"",
+        @"signture_data": @"",
+        @"order_sn": self.currentServerOrderSn ?: @"",
+        @"billingResponseCode": @(0),
+        @"other_data": receiptString
+    };
+    
+    [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY
+                              parameters:params
+                                 success:^(id responseObject) {
+        NSInteger code = [responseObject[@"code"] integerValue];
+        if (code == 0) {
+            [self.applePayManager finishTransaction:transaction];
+            [SVProgressHUD showSuccessWithStatus:LocalString(@"充值成功")];
+            [self refreshUserInfoAndBalance];
+        } else {
+            [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+        }
+    } failure:^(NSError *error) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+    }];
+}
+
+- (void)refreshUserInfoAndBalance {
+    [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self updateBalance];
+        });
+    } failure:^(NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self updateBalance];
+        });
+    }];
+}
+
+#pragma mark - ApplePayManagerDelegate
+
+- (void)applePayManager:(ApplePayManager *)manager didPurchaseSuccessWithTransaction:(SKPaymentTransaction *)transaction productId:(NSString *)productId {
+    [self verifyRechargePaymentWithTransaction:transaction];
+}
+
+- (void)applePayManager:(ApplePayManager *)manager didPurchaseFailWithError:(NSError *)error {
+    NSString *message = error.localizedDescription.length > 0 ? error.localizedDescription : LocalString(@"充值失败");
+    [SVProgressHUD showErrorWithStatus:message];
 }
 
 @end

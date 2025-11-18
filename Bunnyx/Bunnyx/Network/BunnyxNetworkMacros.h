@@ -11,7 +11,9 @@
 // MARK: - 服务器环境配置
 #ifdef DEBUG
     // 开发环境
-    #define BUNNYX_BASE_URL @"https://testappapi.bunnyx.ai"
+    //https://testappapi.bunnyx.ai
+    #define BUNNYX_BASE_URL @"http://albbunnyxtestappapi-1240859665.ap-northeast-1.elb.amazonaws.com"
+
 #else
     // 生产环境
     #define BUNNYX_BASE_URL @"https://api.bunnyx.com"
