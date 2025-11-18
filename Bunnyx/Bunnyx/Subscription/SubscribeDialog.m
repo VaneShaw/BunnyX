@@ -22,6 +22,7 @@
 @property (nonatomic, strong) SKPaymentTransaction *currentTransaction;
 @property (nonatomic, strong) UIView *backgroundView;
 @property (nonatomic, strong) UIView *dialogView;
+@property (nonatomic, strong) UIImageView *backgroundImageView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UIView *countdownContainer;
 @property (nonatomic, strong) UILabel *hourTensLabel;
@@ -87,8 +88,12 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
 
 - (void)setupUI {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    if (!window) {
+        return;
+    }
     self.frame = window.bounds;
     [window addSubview:self];
+    [window bringSubviewToFront:self];
     
     // 背景遮罩
     self.backgroundView = [[UIView alloc] init];
@@ -103,17 +108,17 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     
     // 对话框
     self.dialogView = [[UIView alloc] init];
-    self.dialogView.backgroundColor = [UIColor whiteColor];
+    self.dialogView.backgroundColor = [UIColor clearColor];
     self.dialogView.layer.cornerRadius = 20;
     self.dialogView.layer.masksToBounds = YES;
     // 背景图片（如果有）
     UIImage *bgImage = [UIImage imageNamed:@"bg_subscribe_topup"];
     if (bgImage) {
-        UIImageView *bgImageView = [[UIImageView alloc] initWithImage:bgImage];
-        bgImageView.contentMode = UIViewContentModeScaleAspectFill;
-        bgImageView.clipsToBounds = YES;
-        [self.dialogView addSubview:bgImageView];
-        [bgImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        self.backgroundImageView = [[UIImageView alloc] initWithImage:bgImage];
+        self.backgroundImageView.contentMode = UIViewContentModeScaleToFill;
+        self.backgroundImageView.clipsToBounds = YES;
+        [self.dialogView addSubview:self.backgroundImageView];
+        [self.backgroundImageView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self.dialogView);
         }];
     }
@@ -238,13 +243,15 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     // 布局
     [self.hourTensLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
     }];
     
     [self.hourOnesLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.hourTensLabel.mas_right).offset(4);
         make.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
     }];
     
     [colon1 mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -255,13 +262,15 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     [self.minuteTensLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(colon1.mas_right).offset(5);
         make.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
     }];
     
     [self.minuteOnesLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.minuteTensLabel.mas_right).offset(4);
         make.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
     }];
     
     [colon2 mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -272,13 +281,15 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     [self.secondTensLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(colon2.mas_right).offset(5);
         make.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
     }];
     
     [self.secondOnesLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.secondTensLabel.mas_right).offset(4);
         make.centerY.equalTo(self.countdownContainer);
-        make.width.height.mas_equalTo(35);
+        make.width.mas_equalTo(35);
+        make.height.mas_equalTo(45);
         make.right.equalTo(self.countdownContainer);
     }];
 }
@@ -396,6 +407,7 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
         make.left.right.equalTo(self.dialogView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
     }];
     
+    [self applyBottomDescText:LocalString(@"订阅提示默认")];
     // 加载VIP折扣提示
     [self loadVipDiscountTips];
 }
@@ -419,14 +431,30 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
                     text = dict[@"en_US"];
                 }
                 if (text) {
-                    self.bottomDescLabel.text = text;
+                    [self applyBottomDescText:text];
                     return;
                 }
             }
         }
     }
     // 默认文案
-    self.bottomDescLabel.text = LocalString(@"订阅提示默认");
+    [self applyBottomDescText:LocalString(@"订阅提示默认")];
+}
+
+- (void)applyBottomDescText:(NSString *)text {
+    if (!self.bottomDescLabel) {
+        return;
+    }
+    NSString *displayText = (text.length > 0) ? text : LocalString(@"订阅提示默认");
+    NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+    style.alignment = NSTextAlignmentCenter;
+    style.lineSpacing = 4.0;
+    NSDictionary *attributes = @{
+        NSFontAttributeName: self.bottomDescLabel.font ?: FONT(11),
+        NSForegroundColorAttributeName: self.bottomDescLabel.textColor ?: [UIColor colorWithWhite:0.6 alpha:1.0],
+        NSParagraphStyleAttributeName: style
+    };
+    self.bottomDescLabel.attributedText = [[NSAttributedString alloc] initWithString:displayText attributes:attributes];
 }
 
 - (void)updatePriceAndType {

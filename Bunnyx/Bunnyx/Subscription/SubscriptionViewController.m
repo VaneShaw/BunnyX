@@ -78,10 +78,6 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     self.showBackButton = NO;
-    // 检查是否需要弹出限时优惠弹窗
-    if (self.vipData) {
-        [self checkAndShowFirstBuyDialog];
-    }
 }
 
 - (void)setupUI {
@@ -108,7 +104,7 @@
     self.titleLabel.font = BOLD_FONT(28);
     [self.contentView addSubview:self.titleLabel];
     [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.contentView).offset(40);
+        make.top.equalTo(self.contentView).offset(STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT);
         make.left.equalTo(self.contentView).offset(20);
         make.height.mas_equalTo(40);
     }];

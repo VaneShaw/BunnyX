@@ -34,7 +34,7 @@
 - (void)setupUI {
     // 卡片容器
     self.cardView = [[UIView alloc] init];
-    self.cardView.backgroundColor = [UIColor whiteColor];
+    self.cardView.backgroundColor = [UIColor clearColor]; // 初始为透明，渐变层会覆盖
     self.cardView.layer.cornerRadius = 12;
     self.cardView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.cardView];
@@ -131,6 +131,15 @@
     // 添加点击手势
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(cellTapped)];
     [self.contentView addGestureRecognizer:tap];
+    
+    // 初始化时创建默认渐变背景（未选中状态），确保刚进页面时就有背景色
+    [self setupDefaultGradientBackground];
+}
+
+- (void)setupDefaultGradientBackground {
+    // 标记需要创建默认渐变背景，实际创建在 layoutSubviews 中进行（此时 bounds 已确定）
+    // 这样确保刚进页面时就有背景色
+    self.cardView.backgroundColor = [UIColor clearColor];
 }
 
 - (void)configureWithVipItem:(VipItemModel *)item selected:(BOOL)selected {
@@ -156,35 +165,53 @@
     
     // 更新选中状态
     [self updateSelectedState:selected];
+    
+    // 强制布局一次，确保渐变层立即显示（即使 bounds 还未确定，也会在 layoutSubviews 中更新）
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 - (void)updateSelectedState:(BOOL)selected {
+    // 无论选中还是未选中，都使用深绿色渐变背景（对齐安卓）
+    // 先移除旧的渐变层
+    NSArray *sublayers = [self.cardView.layer.sublayers copy];
+    for (CALayer *layer in sublayers) {
+        if ([layer isKindOfClass:[CAGradientLayer class]]) {
+            [layer removeFromSuperlayer];
+        }
+    }
+    
+    // 创建深绿色渐变背景（即使 bounds 为空也创建，会在 layoutSubviews 中更新 frame）
+    CAGradientLayer *gradient = [CAGradientLayer layer];
+    // 优先使用 bounds，如果为空则使用 frame，如果还是为空则使用临时值
+    CGRect gradientFrame = self.cardView.bounds;
+    if (CGRectIsEmpty(gradientFrame)) {
+        gradientFrame = self.cardView.frame;
+        if (CGRectIsEmpty(gradientFrame)) {
+            // 使用一个默认的 frame，确保渐变层被创建并显示
+            gradientFrame = CGRectMake(0, 0, 200, 200);
+        }
+    }
+    gradient.frame = gradientFrame;
+    gradient.colors = @[
+        (id)[UIColor colorWithRed:0.11 green:0.20 blue:0.15 alpha:1.0].CGColor, // #1C3427
+        (id)[UIColor colorWithRed:0.04 green:0.12 blue:0.10 alpha:1.0].CGColor  // #091E1A
+    ];
+    gradient.startPoint = CGPointMake(0, 0);
+    gradient.endPoint = CGPointMake(0, 1);
+    gradient.cornerRadius = 12;
+    [self.cardView.layer insertSublayer:gradient atIndex:0];
+    // 设置背景色为透明，让渐变层显示
+    self.cardView.backgroundColor = [UIColor clearColor];
+    
     if (selected) {
         // 选中状态：绿色边框
         self.cardView.layer.borderWidth = 1;
         self.cardView.layer.borderColor = [UIColor colorWithRed:0.04 green:0.92 blue:0.44 alpha:1.0].CGColor; // #0AEA6F
-        // 背景渐变（深绿色）
-        CAGradientLayer *gradient = [CAGradientLayer layer];
-        gradient.frame = self.cardView.bounds;
-        gradient.colors = @[
-            (id)[UIColor colorWithRed:0.11 green:0.20 blue:0.15 alpha:1.0].CGColor, // #1C3427
-            (id)[UIColor colorWithRed:0.04 green:0.12 blue:0.10 alpha:1.0].CGColor  // #091E1A
-        ];
-        gradient.startPoint = CGPointMake(0, 0);
-        gradient.endPoint = CGPointMake(0, 1);
-        gradient.cornerRadius = 12;
-        [self.cardView.layer insertSublayer:gradient atIndex:0];
     } else {
-        // 未选中状态：白色背景，无边框
+        // 未选中状态：无边框
         self.cardView.layer.borderWidth = 0;
         self.cardView.layer.borderColor = [UIColor clearColor].CGColor;
-        // 移除渐变层
-        NSArray *sublayers = [self.cardView.layer.sublayers copy];
-        for (CALayer *layer in sublayers) {
-            if ([layer isKindOfClass:[CAGradientLayer class]]) {
-                [layer removeFromSuperlayer];
-            }
-        }
     }
 }
 
@@ -196,14 +223,32 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    // 更新渐变层frame
-    if (self.isSelected) {
-        NSArray *sublayers = [self.cardView.layer.sublayers copy];
-        for (CALayer *layer in sublayers) {
-            if ([layer isKindOfClass:[CAGradientLayer class]]) {
+    
+    // 更新所有渐变层的frame（确保背景色正确显示）
+    NSArray *sublayers = [self.cardView.layer.sublayers copy];
+    BOOL hasGradientLayer = NO;
+    for (CALayer *layer in sublayers) {
+        if ([layer isKindOfClass:[CAGradientLayer class]]) {
+            hasGradientLayer = YES;
+            // 如果 bounds 不为空，更新 frame；如果为空，保持之前的 frame（可能是临时 frame）
+            if (!CGRectIsEmpty(self.cardView.bounds)) {
                 layer.frame = self.cardView.bounds;
             }
         }
+    }
+    
+    // 如果没有渐变层且 bounds 不为空，创建默认渐变背景（确保刚进页面时就有背景色）
+    if (!hasGradientLayer && !CGRectIsEmpty(self.cardView.bounds)) {
+        CAGradientLayer *gradient = [CAGradientLayer layer];
+        gradient.frame = self.cardView.bounds;
+        gradient.colors = @[
+            (id)[UIColor colorWithRed:0.11 green:0.20 blue:0.15 alpha:1.0].CGColor, // #1C3427
+            (id)[UIColor colorWithRed:0.04 green:0.12 blue:0.10 alpha:1.0].CGColor  // #091E1A
+        ];
+        gradient.startPoint = CGPointMake(0, 0);
+        gradient.endPoint = CGPointMake(0, 1);
+        gradient.cornerRadius = 12;
+        [self.cardView.layer insertSublayer:gradient atIndex:0];
     }
 }
 
