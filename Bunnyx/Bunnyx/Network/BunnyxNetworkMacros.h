@@ -106,7 +106,7 @@
 #define BUNNYX_API_USER_BUDGET_LIST [NSString stringWithFormat:@"%@/user/getUserBudgetList", BUNNYX_API_BASE_URL] // 钱包明细列表接口
 #define BUNNYX_API_PAY_VIP_LIST [NSString stringWithFormat:@"%@/pay/vipList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_BUY_VIP [NSString stringWithFormat:@"%@/pay/buy/vip", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePayVerify", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePay/verify", BUNNYX_API_BASE_URL]
 
 // MARK: - 设置相关接口
 #define BUNNYX_API_SETTINGS_GET [NSString stringWithFormat:@"%@/settings/get", BUNNYX_API_BASE_URL]

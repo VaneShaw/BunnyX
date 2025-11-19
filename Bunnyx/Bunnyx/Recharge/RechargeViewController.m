@@ -616,12 +616,11 @@
     }
     
     NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
+    
+    // 构建验证参数（根据接口文档）
     NSDictionary *params = @{
-        @"token": transaction.transactionIdentifier ?: @"",
-        @"signture_data": @"",
-        @"order_sn": self.currentServerOrderSn ?: @"",
-        @"billingResponseCode": @(0),
-        @"other_data": receiptString
+        @"appleReceipt": receiptString, // 苹果支付凭据（base64编码的收据）
+        @"orderSn": self.currentServerOrderSn ?: @"" // 订单号（必选）
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY

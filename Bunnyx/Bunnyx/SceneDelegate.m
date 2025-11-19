@@ -12,6 +12,7 @@
 #import "NetworkManager.h"
 #import "UserInfoManager.h"
 #import "AppConfigManager.h"
+#import "PaymentExceptionHandler.h"
 
 @interface SceneDelegate ()
 
@@ -26,6 +27,9 @@
     // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
     // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
     // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
+    
+    // 初始化支付异常处理（处理未完成的交易）
+    [[PaymentExceptionHandler sharedHandler] initialize];
     
     // 创建窗口并设置启动页
     if ([scene isKindOfClass:[UIWindowScene class]]) {
@@ -103,6 +107,11 @@
             // 设置Bearer认证
             [[NetworkManager sharedManager] setBearerAuthWithToken:accessToken];
             NSLog(@"[SceneDelegate] 自动设置Bearer认证成功");
+            
+            // 检查并恢复未完成的订单（与安卓版本保持一致）
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [[PaymentExceptionHandler sharedHandler] checkAndRecoverPendingOrder];
+            });
             
             // 刷新用户信息
             [self refreshUserInfoIfNeeded];

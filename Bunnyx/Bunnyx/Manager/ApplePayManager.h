@@ -36,8 +36,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 单例
 + (instancetype)sharedManager;
 
-/// 代理
-@property (nonatomic, weak) id<ApplePayManagerDelegate> delegate;
+/// 代理（已废弃，使用addDelegate:和removeDelegate:）
+@property (nonatomic, weak) id<ApplePayManagerDelegate> delegate DEPRECATED_MSG_ATTRIBUTE("Use addDelegate: and removeDelegate: instead");
+
+/// 添加代理（支持多个代理）
+- (void)addDelegate:(id<ApplePayManagerDelegate>)delegate;
+
+/// 移除代理
+- (void)removeDelegate:(id<ApplePayManagerDelegate>)delegate;
 
 /// 是否已初始化
 @property (nonatomic, assign, readonly) BOOL isInitialized;

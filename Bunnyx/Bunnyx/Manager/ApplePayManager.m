@@ -16,6 +16,7 @@
 @property (nonatomic, strong) NSMutableDictionary<NSString *, void(^)(NSArray<SKProduct *> * _Nullable, NSError * _Nullable)> *productRequestCallbacks;
 @property (nonatomic, strong) NSMutableSet<NSString *> *pendingProductIds;
 @property (nonatomic, strong) NSMapTable<SKProductsRequest *, NSSet<NSString *> *> *requestToProductIds;
+@property (nonatomic, strong) NSHashTable<id<ApplePayManagerDelegate>> *delegates;
 
 @end
 
@@ -37,6 +38,7 @@
         _productRequestCallbacks = [NSMutableDictionary dictionary];
         _pendingProductIds = [NSMutableSet set];
         _requestToProductIds = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory valueOptions:NSPointerFunctionsStrongMemory];
+        _delegates = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
     }
     return self;
 }
@@ -44,16 +46,96 @@
 - (void)initializeWithDelegate:(id<ApplePayManagerDelegate>)delegate {
     if (self.isInitialized) {
         BUNNYX_LOG(@"ApplePayManager already initialized");
+        // 如果已经初始化，仍然添加delegate
+        if (delegate) {
+            [self addDelegate:delegate];
+        }
         return;
     }
-    
-    self.delegate = delegate;
     
     // 添加交易观察者
     [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
     
     self.isInitialized = YES;
+    
+    // 添加delegate
+    if (delegate) {
+        [self addDelegate:delegate];
+    }
+    
     BUNNYX_LOG(@"ApplePayManager initialized successfully");
+}
+
+- (void)addDelegate:(id<ApplePayManagerDelegate>)delegate {
+    if (delegate && ![self.delegates containsObject:delegate]) {
+        [self.delegates addObject:delegate];
+        BUNNYX_LOG(@"ApplePayManager: Added delegate: %@", delegate);
+    }
+}
+
+- (void)removeDelegate:(id<ApplePayManagerDelegate>)delegate {
+    if (delegate) {
+        [self.delegates removeObject:delegate];
+        BUNNYX_LOG(@"ApplePayManager: Removed delegate: %@", delegate);
+    }
+}
+
+#pragma mark - Delegate Notification Helpers
+
+- (void)notifyDelegatesPurchaseSuccess:(SKPaymentTransaction *)transaction productId:(NSString *)productId {
+    // 兼容旧的delegate属性
+    if (self.delegate && [self.delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
+        [self.delegate applePayManager:self didPurchaseSuccessWithTransaction:transaction productId:productId];
+    }
+    
+    // 通知所有delegates
+    for (id<ApplePayManagerDelegate> delegate in self.delegates) {
+        if ([delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
+            [delegate applePayManager:self didPurchaseSuccessWithTransaction:transaction productId:productId];
+        }
+    }
+}
+
+- (void)notifyDelegatesPurchaseFail:(NSError *)error {
+    // 兼容旧的delegate属性
+    if (self.delegate && [self.delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
+        [self.delegate applePayManager:self didPurchaseFailWithError:error];
+    }
+    
+    // 通知所有delegates
+    for (id<ApplePayManagerDelegate> delegate in self.delegates) {
+        if ([delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
+            [delegate applePayManager:self didPurchaseFailWithError:error];
+        }
+    }
+}
+
+- (void)notifyDelegatesRestoreSuccess:(NSArray<SKPaymentTransaction *> *)transactions {
+    // 兼容旧的delegate属性
+    if (self.delegate && [self.delegate respondsToSelector:@selector(applePayManager:didRestoreSuccessWithTransactions:)]) {
+        [self.delegate applePayManager:self didRestoreSuccessWithTransactions:transactions];
+    }
+    
+    // 通知所有delegates
+    for (id<ApplePayManagerDelegate> delegate in self.delegates) {
+        if ([delegate respondsToSelector:@selector(applePayManager:didRestoreSuccessWithTransactions:)]) {
+            [delegate applePayManager:self didRestoreSuccessWithTransactions:transactions];
+        }
+    }
+}
+
+- (void)notifyDelegatesRestoreFail:(NSError *)error {
+    // 兼容旧的delegate属性
+    if (self.delegate && [self.delegate respondsToSelector:@selector(applePayManager:didRestoreFailWithError:)]) {
+        [self.delegate applePayManager:self didRestoreFailWithError:error];
+    }
+    
+    // 通知所有delegates
+    for (id<ApplePayManagerDelegate> delegate in self.delegates) {
+        if ([delegate respondsToSelector:@selector(applePayManager:didRestoreFailWithError:)]) {
+            [delegate applePayManager:self didRestoreFailWithError:error];
+        }
+    }
 }
 
 - (void)requestProductsWithIds:(NSArray<NSString *> *)productIds
@@ -102,12 +184,10 @@
                       timestamp:(NSString *)timestamp {
     if (!productId || productId.length == 0) {
         BUNNYX_ERROR(@"Product ID is empty");
-        if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
-            NSError *error = [NSError errorWithDomain:@"ApplePayManager" 
-                                                 code:-1003 
-                                             userInfo:@{NSLocalizedDescriptionKey: @"商品ID为空"}];
-            [self.delegate applePayManager:self didPurchaseFailWithError:error];
-        }
+        NSError *error = [NSError errorWithDomain:@"ApplePayManager" 
+                                             code:-1003 
+                                         userInfo:@{NSLocalizedDescriptionKey: @"商品ID为空"}];
+        [self notifyDelegatesPurchaseFail:error];
         return;
     }
     
@@ -115,12 +195,10 @@
     [self requestProductsWithIds:@[productId] completion:^(NSArray<SKProduct *> * _Nullable products, NSError * _Nullable error) {
         if (error || !products || products.count == 0) {
             BUNNYX_ERROR(@"Failed to get product info: %@", error);
-            if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
-                NSError *purchaseError = error ?: [NSError errorWithDomain:@"ApplePayManager" 
-                                                                      code:-1004 
-                                                                  userInfo:@{NSLocalizedDescriptionKey: @"获取商品信息失败"}];
-                [self.delegate applePayManager:self didPurchaseFailWithError:purchaseError];
-            }
+            NSError *purchaseError = error ?: [NSError errorWithDomain:@"ApplePayManager" 
+                                                                  code:-1004 
+                                                              userInfo:@{NSLocalizedDescriptionKey: @"获取商品信息失败"}];
+            [self notifyDelegatesPurchaseFail:purchaseError];
             return;
         }
         
@@ -266,25 +344,16 @@
                     [self verifyReceipt:receiptData completion:^(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error) {
                         if (success) {
                             // 通知代理购买成功
-                            if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
-                                [self.delegate applePayManager:self 
-                                    didPurchaseSuccessWithTransaction:transaction 
-                                                           productId:transaction.payment.productIdentifier];
-                            }
+                            [self notifyDelegatesPurchaseSuccess:transaction productId:transaction.payment.productIdentifier];
                         } else {
                             // 验证失败，但仍通知代理（由业务层决定如何处理）
-                            if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
-                                [self.delegate applePayManager:self didPurchaseFailWithError:error ?: [NSError errorWithDomain:@"ApplePayManager" code:-1007 userInfo:@{NSLocalizedDescriptionKey: @"收据验证失败"}]];
-                            }
+                            NSError *verifyError = error ?: [NSError errorWithDomain:@"ApplePayManager" code:-1007 userInfo:@{NSLocalizedDescriptionKey: @"收据验证失败"}];
+                            [self notifyDelegatesPurchaseFail:verifyError];
                         }
                     }];
                 } else {
                     // 没有收据，直接通知成功（可能是测试环境）
-                    if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
-                        [self.delegate applePayManager:self 
-                            didPurchaseSuccessWithTransaction:transaction 
-                                                   productId:transaction.payment.productIdentifier];
-                    }
+                    [self notifyDelegatesPurchaseSuccess:transaction productId:transaction.payment.productIdentifier];
                 }
                 
                 // 注意：不要在这里finishTransaction，应该在业务层验证成功后调用
@@ -293,12 +362,10 @@
             case SKPaymentTransactionStateFailed: {
                 BUNNYX_ERROR(@"Transaction failed: %@, error: %@", transaction.transactionIdentifier, transaction.error);
                 
-                if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseFailWithError:)]) {
-                    NSError *error = transaction.error ?: [NSError errorWithDomain:@"ApplePayManager" 
-                                                                              code:-1008 
-                                                                          userInfo:@{NSLocalizedDescriptionKey: @"购买失败"}];
-                    [self.delegate applePayManager:self didPurchaseFailWithError:error];
-                }
+                NSError *error = transaction.error ?: [NSError errorWithDomain:@"ApplePayManager" 
+                                                                          code:-1008 
+                                                                      userInfo:@{NSLocalizedDescriptionKey: @"购买失败"}];
+                [self notifyDelegatesPurchaseFail:error];
                 
                 // 失败时完成交易
                 [self finishTransaction:transaction];
@@ -307,11 +374,7 @@
             case SKPaymentTransactionStateRestored: {
                 BUNNYX_LOG(@"Transaction restored: %@", transaction.transactionIdentifier);
                 
-                if ([self.delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
-                    [self.delegate applePayManager:self 
-                        didPurchaseSuccessWithTransaction:transaction 
-                                               productId:transaction.payment.productIdentifier];
-                }
+                [self notifyDelegatesPurchaseSuccess:transaction productId:transaction.payment.productIdentifier];
                 
                 [self finishTransaction:transaction];
                 break;
@@ -328,18 +391,12 @@
 
 - (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
     BUNNYX_ERROR(@"Restore purchases failed: %@", error);
-    
-    if ([self.delegate respondsToSelector:@selector(applePayManager:didRestoreFailWithError:)]) {
-        [self.delegate applePayManager:self didRestoreFailWithError:error];
-    }
+    [self notifyDelegatesRestoreFail:error];
 }
 
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
     BUNNYX_LOG(@"Restore purchases completed");
-    
-    if ([self.delegate respondsToSelector:@selector(applePayManager:didRestoreSuccessWithTransactions:)]) {
-        [self.delegate applePayManager:self didRestoreSuccessWithTransactions:queue.transactions];
-    }
+    [self notifyDelegatesRestoreSuccess:queue.transactions];
 }
 
 @end

@@ -15,6 +15,7 @@
 #import "SubscribeVipCell.h"
 #import "UserInfoManager.h"
 #import "AppConfigManager.h"
+#import "PaymentOrderCacheManager.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import "SubscribeDialog.h"
 #import "ApplePayManager.h"
@@ -519,12 +520,10 @@
     
     NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
     
+    // 构建验证参数（根据接口文档）
     NSDictionary *params = @{
-        @"token": transaction.transactionIdentifier ?: @"",
-        @"signture_data": @"", // Apple Pay不需要签名
-        @"order_sn": self.currentServerOrderSn ?: @"",
-        @"billingResponseCode": @(0),
-        @"other_data": receiptString
+        @"appleReceipt": receiptString, // 苹果支付凭据（base64编码的收据）
+        @"orderSn": self.currentServerOrderSn ?: @"" // 订单号（必选）
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY
@@ -534,6 +533,12 @@
         if (code == 0) {
             // 验证通过，完成交易
             [self.applePayManager finishTransaction:transaction];
+            
+            // 清除缓存的订单信息
+            if (transaction.transactionIdentifier) {
+                [[PaymentOrderCacheManager sharedManager] clearPendingOrderForTransactionId:transaction.transactionIdentifier];
+            }
+            
             [SVProgressHUD showSuccessWithStatus:LocalString(@"订阅成功")];
             // 刷新用户信息
             [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
@@ -617,6 +622,11 @@
 #pragma mark - ApplePayManagerDelegate
 
 - (void)applePayManager:(ApplePayManager *)manager didPurchaseSuccessWithTransaction:(SKPaymentTransaction *)transaction productId:(NSString *)productId {
+    // 保存订单缓存（用于异常处理）
+    if (transaction.transactionIdentifier && self.currentServerOrderSn) {
+        [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transaction.transactionIdentifier orderSn:self.currentServerOrderSn];
+    }
+    
     [self verifyPaymentWithTransaction:transaction];
 }
 
