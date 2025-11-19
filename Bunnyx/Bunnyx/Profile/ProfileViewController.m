@@ -23,6 +23,7 @@
 #import "GradientButton.h"
 #import "ContactUsViewController.h"
 #import <SVProgressHUD/SVProgressHUD.h>
+#import "HostEnvironmentSwitchViewController.h"
 
 // MARK: - ProfileViewController
 @interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
@@ -57,6 +58,10 @@
 
 // 数据
 @property (nonatomic, strong) UserInfoModel *userInfo;
+
+// Debug
+@property (nonatomic, assign) NSInteger avatarTapCount;
+@property (nonatomic, strong) NSTimer *avatarTapTimer;
 
 @end
 
@@ -154,6 +159,9 @@
     self.avatarImageView.contentMode = UIViewContentModeScaleAspectFill;
     self.avatarImageView.layer.cornerRadius = 37.5;
     self.avatarImageView.layer.masksToBounds = YES;
+    self.avatarImageView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *avatarTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onAvatarImageTapped)];
+    [self.avatarImageView addGestureRecognizer:avatarTap];
     [userInfoContainer addSubview:self.avatarImageView];
     
     [self.avatarImageView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -412,6 +420,8 @@
     } @catch (NSException *exception) {
         // 忽略移除观察者时的异常
     }
+    [self.avatarTapTimer invalidate];
+    self.avatarTapTimer = nil;
 }
 
 #pragma mark - JXPagerViewDelegate
@@ -529,6 +539,31 @@
     [UIView animateWithDuration:0.3 animations:^{
         [self.tabContainerView layoutIfNeeded];
     }];
+}
+
+#pragma mark - Hidden Debug Entry
+
+- (void)onAvatarImageTapped {
+    self.avatarTapCount += 1;
+    [self resetAvatarTapTimer];
+    if (self.avatarTapCount >= 5) {
+        [self resetAvatarTapState];
+        HostEnvironmentSwitchViewController *envVC = [[HostEnvironmentSwitchViewController alloc] init];
+        envVC.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:envVC animated:YES];
+    }
+}
+
+- (void)resetAvatarTapTimer {
+    [self.avatarTapTimer invalidate];
+    self.avatarTapTimer = [NSTimer timerWithTimeInterval:1.5 target:self selector:@selector(resetAvatarTapState) userInfo:nil repeats:NO];
+    [[NSRunLoop mainRunLoop] addTimer:self.avatarTapTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)resetAvatarTapState {
+    self.avatarTapCount = 0;
+    [self.avatarTapTimer invalidate];
+    self.avatarTapTimer = nil;
 }
 
 #pragma mark - Button Actions

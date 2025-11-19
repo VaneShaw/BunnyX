@@ -8,15 +8,10 @@
 #ifndef BunnyxNetworkMacros_h
 #define BunnyxNetworkMacros_h
 
+#import "HostEnvironmentManager.h"
+
 // MARK: - 服务器环境配置
-#ifdef DEBUG
-    // 开发环境
-    //#define BUNNYX_BASE_URL @"http://albbunnyxtestappapi-1240859665.ap-northeast-1.elb.amazonaws.com"
-    #define BUNNYX_BASE_URL @"https://testappapi.bunnyx.ai"
-#else
-    // 生产环境
-    #define BUNNYX_BASE_URL @"https://api.bunnyx.com"
-#endif
+#define BUNNYX_BASE_URL [[HostEnvironmentManager sharedManager] currentBaseURL]
 
 // MARK: - API版本
 #define BUNNYX_API_VERSION @"1.0"
