@@ -305,15 +305,12 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     // 2. pageType (PAGE_TYPE_GENERATE = 1)
     // 3. materialId (createTask.materialId)
     
-    // 使用MaterialDetailViewController，传递pageType参数（对齐安卓）
+    // 使用MaterialDetailViewController，传递pageType参数和createTask（对齐安卓）
     if (createTask.materialId > 0) {
         MaterialDetailViewController *vc = [[MaterialDetailViewController alloc] initWithMaterialId:createTask.materialId 
-                                                                                            pageType:MaterialDetailPageTypeGenerate];
+                                                                                            pageType:MaterialDetailPageTypeGenerate
+                                                                                           createTask:createTask];
         vc.hidesBottomBarWhenPushed = YES;
-        
-        // 使用block回调来处理详情页返回后的删除操作
-        // 注意：需要在MaterialDetailViewController中添加回调支持
-        // 暂时先跳转，删除功能通过通知或其他方式实现
         
         [self.navigationController pushViewController:vc animated:YES];
         BUNNYX_LOG(@"跳转到详情页，createId: %@, materialId: %ld", createTask.createId, (long)createTask.materialId);

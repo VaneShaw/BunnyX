@@ -14,10 +14,13 @@ typedef NS_ENUM(NSInteger, MaterialDetailPageType) {
     MaterialDetailPageTypeGenerateFromUploading = 2  // 从上传页面生成完成进入
 };
 
+@class CreateTaskModel;
+
 @interface MaterialDetailViewController : BaseViewController
 
 - (instancetype)initWithMaterialId:(NSInteger)materialId;
 - (instancetype)initWithMaterialId:(NSInteger)materialId pageType:(MaterialDetailPageType)pageType;
+- (instancetype)initWithMaterialId:(NSInteger)materialId pageType:(MaterialDetailPageType)pageType createTask:(CreateTaskModel *)createTask;
 
 @end
 

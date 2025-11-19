@@ -12,8 +12,10 @@
 #import "BunnyxNetworkMacros.h"
 #import "BunnyxMacros.h"
 #import "MaterialCollectionViewCell.h"
+#import "MaterialDetailViewController.h"
 #import <MJRefresh/MJRefresh.h>
 #import <JXPagingView/JXPagerView.h>
+#import <SDWebImage/SDWebImage.h>
 
 static NSString *const kLikeCellId = @"LikeListCell";
 
@@ -26,6 +28,8 @@ static NSString *const kLikeCellId = @"LikeListCell";
 @property (nonatomic, assign) BOOL isLoading;
 @property (nonatomic, assign) BOOL hasMoreData;
 @property (nonatomic, copy) void(^listViewDidScrollCallback)(UIScrollView *scrollView);
+@property (nonatomic, assign) NSTimeInterval lastItemClickTime; // 防重复点击
+@property (nonatomic, assign) NSInteger lastClickIndex; // 最后点击的位置
 
 @end
 
@@ -39,6 +43,8 @@ static NSString *const kLikeCellId = @"LikeListCell";
     self.currentPage = 1;
     self.isLoading = NO;
     self.hasMoreData = YES;
+    self.lastItemClickTime = 0;
+    self.lastClickIndex = -1;
     
     [self setupUI];
     [self setupRefresh];
@@ -227,10 +233,27 @@ static NSString *const kLikeCellId = @"LikeListCell";
 }
 
 - (void)handleCellSelectionAtIndexPath:(NSIndexPath *)indexPath {
+    // 防重复点击（对齐安卓：600ms防重复点击）
+    NSTimeInterval now = [[NSDate date] timeIntervalSince1970] * 1000;
+    if (now - self.lastItemClickTime < 600) {
+        return;
+    }
+    self.lastItemClickTime = now;
+    self.lastClickIndex = indexPath.item;
+    
     if (indexPath.item >= 0 && indexPath.item < self.dataList.count) {
         MaterialItemModel *model = self.dataList[indexPath.item];
-        // TODO: 跳转到素材详情页
-        BUNNYX_LOG(@"点击收藏素材: %ld", (long)model.materialId);
+        
+        // 预加载图片（对齐安卓：点击后预加载详情页需要的大图）
+        if (model.materialUrl && model.materialUrl.length > 0) {
+            NSURL *url = [NSURL URLWithString:model.materialUrl];
+            [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:@[url]];
+        }
+        
+        // 跳转到素材详情页（对齐安卓：MaterialDetailActivity）
+        MaterialDetailViewController *detailVC = [[MaterialDetailViewController alloc] initWithMaterialId:model.materialId];
+        detailVC.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:detailVC animated:YES];
     }
 }
 

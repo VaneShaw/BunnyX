@@ -8,6 +8,7 @@
 #import <SDWebImage/SDWebImage.h>
 #import <Masonry/Masonry.h>
 #import "BunnyxMacros.h"
+#import "VectorImageHelper.h"
 
 @interface MaterialCollectionViewCell ()
 
@@ -52,6 +53,8 @@
     self.imageView.clipsToBounds = YES;
     self.imageView.layer.cornerRadius = 10.0; // dp_10 = 10dp
     self.imageView.layer.masksToBounds = YES;
+    // 设置背景色#1D2B2C，让背景色和图片同时可见
+    self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
     [self.containerView addSubview:self.imageView];
     
     [self.imageView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -128,6 +131,8 @@
     self.showLikeButton = YES;
     // 取消可能存在的视图动画（对齐安卓：onViewDetachedFromWindow中的处理）
     [self.imageView.layer removeAllAnimations];
+    // 保持背景色#1D2B2C
+    self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
 }
 
 - (void)configureWithModel:(MaterialItemModel *)model {
@@ -135,16 +140,21 @@
     
     // 加载图片（对齐安卓：添加placeholder和error图片）
     NSURL *url = [NSURL URLWithString:model.materialUrl];
+    if (!url) {
+        self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
+        // 保持背景色#1D2B2C，让背景色和图片同时可见
+        self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+        return;
+    }
     
-    // 对齐安卓：使用ALL缓存策略，对于动态图（GIF/WebP），保持动态效果
-    // SDWebImage默认支持动图，使用SDImageCacheTypeAll缓存策略
-    SDWebImageOptions options = SDWebImageRetryFailed | SDWebImageContinueInBackground;
-    
-    // 如果之前有图片，先取消加载（避免复用时的混乱）
-    [self.imageView sd_cancelCurrentImageLoad];
-    
+ 
+    SDWebImageOptions options = SDWebImageRetryFailed | SDWebImageContinueInBackground | SDWebImageQueryMemoryData;
+    // 使用SDWebImage加载图片，它会自动处理：
+    // 1. 先检查内存缓存，如果有立即显示（通过上面的cachedImage）
+    // 2. 如果没有，SDWebImage会异步从磁盘缓存读取（不会阻塞主线程）
+    // 3. 如果磁盘也没有，从网络下载
     [self.imageView sd_setImageWithURL:url 
-                       placeholderImage:[UIImage imageNamed:@"image_loading_ic"] 
+                       placeholderImage:[VectorImageHelper defaultLoadingImage]
                                 options:options 
                                 context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}
                               progress:nil
@@ -152,6 +162,8 @@
         if (error) {
             self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
         }
+        // 保持背景色#1D2B2C，让背景色和图片同时可见
+        self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
     }];
     
     // 根据showLikeButton属性控制点赞按钮的显示/隐藏

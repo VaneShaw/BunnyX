@@ -13,6 +13,7 @@
 #import <MJRefresh/MJRefresh.h>
 #import <SDWebImage/SDWebImage.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import <Masonry/Masonry.h>
 
 static NSString * const kMaterialCellId = @"kMaterialCellId";
 
@@ -20,6 +21,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 
 @property (nonatomic, assign) NSInteger typeId;
 @property (nonatomic, strong) UICollectionView *collectionView;
+@property (nonatomic, strong) UIView *emptyView; // 空状态视图（对齐安卓：layout_empty）
 @property (nonatomic, strong) NSMutableArray<MaterialItemModel *> *items;
 @property (nonatomic, assign) NSInteger index;
 @property (nonatomic, assign) NSInteger count;
@@ -46,7 +48,9 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor clearColor];
     [self setupCollectionView];
+    [self setupEmptyView];
     [self setupRefresh];
+    [self setupNotifications];
     [self.collectionView.mj_header beginRefreshing];
 }
 
@@ -69,6 +73,97 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     // iOS中通过禁用UIView动画来达到类似效果
     [_collectionView registerClass:[MaterialCollectionViewCell class] forCellWithReuseIdentifier:kMaterialCellId];
     [self.view addSubview:_collectionView];
+}
+
+- (void)setupEmptyView {
+    // 对齐安卓：layout_empty，使用icon_mine_default_image
+    self.emptyView = [[UIView alloc] init];
+    self.emptyView.backgroundColor = [UIColor clearColor];
+    self.emptyView.hidden = YES;
+    [self.view addSubview:self.emptyView];
+    [self.emptyView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.view);
+    }];
+    
+    UIImageView *emptyIcon = [[UIImageView alloc] init];
+    emptyIcon.image = [UIImage imageNamed:@"icon_mine_default_image"];
+    emptyIcon.contentMode = UIViewContentModeScaleAspectFit;
+    [self.emptyView addSubview:emptyIcon];
+    [emptyIcon mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.center.equalTo(self.emptyView);
+        make.width.height.mas_equalTo(80);
+    }];
+}
+
+- (void)setupNotifications {
+    // 监听详情页返回后的收藏状态更新通知（对齐安卓：ActivityResultLauncher）
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleMaterialDetailFavoriteChanged:)
+                                                 name:@"MaterialDetailFavoriteChangedNotification"
+                                               object:nil];
+    // 监听素材被举报/屏蔽的通知（对齐安卓：material_reported）
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleMaterialReported:)
+                                                 name:@"MaterialReportedNotification"
+                                               object:nil];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)handleMaterialDetailFavoriteChanged:(NSNotification *)notification {
+    // 对齐安卓：精确更新对应item的收藏状态，避免整体刷新
+    NSDictionary *userInfo = notification.userInfo;
+    if (!userInfo) {
+        return;
+    }
+    
+    NSInteger materialId = [userInfo[@"materialId"] integerValue];
+    BOOL isFavorite = [userInfo[@"isFavorite"] boolValue];
+    NSInteger likeCount = [userInfo[@"likeCount"] integerValue];
+    
+    // 查找对应的item并更新
+    for (NSInteger i = 0; i < self.items.count; i++) {
+        MaterialItemModel *item = self.items[i];
+        if (item && item.materialId == materialId) {
+            item.isFavorite = isFavorite;
+            if (likeCount >= 0) {
+                item.favoriteQty = @(likeCount);
+            }
+            // 只更新对应的cell，不整体刷新
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
+            [self.collectionView reloadItemsAtIndexPaths:@[indexPath]];
+            break;
+        }
+    }
+}
+
+- (void)handleMaterialReported:(NSNotification *)notification {
+    // 对齐安卓：从列表中移除被举报/屏蔽的item（对应material_reported）
+    NSDictionary *userInfo = notification.userInfo;
+    if (!userInfo) {
+        return;
+    }
+    
+    NSInteger materialId = [userInfo[@"materialId"] integerValue];
+    
+    // 查找对应的item并移除
+    for (NSInteger i = 0; i < self.items.count; i++) {
+        MaterialItemModel *item = self.items[i];
+        if (item && item.materialId == materialId) {
+            [self.items removeObjectAtIndex:i];
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:i inSection:0];
+            [self.collectionView deleteItemsAtIndexPaths:@[indexPath]];
+            
+            // 如果删除后列表为空，显示空状态
+            if (self.items.count == 0) {
+                self.emptyView.hidden = NO;
+                self.collectionView.hidden = YES;
+            }
+            break;
+        }
+    }
 }
 
 - (void)viewDidLayoutSubviews {
@@ -120,6 +215,16 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         } else {
             [self.collectionView.mj_footer resetNoMoreData];
         }
+        
+        // 对齐安卓：根据数据是否为空显示/隐藏空状态
+        if (self.items.count > 0) {
+            self.emptyView.hidden = YES;
+            self.collectionView.hidden = NO;
+        } else {
+            self.emptyView.hidden = NO;
+            self.collectionView.hidden = YES;
+        }
+        
         // 对齐安卓：禁用动画，减少闪烁
         [UIView performWithoutAnimation:^{
             [self.collectionView reloadData];

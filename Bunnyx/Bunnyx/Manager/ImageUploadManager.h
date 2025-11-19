@@ -8,7 +8,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef void(^ImageUploadSuccessBlock)(NSString *initImage);
+typedef void(^ImageUploadSuccessBlock)(NSString *initImage, NSString *fullUrl);
 typedef void(^ImageUploadFailureBlock)(NSError *error);
 typedef void(^ImageUploadProgressBlock)(CGFloat progress, NSString *status);
 

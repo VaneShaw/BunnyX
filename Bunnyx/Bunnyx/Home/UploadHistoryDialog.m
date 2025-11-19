@@ -90,19 +90,47 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         return;
     }
     
-    // 加载图片（支持URL和本地路径）
+    // 对齐安卓：优先使用AWS URL显示图片（如果本地文件不存在）
+    // 1. 如果是HTTP/HTTPS URL，直接使用
     if ([item.imageUri hasPrefix:@"http://"] || [item.imageUri hasPrefix:@"https://"]) {
         [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.imageUri]
                            placeholderImage:[UIImage systemImageNamed:@"photo"]];
-    } else {
-        // 本地路径
-        UIImage *localImage = [UIImage imageWithContentsOfFile:item.imageUri];
-        if (localImage) {
-            self.imageView.image = localImage;
-        } else {
-            self.imageView.image = [UIImage systemImageNamed:@"photo"];
+        return;
+    }
+    
+    // 2. 尝试加载本地路径
+    UIImage *localImage = [UIImage imageWithContentsOfFile:item.imageUri];
+    if (localImage) {
+        self.imageView.image = localImage;
+        return;
+    }
+    
+    // 3. 本地文件不存在，尝试使用AWS路径（对齐安卓：如果本地文件不存在，使用AWS URL）
+    if (item.awsFullPath && item.awsFullPath.length > 0) {
+        // 如果awsFullPath是完整URL，直接使用
+        if ([item.awsFullPath hasPrefix:@"http://"] || [item.awsFullPath hasPrefix:@"https://"]) {
+            [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.awsFullPath]
+                               placeholderImage:[UIImage systemImageNamed:@"photo"]];
+            return;
+        }
+        // 如果awsFullPath是相对路径，需要拼接完整URL（这里可以根据实际情况调整）
+        // 暂时先尝试使用awsFullPath作为URL
+        [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.awsFullPath]
+                           placeholderImage:[UIImage systemImageNamed:@"photo"]];
+        return;
+    }
+    
+    // 4. 如果awsFullPath也不可用，尝试使用awsRelativePath
+    if (item.awsRelativePath && item.awsRelativePath.length > 0) {
+        if ([item.awsRelativePath hasPrefix:@"http://"] || [item.awsRelativePath hasPrefix:@"https://"]) {
+            [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.awsRelativePath]
+                               placeholderImage:[UIImage systemImageNamed:@"photo"]];
+            return;
         }
     }
+    
+    // 5. 所有方式都失败，显示占位图
+    self.imageView.image = [UIImage systemImageNamed:@"photo"];
 }
 
 - (void)setSelectedState:(BOOL)selected {

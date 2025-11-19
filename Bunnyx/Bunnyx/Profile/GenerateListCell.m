@@ -11,6 +11,7 @@
 #import "BunnyxMacros.h"
 #import <SDWebImage/SDWebImage.h>
 #import "LanguageManager.h"
+#import "VectorImageHelper.h"
 
 @implementation GenerateListCell
 
@@ -178,6 +179,20 @@
         make.edges.equalTo(statusBackgroundView).insets(UIEdgeInsetsMake(0, 8, 0, 8)); // paddingStart/End: 8dp
     }];
     
+    // 进度点容器（对齐安卓：根据position显示不同数量的点）
+    self.progressDotsContainer = [[UIView alloc] init];
+    self.progressDotsContainer.backgroundColor = [UIColor clearColor];
+    [self.statusRowView addSubview:self.progressDotsContainer];
+    
+    [self.progressDotsContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.statusLabel.mas_right).offset(8);
+        make.centerY.equalTo(self.statusRowView);
+        make.height.mas_equalTo(8); // 对齐安卓：点的高度8dp
+    }];
+    
+    // 初始化进度点视图数组
+    self.progressDotViews = [NSMutableArray array];
+    
     // 队列信息标签（对应TextView）
     // textSize: 12sp, textColor: white
     self.queueInfoLabel = [[UILabel alloc] init];
@@ -186,7 +201,7 @@
     [self.statusRowView addSubview:self.queueInfoLabel];
     
     [self.queueInfoLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.statusLabel.mas_right).offset(8);
+        make.left.equalTo(self.progressDotsContainer.mas_right).offset(8);
         make.centerY.equalTo(self.statusRowView);
         make.right.lessThanOrEqualTo(self.statusRowView);
     }];
@@ -293,6 +308,8 @@
 - (void)showLoadingState:(CreateTaskModel *)createTask {
     // 显示渐变背景
     self.coverImageView.hidden = NO;
+    // 清除背景色，使用渐变背景
+    self.coverImageView.backgroundColor = [UIColor clearColor];
     // 设置渐变背景（bg_generate_gradient: #CECDF5 -> #F0CADB -> #CFCBF5）
     CAGradientLayer *gradientLayer = [CAGradientLayer layer];
     gradientLayer.colors = @[
@@ -316,6 +333,72 @@
     
     // 显示状态标签行
     self.statusRowView.hidden = NO;
+    
+    // 对齐安卓：根据position显示不同数量的进度点
+    [self updateProgressDots:createTask];
+}
+
+// 对齐安卓：根据position显示不同数量的进度点
+- (void)updateProgressDots:(CreateTaskModel *)createTask {
+    // 清除旧的进度点
+    for (UIView *dotView in self.progressDotViews) {
+        [dotView removeFromSuperview];
+    }
+    [self.progressDotViews removeAllObjects];
+    
+    // 获取position值（排队位置）
+    NSInteger position = 0;
+    if (createTask.position && [createTask.position isKindOfClass:[NSNumber class]]) {
+        position = [createTask.position integerValue];
+    }
+    
+    // 对齐安卓：根据position显示不同数量的点（最多5个点）
+    // position=1显示1个点，position=2显示2个点，以此类推，最多5个点
+    NSInteger dotCount = MIN(MAX(position, 0), 5); // 限制在0-5之间
+    
+    if (dotCount <= 0) {
+        // 没有点，隐藏容器
+        self.progressDotsContainer.hidden = YES;
+        return;
+    }
+    
+    // 显示容器
+    self.progressDotsContainer.hidden = NO;
+    
+    // 创建进度点（对齐安卓：LoadingDotsView的样式）
+    // 方块尺寸：8dp，间距：4dp
+    CGFloat dotSize = 8;
+    CGFloat spacing = 4;
+    CGFloat totalWidth = dotCount * dotSize + (dotCount - 1) * spacing;
+    
+    // 更新容器宽度约束
+    [self.progressDotsContainer mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.width.mas_equalTo(totalWidth);
+    }];
+    
+    // 创建点视图（对齐安卓：颜色从深蓝到浅蓝）
+    NSArray *dotColors = @[
+        HEX_COLOR(0x1E3A8A), // 深蓝
+        HEX_COLOR(0x3B82F6), // 中深蓝
+        HEX_COLOR(0x60A5FA), // 中蓝
+        HEX_COLOR(0x93C5FD), // 浅蓝
+        HEX_COLOR(0xDBEAFE)  // 最浅蓝
+    ];
+    
+    for (NSInteger i = 0; i < dotCount; i++) {
+        UIView *dotView = [[UIView alloc] init];
+        dotView.backgroundColor = dotColors[MIN(i, dotColors.count - 1)];
+        dotView.layer.cornerRadius = 2; // 对齐安卓：圆角2dp
+        dotView.layer.masksToBounds = YES;
+        [self.progressDotsContainer addSubview:dotView];
+        [self.progressDotViews addObject:dotView];
+        
+        [dotView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(self.progressDotsContainer).offset(i * (dotSize + spacing));
+            make.width.height.mas_equalTo(dotSize);
+            make.centerY.equalTo(self.progressDotsContainer);
+        }];
+    }
 }
 
 - (void)showCompletedState:(CreateTaskModel *)createTask {
@@ -328,6 +411,8 @@
             [layer removeFromSuperlayer];
         }
     }
+    // 设置背景色#1D2B2C，让背景色和图片同时可见
+    self.coverImageView.backgroundColor = HEX_COLOR(0x1D2B2C);
     
     // 直接使用imageUrl显示封面图
     NSString *imageUrl = createTask.imageUrl;
@@ -336,19 +421,24 @@
         NSURL *url = [NSURL URLWithString:imageUrl];
         // 使用SDWebImage加载图片，并添加圆角处理
         [self.coverImageView sd_setImageWithURL:url
-                               placeholderImage:[UIImage imageNamed:@"image_loading_ic"]
+                               placeholderImage:[VectorImageHelper defaultLoadingImage]
                                         options:SDWebImageRetryFailed
                                       completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
             if (error) {
-                self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+                [self setFailureImage];
+            } else {
+                // 加载成功时，恢复正常的contentMode，保持背景色
+                self.coverImageView.contentMode = UIViewContentModeScaleAspectFill;
+                self.coverImageView.backgroundColor = HEX_COLOR(0x1D2B2C);
             }
         }];
     } else {
-        self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+        [self setFailureImage];
     }
     
-    // 隐藏状态标签行
+    // 隐藏状态标签行（包括进度点）
     self.statusRowView.hidden = YES;
+    self.progressDotsContainer.hidden = YES;
 }
 
 - (void)showDefaultState:(CreateTaskModel *)createTask {
@@ -361,10 +451,40 @@
             [layer removeFromSuperlayer];
         }
     }
-    self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+    // 设置背景色#1D2B2C，让背景色和图片同时可见
+    self.coverImageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+    [self setFailureImage];
     
     // 显示状态标签行（除了成功状态，其他状态都要显示）
     self.statusRowView.hidden = NO;
+    
+    // 非排队状态，隐藏进度点
+    self.progressDotsContainer.hidden = YES;
+}
+
+// 设置失败图片：使用icon_failure_default_ image，图片大小145*120，居中显示
+- (void)setFailureImage {
+    UIImage *failureImage = [UIImage imageNamed:@"icon_failure_default_ image"];
+    if (failureImage) {
+        // 将图片缩放到145*120
+        CGSize targetSize = CGSizeMake(145, 120);
+        UIGraphicsBeginImageContextWithOptions(targetSize, NO, [UIScreen mainScreen].scale);
+        [failureImage drawInRect:CGRectMake(0, 0, targetSize.width, targetSize.height)];
+        UIImage *scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        
+        self.coverImageView.image = scaledImage;
+        // 设置contentMode为Center，让图片在imageView中居中显示
+        self.coverImageView.contentMode = UIViewContentModeCenter;
+        // 设置背景色#1D2B2C，让背景色和图片同时可见
+        self.coverImageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+    } else {
+        // 如果图片不存在，使用默认图片
+        self.coverImageView.image = [UIImage imageNamed:@"image_error_ic"];
+        self.coverImageView.contentMode = UIViewContentModeScaleAspectFill;
+        // 设置背景色#1D2B2C，让背景色和图片同时可见
+        self.coverImageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+    }
 }
 
 - (NSString *)formatDateTime:(NSString *)dateTimeStr {

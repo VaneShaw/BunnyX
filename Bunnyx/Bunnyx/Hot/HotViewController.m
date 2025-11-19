@@ -11,12 +11,16 @@
 #import "NetworkManager.h"
 #import "BunnyxNetworkMacros.h"
 #import "MaterialItemModel.h"
+#import "MaterialDetailModel.h"
 #import "MaterialCollectionViewCell.h"
 #import "BottomAlignedCollectionViewFlowLayout.h"
 #import <SDWebImage/SDWebImage.h>
 #import <SVProgressHUD/SVProgressHUD.h>
 #import "UploadMaterialViewController.h"
 #import "RechargeViewController.h"
+#import "VectorImageHelper.h"
+#import "UserInfoManager.h"
+#import "MainTabBarController.h"
 
 static NSString * const kMaterialCellId = @"kMaterialCellId";
 
@@ -161,13 +165,18 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                         
                         // 等待布局完成后再刷新布局，确保选中item正确显示放大效果
                         dispatch_async(dispatch_get_main_queue(), ^{
-                            // 强制刷新布局，让选中的item显示为放大状态
-                            [self.materialCollectionView.collectionViewLayout invalidateLayout];
-                            [self.materialCollectionView layoutIfNeeded];
-                            
-                            // 对齐安卓：滚动到中间位置
+                            // 对齐安卓：滚动到中间位置（先滚动，再刷新布局）
                             NSIndexPath *middlePath = [NSIndexPath indexPathForItem:middleIndex inSection:0];
                             [self.materialCollectionView scrollToItemAtIndexPath:middlePath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
+                            
+                            // 滚动完成后，强制刷新布局，让选中的item显示为放大状态
+                            // 使用performBatchUpdates确保布局正确应用
+                            [self.materialCollectionView performBatchUpdates:^{
+                                [self.materialCollectionView.collectionViewLayout invalidateLayout];
+                            } completion:^(BOOL finished) {
+                                // 布局更新完成后，再次确保布局正确
+                                [self.materialCollectionView layoutIfNeeded];
+                            }];
                         });
                     });
                 }
@@ -224,7 +233,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     // 对齐安卓：使用ALL缓存策略，同时缓存原始数据和解码后的图片
     // 对于动态图（GIF/WebP），会优先使用SOURCE缓存，保持动态效果
     [self.backgroundImageView sd_setImageWithURL:url 
-                                 placeholderImage:[UIImage imageNamed:@"image_loading_ic"]
+                                 placeholderImage:[VectorImageHelper defaultLoadingImage]
                                           options:SDWebImageRetryFailed | SDWebImageScaleDownLargeImages
                                           context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}
                                          progress:nil
@@ -501,10 +510,8 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         }
         
         if (isSufficient) {
-            // 金币足够，进入上传页
-            UploadMaterialViewController *vc = [[UploadMaterialViewController alloc] initWithMaterialId:materialId];
-            vc.hidesBottomBarWhenPushed = YES;
-            [self.navigationController pushViewController:vc animated:YES];
+            // 金币足够，检查VIP权限（对齐安卓：checkVipAndStartUpload）
+            [self checkVipAndStartUpload:materialId];
         } else {
             // 金币不足，显示充值提示
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"余额不足")
@@ -528,6 +535,77 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         [SVProgressHUD dismiss];
         [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
     }];
+}
+
+// 对齐安卓：检查VIP权限并继续上传流程
+- (void)checkVipAndStartUpload:(NSInteger)materialId {
+    // 对齐安卓：如果当前背景素材不存在，需要先获取
+    // 注意：MaterialItemModel可能没有onlyVip字段，需要重新获取详情来检查
+    [self loadMaterialForVipCheck:materialId];
+}
+
+// 对齐安卓：加载素材信息用于VIP检查
+- (void)loadMaterialForVipCheck:(NSInteger)materialId {
+    [SVProgressHUD show];
+    NSDictionary *params = @{ @"materialId": @(materialId) };
+    [[NetworkManager sharedManager] GET:BUNNYX_API_MATERIAL_DETAIL parameters:params success:^(id  _Nonnull responseObject) {
+        [SVProgressHUD dismiss];
+        NSDictionary *data = responseObject[@"data"];
+        if (data && [data isKindOfClass:[NSDictionary class]]) {
+            MaterialDetailModel *detailModel = [MaterialDetailModel modelFromResponse:data];
+            
+            // 检查onlyVip字段
+            NSInteger onlyVip = detailModel.onlyVip;
+            if (onlyVip == 1) {
+                // 检查用户是否是VIP
+                BOOL isVip = [[UserInfoManager sharedManager] isVip];
+                if (!isVip) {
+                    // 不是VIP，显示VIP提示弹窗
+                    [self showVipRequiredDialog];
+                    return;
+                }
+            }
+            
+            // VIP检查通过，继续上传流程
+            [self proceedToUpload:materialId];
+        } else {
+            // 获取素材信息失败，直接继续上传流程
+            [self proceedToUpload:materialId];
+        }
+    } failure:^(NSError * _Nonnull error) {
+        [SVProgressHUD dismiss];
+        // 获取素材信息失败，直接继续上传流程
+        [self proceedToUpload:materialId];
+    }];
+}
+
+// 对齐安卓：显示VIP要求弹窗
+- (void)showVipRequiredDialog {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"仅VIP可用")
+                                                                     message:LocalString(@"此素材仅VIP用户可用，是否前往订阅？")
+                                                              preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *subscribeAction = [UIAlertAction actionWithTitle:LocalString(@"去订阅")
+                                                            style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * _Nonnull action) {
+        // 对齐安卓：关闭当前页面并跳转到首页第三个tab（订阅页面，索引2）
+        UITabBarController *tabBarController = self.tabBarController;
+        if (tabBarController && tabBarController.viewControllers.count > 2) {
+            tabBarController.selectedIndex = 2; // 第三个tab索引为2
+        }
+    }];
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
+                                                           style:UIAlertActionStyleCancel
+                                                         handler:nil];
+    [alert addAction:subscribeAction];
+    [alert addAction:cancelAction];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
+// 对齐安卓：继续上传流程
+- (void)proceedToUpload:(NSInteger)materialId {
+    UploadMaterialViewController *vc = [[UploadMaterialViewController alloc] initWithMaterialId:materialId];
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 #pragma mark - UICollectionViewDataSource

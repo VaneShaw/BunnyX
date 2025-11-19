@@ -11,6 +11,7 @@
 #import "Manager/Config/SVProgressHUDConfig.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
+#import <SDWebImage/SDWebImage.h>
 
 @interface AppDelegate ()
 

@@ -5,28 +5,41 @@
 
 #import "MaterialDetailViewController.h"
 #import "MaterialDetailModel.h"
+#import "CreateTaskModel.h"
 #import "NetworkManager.h"
 #import "BunnyxMacros.h"
 #import "BunnyxNetworkMacros.h"
 #import "GradientButton.h"
 #import "AppConfigManager.h"
 #import "UserInfoManager.h"
+#import "GenerateListViewController.h" // 导入以使用 kGenerateDetailDeletedCreateIdKey
 #import <SDWebImage/SDWebImage.h>
 #import <Masonry/Masonry.h>
 #import <SVProgressHUD/SVProgressHUD.h>
+#import <AVFoundation/AVFoundation.h>
+#import <AVKit/AVKit.h>
+#import <Photos/Photos.h>
 #import "UploadMaterialViewController.h"
 #import "RechargeViewController.h"
 #import "MainTabBarController.h"
 
 // 通知名称：刷新首页列表
 NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotification";
+// 通知名称：素材被举报/屏蔽，需要从列表中移除
+NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 
 @interface MaterialDetailViewController ()
 
 @property (nonatomic, assign) NSInteger materialId;
 @property (nonatomic, assign) MaterialDetailPageType pageType; // 页面类型（对齐安卓：mPageType）
+@property (nonatomic, strong) CreateTaskModel *createTask; // 生成任务（对齐安卓：mCreateTask，用于删除功能）
 @property (nonatomic, strong) MaterialDetailModel *detailModel;
 @property (nonatomic, strong) UIImageView *materialImageView;
+@property (nonatomic, strong) UIView *videoContainer; // 视频容器（对齐安卓：fl_video_container）
+@property (nonatomic, strong) AVPlayer *videoPlayer; // 视频播放器（对齐安卓：VideoView）
+@property (nonatomic, strong) AVPlayerLayer *videoPlayerLayer; // 视频播放器图层
+@property (nonatomic, strong) NSString *currentVideoUrl; // 当前视频URL（对齐安卓：mCurrentVideoUrl）
+@property (nonatomic, assign) BOOL hasSwitchedToVideo; // 是否已切换到视频显示（对齐安卓：mHasSwitchedToVideo）
 @property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（对齐安卓：icon_home_detail_more_light）
 @property (nonatomic, strong) GradientButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
 @property (nonatomic, strong) UIButton *saveToAlbumButton; // 保存到相册按钮（对齐安卓：mBtnSaveToAlbum，使用黑色半透明背景）
@@ -38,22 +51,51 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 @implementation MaterialDetailViewController
 
 - (instancetype)initWithMaterialId:(NSInteger)materialId {
-    return [self initWithMaterialId:materialId pageType:MaterialDetailPageTypeMaterial];
+    return [self initWithMaterialId:materialId pageType:MaterialDetailPageTypeMaterial createTask:nil];
 }
 
 - (instancetype)initWithMaterialId:(NSInteger)materialId pageType:(MaterialDetailPageType)pageType {
+    return [self initWithMaterialId:materialId pageType:pageType createTask:nil];
+}
+
+- (instancetype)initWithMaterialId:(NSInteger)materialId pageType:(MaterialDetailPageType)pageType createTask:(CreateTaskModel *)createTask {
     self = [super init];
     if (self) {
         _materialId = materialId;
         _pageType = pageType;
+        _createTask = createTask;
     }
     return self;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.backgroundImageView.hidden = YES;
+    self.currentVideoUrl = nil;
+    self.hasSwitchedToVideo = NO;
     [self setupUI];
     [self fetchMaterialDetail];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    // 页面消失时暂停视频播放
+    if (self.videoPlayer) {
+        [self.videoPlayer pause];
+    }
+}
+
+- (void)dealloc {
+    // 清理视频播放器
+    if (self.videoPlayer) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+        [self.videoPlayer pause];
+        self.videoPlayer = nil;
+    }
+    if (self.videoPlayerLayer) {
+        [self.videoPlayerLayer removeFromSuperlayer];
+        self.videoPlayerLayer = nil;
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -69,6 +111,19 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     [self.view bringSubviewToFront:self.favoriteButton];
     [self.view bringSubviewToFront:self.saveToAlbumButton];
     [self.view bringSubviewToFront:self.generateButton];
+    
+    // 确保视图层级正确：materialImageView作为背景，videoContainer在materialImageView之上（如果需要），按钮在最上层
+    // 注意：不要使用sendSubviewToBack，因为会把视图放到view背景色后面
+    // 正确的层级应该是：view背景 < materialImageView < videoContainer < 按钮
+    if (self.videoContainer && !self.videoContainer.hidden) {
+        // 如果视频容器显示，确保它在materialImageView之上
+        [self.view insertSubview:self.videoContainer aboveSubview:self.materialImageView];
+    }
+    
+    // 如果视频正在播放，恢复播放
+    if (self.videoPlayer && self.videoPlayer.rate == 0.0) {
+        [self.videoPlayer play];
+    }
 }
 
 - (void)setupUI {
@@ -82,6 +137,15 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     self.materialImageView.userInteractionEnabled = NO; // 背景图片不拦截点击事件
     [self.view addSubview:self.materialImageView];
     [self.materialImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.equalTo(self.view);
+    }];
+    
+    // 视频播放器容器（对齐安卓：fl_video_container，初始隐藏）
+    self.videoContainer = [[UIView alloc] init];
+    self.videoContainer.backgroundColor = [UIColor blackColor];
+    self.videoContainer.hidden = YES; // 初始隐藏
+    [self.view addSubview:self.videoContainer];
+    [self.videoContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.edges.equalTo(self.view);
     }];
     
@@ -247,14 +311,25 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     
     if (shouldCheckVideoMode && self.detailModel.materialMode == 2 && self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
         // 视频类型，materialUrl就是视频URL（对齐安卓：materialMode == 2）
-        // TODO: 实现视频播放功能（暂时先显示图片）
-        NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
-        [self.materialImageView sd_setImageWithURL:url 
-                                    placeholderImage:[UIImage imageNamed:@"image_error_ic"]
-                                             options:SDWebImageRetryFailed
-                                             context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
+        // 先显示封面图，等视频加载完成后再显示视频
+        self.materialImageView.hidden = NO;
+        self.videoContainer.hidden = YES;
+        [self.materialImageView setImage:[UIImage imageNamed:@"image_error_ic"]];
+        
+        // 如果视频URL和当前加载的相同，不重复设置
+        NSString *videoUrl = self.detailModel.materialUrl;
+        if (!self.currentVideoUrl || ![self.currentVideoUrl isEqualToString:videoUrl]) {
+            self.currentVideoUrl = videoUrl;
+            self.hasSwitchedToVideo = NO;
+            // 准备视频播放
+            [self prepareVideoDisplay];
+        }
     } else {
         // 非视频类型，按图片处理（包括从其他列表进入的情况）
+        // 确保图片视图可见，视频容器隐藏
+        self.materialImageView.hidden = NO;
+        self.videoContainer.hidden = YES;
+        
         if (self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
             NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
             [self.materialImageView sd_setImageWithURL:url 
@@ -267,6 +342,100 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
     // 更新生成按钮（对齐安卓：Generate(XXCoins)，17sp，bold）
     NSString *generateTitle = [NSString stringWithFormat:@"Generate(%ldCoins)", (long)self.detailModel.generatePrice];
     [self.generateButton setTitle:generateTitle forState:UIControlStateNormal];
+}
+
+#pragma mark - Video Playback
+
+// 对齐安卓：prepareVideoDisplay - 准备视频显示
+- (void)prepareVideoDisplay {
+    if (!self.currentVideoUrl || self.currentVideoUrl.length == 0) {
+        return;
+    }
+    
+    // 清理旧的播放器
+    if (self.videoPlayer) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+        [self.videoPlayer pause];
+        self.videoPlayer = nil;
+    }
+    if (self.videoPlayerLayer) {
+        [self.videoPlayerLayer removeFromSuperlayer];
+        self.videoPlayerLayer = nil;
+    }
+    
+    // 创建AVPlayer
+    NSURL *videoURL = [NSURL URLWithString:self.currentVideoUrl];
+    if (!videoURL) {
+        NSLog(@"[MaterialDetailViewController] 视频URL无效: %@", self.currentVideoUrl);
+        return;
+    }
+    
+    AVPlayerItem *playerItem = [AVPlayerItem playerItemWithURL:videoURL];
+    self.videoPlayer = [AVPlayer playerWithPlayerItem:playerItem];
+    
+    // 创建AVPlayerLayer
+    self.videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:self.videoPlayer];
+    self.videoPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill; // 对齐安卓：centerCrop效果
+    [self.videoContainer.layer addSublayer:self.videoPlayerLayer];
+    
+    // 设置图层frame（在viewDidLayoutSubviews中更新）
+    [self.view setNeedsLayout];
+    
+    // 监听播放完成，实现循环播放（对齐安卓：OnCompletionListener）
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(videoDidPlayToEnd:)
+                                                 name:AVPlayerItemDidPlayToEndTimeNotification
+                                               object:playerItem];
+    
+    // 监听播放状态，当视频准备好后切换到视频显示
+    [playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    
+    // 延迟一点再开始播放，确保设置完成（对齐安卓：post延迟）
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (self.videoPlayer && self.currentVideoUrl) {
+            [self.videoPlayer play];
+            NSLog(@"[MaterialDetailViewController] 视频开始播放: %@", self.currentVideoUrl);
+        }
+    });
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"status"]) {
+        AVPlayerItem *playerItem = (AVPlayerItem *)object;
+        if (playerItem.status == AVPlayerItemStatusReadyToPlay) {
+            // 视频准备好后，切换到视频显示（对齐安卓：切换到VideoView）
+            if (!self.hasSwitchedToVideo) {
+                self.hasSwitchedToVideo = YES;
+                self.materialImageView.hidden = YES;
+                self.videoContainer.hidden = NO;
+                NSLog(@"[MaterialDetailViewController] 切换到视频显示");
+            }
+            // 移除观察者
+            [playerItem removeObserver:self forKeyPath:@"status"];
+        } else if (playerItem.status == AVPlayerItemStatusFailed) {
+            NSLog(@"[MaterialDetailViewController] 视频加载失败: %@", playerItem.error);
+            // 移除观察者
+            [playerItem removeObserver:self forKeyPath:@"status"];
+        }
+    }
+}
+
+// 对齐安卓：视频播放完成，循环播放
+- (void)videoDidPlayToEnd:(NSNotification *)notification {
+    if (self.videoPlayer) {
+        // 重新开始播放（对齐安卓：seekTo(0) + start()）
+        [self.videoPlayer seekToTime:kCMTimeZero];
+        [self.videoPlayer play];
+        NSLog(@"[MaterialDetailViewController] 视频循环播放");
+    }
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    // 更新视频播放器图层frame
+    if (self.videoPlayerLayer) {
+        self.videoPlayerLayer.frame = self.videoContainer.bounds;
+    }
 }
 
 #pragma mark - Actions
@@ -331,9 +500,13 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
         [SVProgressHUD dismiss];
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 对齐安卓：成功后关闭当前页面，返回首页并刷新列表
-            // 发送通知刷新首页列表
-            [[NSNotificationCenter defaultCenter] postNotificationName:kRefreshMaterialListNotification object:nil];
+            // 对齐安卓：成功后关闭当前页面，通知列表页移除对应item（对应material_reported）
+            // 发送通知，通知列表页移除对应item
+            [[NSNotificationCenter defaultCenter] postNotificationName:kMaterialReportedNotification
+                                                                object:nil
+                                                              userInfo:@{
+                                                                  @"materialId": @(self.materialId)
+                                                              }];
             // 切换到首页tab（索引0）
             UITabBarController *tabBarController = self.tabBarController;
             if (tabBarController && tabBarController.viewControllers.count > 0) {
@@ -382,6 +555,16 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
                 self.detailModel.favoriteQty = @(MAX(0, currentCount - 1));
             }
             [self updateUI];
+            
+            // 对齐安卓：发送通知，通知列表页更新对应item的收藏状态（对应ActivityResultLauncher）
+            NSInteger likeCount = self.detailModel.favoriteQty ? [self.detailModel.favoriteQty integerValue] : 0;
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"MaterialDetailFavoriteChangedNotification"
+                                                                object:nil
+                                                              userInfo:@{
+                                                                  @"materialId": @(self.detailModel.materialId),
+                                                                  @"isFavorite": @(willFavorite),
+                                                                  @"likeCount": @(likeCount)
+                                                              }];
         } else {
             [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
         }
@@ -552,26 +735,90 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 
 // 对齐安卓：保存到相册
 - (void)saveToAlbumButtonTapped:(UIButton *)sender {
-    // 对齐安卓：从CreateTask获取videoUrl或imageUrl
-    // 注意：iOS中需要从detailModel获取materialUrl，但生成详情应该使用生成结果的URL
-    // 暂时使用materialUrl，后续可能需要从CreateTask获取
-    if (!self.detailModel || !self.detailModel.materialUrl || self.detailModel.materialUrl.length == 0) {
+    // 对齐安卓：从CreateTask获取videoUrl或imageUrl（生成详情模式）
+    // 或者从detailModel获取materialUrl（素材详情模式，但生成详情不应该走这个分支）
+    NSString *saveUrl = nil;
+    BOOL isVideo = NO;
+    
+    if (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading) {
+        // 生成详情模式：优先使用CreateTask的videoUrl，其次使用imageUrl（对齐安卓：mGenerateImageUrl）
+        if (self.createTask && self.createTask.videoUrl && self.createTask.videoUrl.length > 0) {
+            saveUrl = self.createTask.videoUrl;
+            isVideo = YES;
+        } else if (self.createTask && self.createTask.imageUrl && self.createTask.imageUrl.length > 0) {
+            saveUrl = self.createTask.imageUrl;
+            isVideo = NO;
+        } else {
+            // 如果CreateTask没有URL，尝试从detailModel获取（可能已经通过接口更新了）
+            saveUrl = self.detailModel.materialUrl;
+            isVideo = (self.detailModel.materialMode == 2);
+        }
+    } else {
+        // 素材详情模式：使用materialUrl（但这种情况不应该显示保存按钮）
+        saveUrl = self.detailModel.materialUrl;
+        isVideo = (self.detailModel.materialMode == 2);
+    }
+    
+    if (!saveUrl || saveUrl.length == 0) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"URL无效")];
         return;
     }
     
     [SVProgressHUD showWithStatus:LocalString(@"保存中...")];
     
-    // 判断是视频还是图片（对齐安卓：materialMode == 2 表示视频）
-    BOOL isVideo = (self.detailModel.materialMode == 2);
+    // 如果还没有确定是视频，通过检查URL或当前显示状态来判断
+    if (!isVideo) {
+        // 方法1: 检查当前显示的是否是视频（最准确的方法）
+        if (self.videoContainer && !self.videoContainer.hidden) {
+            isVideo = YES;
+        } else {
+            // 方法2: 检查URL的扩展名或路径
+            NSString *urlLower = [saveUrl lowercaseString];
+            if ([urlLower containsString:@".mp4"] || [urlLower containsString:@".mov"] ||
+                [urlLower containsString:@".avi"] || [urlLower containsString:@"video"]) {
+                isVideo = YES;
+            }
+        }
+    }
     
     if (isVideo) {
-        // 保存视频（TODO: 实现视频保存功能）
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"视频保存功能暂未实现")];
+        // 保存视频（对齐安卓：使用mGenerateImageUrl）
+        NSString *videoUrl = saveUrl;
+        if (!videoUrl || videoUrl.length == 0) {
+            [SVProgressHUD dismiss];
+            [SVProgressHUD showErrorWithStatus:LocalString(@"视频URL无效")];
+            return;
+        }
+        
+        // 下载视频并保存到相册
+        NSURL *url = [NSURL URLWithString:videoUrl];
+        NSURLSessionDownloadTask *downloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:url completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [SVProgressHUD dismiss];
+                if (error || !location) {
+                    [SVProgressHUD showErrorWithStatus:LocalString(@"下载视频失败")];
+                    return;
+                }
+                
+                // 保存视频到相册
+                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+                    [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:location];
+                } completionHandler:^(BOOL success, NSError * _Nullable error) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (success) {
+                            [SVProgressHUD showSuccessWithStatus:LocalString(@"保存成功")];
+                        } else {
+                            [SVProgressHUD showErrorWithStatus:LocalString(@"保存失败")];
+                        }
+                    });
+                }];
+            });
+        }];
+        [downloadTask resume];
     } else {
-        // 保存图片
-        NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
+        // 保存图片（对齐安卓：使用mGenerateImageUrl）
+        NSString *imageUrl = saveUrl;
+        NSURL *url = [NSURL URLWithString:imageUrl];
         [[SDWebImageManager sharedManager] loadImageWithURL:url
                                                      options:SDWebImageRetryFailed
                                                     progress:nil
@@ -649,12 +896,33 @@ NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotifica
 
 // 对齐安卓：删除生成的素材
 - (void)deleteGenerateMaterial {
-    // TODO: 需要从CreateTask获取createId，暂时先提示
-    [SVProgressHUD showErrorWithStatus:LocalString(@"删除功能需要createId，暂未实现")];
-    // 对齐安卓：删除成功后返回并通知列表刷新
-    // 发送通知（对应安卓的ActivityResultLauncher）
-    // [[NSNotificationCenter defaultCenter] postNotificationName:kGenerateDetailDeletedNotification object:nil userInfo:@{kGenerateDetailDeletedCreateIdKey: createId}];
-    // [self.navigationController popViewControllerAnimated:YES];
+    if (!self.createTask || !self.createTask.createId || self.createTask.createId.length == 0) {
+        [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败：素材信息无效")];
+        return;
+    }
+    
+    [SVProgressHUD show];
+    // 对齐安卓：DeleteCreateApi，参数ids（多个用,号分隔）
+    NSDictionary *params = @{
+        @"ids": self.createTask.createId
+    };
+    
+    [[NetworkManager sharedManager] POST:BUNNYX_API_DELETE_CREATE parameters:params success:^(id  _Nonnull responseObject) {
+        [SVProgressHUD dismiss];
+        NSInteger code = [responseObject[@"code"] integerValue];
+        if (code == 0) {
+            // 对齐安卓：删除成功后返回并通知列表刷新
+            [[NSNotificationCenter defaultCenter] postNotificationName:kGenerateDetailDeletedNotification 
+                                                                object:nil 
+                                                              userInfo:@{kGenerateDetailDeletedCreateIdKey: self.createTask.createId}];
+            [self.navigationController popViewControllerAnimated:YES];
+        } else {
+            [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败")];
+        }
+    } failure:^(NSError * _Nonnull error) {
+        [SVProgressHUD dismiss];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败")];
+    }];
 }
 
 #pragma mark - Helper Methods

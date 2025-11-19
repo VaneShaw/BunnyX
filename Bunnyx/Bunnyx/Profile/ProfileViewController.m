@@ -22,6 +22,7 @@
 #import "LikeListViewController.h"
 #import "GradientButton.h"
 #import "ContactUsViewController.h"
+#import <SVProgressHUD/SVProgressHUD.h>
 
 // MARK: - ProfileViewController
 @interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
@@ -174,11 +175,14 @@
         make.right.lessThanOrEqualTo(userInfoContainer).offset(-16);
     }];
     
-    // ID
+    // ID（对齐安卓：支持点击复制）
     self.userIdLabel = [[UILabel alloc] init];
     self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), @""];
     self.userIdLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
     self.userIdLabel.font = FONT(13);
+    self.userIdLabel.userInteractionEnabled = YES;
+    UITapGestureRecognizer *userIdTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onUserIdClick)];
+    [self.userIdLabel addGestureRecognizer:userIdTap];
     [userInfoContainer addSubview:self.userIdLabel];
     
     [self.userIdLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -555,6 +559,18 @@
     RechargeViewController *rechargeVC = [[RechargeViewController alloc] init];
     rechargeVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:rechargeVC animated:YES];
+}
+
+- (void)onUserIdClick {
+    // 对齐安卓：点击用户ID时复制到剪贴板
+    if (self.userInfo && self.userInfo.account && self.userInfo.account.length > 0) {
+        NSString *account = [self.userInfo.account stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (account.length > 0) {
+            UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+            pasteboard.string = account;
+            [SVProgressHUD showSuccessWithStatus:LocalString(@"已复制")];
+        }
+    }
 }
 
 #pragma mark - Data Loading

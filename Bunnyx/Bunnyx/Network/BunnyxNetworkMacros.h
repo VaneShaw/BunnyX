@@ -11,9 +11,8 @@
 // MARK: - 服务器环境配置
 #ifdef DEBUG
     // 开发环境
-    //https://testappapi.bunnyx.ai
-    #define BUNNYX_BASE_URL @"http://albbunnyxtestappapi-1240859665.ap-northeast-1.elb.amazonaws.com"
-
+    //#define BUNNYX_BASE_URL @"http://albbunnyxtestappapi-1240859665.ap-northeast-1.elb.amazonaws.com"
+    #define BUNNYX_BASE_URL @"https://testappapi.bunnyx.ai"
 #else
     // 生产环境
     #define BUNNYX_BASE_URL @"https://api.bunnyx.com"
@@ -65,6 +64,8 @@
 #define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getCreateByIds", BUNNYX_API_BASE_URL]
 // 获取生成列表（我的页面）
 #define BUNNYX_API_GET_CREATE_LIST [NSString stringWithFormat:@"%@/aitool/getCreateList", BUNNYX_API_BASE_URL]
+// 删除生成接口（对齐安卓：DeleteCreateApi）
+#define BUNNYX_API_DELETE_CREATE [NSString stringWithFormat:@"%@/aitool/deleteCreate", BUNNYX_API_BASE_URL]
 // 获取收藏素材列表（我的页面）
 #define BUNNYX_API_GET_FAVORITE_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getFavoriteMaterialList", BUNNYX_API_BASE_URL]
 // 检查素材生成金币是否足够

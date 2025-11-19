@@ -9,7 +9,7 @@
 #import <Masonry/Masonry.h>
 
 @interface BaseViewController ()
-@property (nonatomic, strong) UIImageView *backgroundImageView;
+
 @end
 
 @implementation BaseViewController

@@ -386,18 +386,18 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             [SVProgressHUD showProgress:progress status:status];
         });
-    } success:^(NSString *initImage) {
+    } success:^(NSString *initImage, NSString *fullUrl) {
         dispatch_async(dispatch_get_main_queue(), ^{
             // 上传成功，保存历史记录（对齐安卓：uploadToS3的onSuccess回调）
             if (self.selectedImagePath) {
                 UploadHistoryManager *historyManager = [UploadHistoryManager sharedManager];
                 // 对齐安卓：使用selectedImagePath作为imageUri，initImage作为awsRelativePath
-                // 构造完整URL（如果需要的话，可以从relativePath构建）
-                NSString *awsFullPath = initImage; // 相对路径，完整URL需要从配置中获取
+                // 使用fullUrl作为awsFullPath（完整URL，用于app重启后显示图片）
+                NSString *awsFullPath = fullUrl ?: initImage; // 优先使用完整URL，如果没有则使用相对路径
                 [historyManager addUploadHistory:self.selectedImagePath 
                                  awsRelativePath:initImage 
                                      awsFullPath:awsFullPath];
-                BUNNYX_LOG(@"保存历史记录 - 图片路径: %@, AWS路径: %@", self.selectedImagePath, initImage);
+                BUNNYX_LOG(@"保存历史记录 - 图片路径: %@, AWS相对路径: %@, AWS完整URL: %@", self.selectedImagePath, initImage, fullUrl);
             }
             
             // 调用生成接口（对齐安卓：callGenerateCreate方法）

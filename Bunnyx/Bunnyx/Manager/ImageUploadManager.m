@@ -84,11 +84,11 @@
                                bucket:bucket
                           filePathName:filePathName
                               progress:progressBlock
-                               success:^(NSString *relativePath) {
+                               success:^(NSString *relativePath, NSString *fullUrl) {
                 // Step 4: 返回上传后的图片路径
                 BUNNYX_LOG(@"图片上传成功，路径: %@", relativePath);
                 if (successBlock) {
-                    successBlock(relativePath);
+                    successBlock(relativePath, fullUrl);
                 }
             } failure:^(NSError *error) {
                 if (failureBlock) {
@@ -234,7 +234,7 @@
                      bucket:(NSString *)bucket
                 filePathName:(NSString *)filePathName
                     progress:(ImageUploadProgressBlock)progressBlock
-                     success:(void(^)(NSString *relativePath))successBlock
+                     success:(void(^)(NSString *relativePath, NSString *fullUrl))successBlock
                      failure:(ImageUploadFailureBlock)failureBlock {
     
     AWSUploader *uploader = [AWSUploader sharedUploader];
@@ -249,8 +249,9 @@
             progressBlock(totalProgress, LocalString(@"正在上传图片..."));
         }
     } success:^(NSString *fullUrl, NSString *relativePath) {
+        // 传递relativePath和fullUrl（用于历史记录显示）
         if (successBlock) {
-            successBlock(relativePath ?: filePathName);
+            successBlock(relativePath ?: filePathName, fullUrl);
         }
     } failure:^(NSError *error) {
         BUNNYX_ERROR(@"AWS S3 上传失败: %@", error.localizedDescription);

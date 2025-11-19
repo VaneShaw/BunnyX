@@ -23,6 +23,8 @@
 @property (nonatomic, strong) UILabel *statusLabel; // 状态标签（带渐变背景）
 @property (nonatomic, strong) UILabel *queueInfoLabel; // 队列信息标签
 @property (nonatomic, strong) CAGradientLayer *statusGradientLayer; // 状态标签渐变背景layer
+@property (nonatomic, strong) UIView *progressDotsContainer; // 进度点容器（对齐安卓：根据position显示不同数量的点）
+@property (nonatomic, strong) NSMutableArray<UIView *> *progressDotViews; // 进度点视图数组
 
 - (void)configureWithModel:(CreateTaskModel *)model;
 

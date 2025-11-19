@@ -10,7 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface BaseViewController : UIViewController
-
+@property (nonatomic, strong) UIImageView *backgroundImageView;
 /// 自定义返回按钮
 @property (nonatomic, strong) UIButton *customBackButton;
 

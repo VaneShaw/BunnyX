@@ -13,6 +13,8 @@
 #import "UploadHistoryManager.h"
 #import <SDWebImage/SDWebImage.h>
 #import "GradientButton.h"
+#import "MaterialDetailViewController.h"
+#import "CreateTaskModel.h"
 
 static const NSTimeInterval kPollingInterval = 5.0; // 5秒轮询一次
 static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
@@ -720,9 +722,28 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
             BUNNYX_LOG(@"生成完成，准备跳转到详情页 - createId: %@, imageUrl: %@, materialId: %ld", 
                       createId, resultImageUrl, (long)self.materialId);
             
-            // TODO: 跳转到生成详情页（VideoDetailActivity.startForGenerate）
-            // 需要创建VideoDetailViewController并传递createId、imageUrl、materialId
-            [self.navigationController popViewControllerAnimated:YES];
+            // 对齐安卓：跳转到生成详情页（VideoDetailActivity.startForGenerate）
+            if (createId && createId.length > 0) {
+                // 创建CreateTaskModel对象（对齐安卓：CreateTask）
+                CreateTaskModel *createTask = [[CreateTaskModel alloc] init];
+                createTask.createId = createId;
+                // 对齐安卓：优先设置videoUrl，如果没有则设置imageUrl
+                // 但GetCreateByIdsApi只返回resultImageUrl，所以这里只设置imageUrl
+                if (resultImageUrl && resultImageUrl.length > 0) {
+                    createTask.imageUrl = resultImageUrl;
+                }
+                createTask.materialId = self.materialId;
+                
+                // 跳转到生成详情页（对齐安卓：MaterialDetailPageTypeGenerateFromUploading）
+                MaterialDetailViewController *detailVC = [[MaterialDetailViewController alloc] initWithMaterialId:self.materialId 
+                                                                                                         pageType:MaterialDetailPageTypeGenerateFromUploading 
+                                                                                                        createTask:createTask];
+                detailVC.hidesBottomBarWhenPushed = YES;
+                [self.navigationController pushViewController:detailVC animated:YES];
+            } else {
+                // createId为空，返回上一页
+                [self.navigationController popViewControllerAnimated:YES];
+            }
         }
     });
 }
