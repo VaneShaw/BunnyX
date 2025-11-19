@@ -31,7 +31,7 @@
     // 创建视图控制器
     [self setupViewControllers];
     
-    // 检查版本更新和签到弹窗（对齐安卓：checkVersionUpdateAndMaybeShowSign）
+    // 检查版本更新和签到弹窗（checkVersionUpdateAndMaybeShowSign）
     [self checkVersionUpdateAndMaybeShowSign];
 }
 
@@ -129,47 +129,47 @@
     return [resizedImage imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
 }
 
-#pragma mark - 版本更新和签到弹窗（对齐安卓HomeActivity）
+#pragma mark - 版本更新和签到弹窗
 
 /**
  * 检查版本更新信息，如果有版本更新则先显示版本更新弹窗，关闭后再显示签到弹窗
  * 如果没有版本更新，直接显示签到弹窗
- * 确保版本更新弹窗始终在最上层（对齐安卓：checkVersionUpdateAndMaybeShowSign）
+ * 确保版本更新弹窗始终在最上层（checkVersionUpdateAndMaybeShowSign）
  */
 - (void)checkVersionUpdateAndMaybeShowSign {
-    // 获取应用配置（对齐安卓：AppConfigManager.getInstance().getAppConfig()）
+    // 获取应用配置（AppConfigManager.getInstance().getAppConfig()）
     AppConfigModel *config = [[AppConfigManager sharedManager] getCachedConfig];
     
-    // 检查是否有版本更新信息（对齐安卓：config.getNew_app_info() != null）
-    // 对齐安卓：只要 new_app_info 不为 null 就显示版本更新弹窗，不进行版本比较
+    // 检查是否有版本更新信息（config.getNew_app_info() != null）
+    // 只要 new_app_info 不为 null 就显示版本更新弹窗，不进行版本比较
     NewAppInfo *appInfo = config.latestAppInfo;
     if (config != nil && appInfo != nil) {
-        // 有版本更新信息，构建VersionUpdateInfo（对齐安卓：GetAppConfigApi.NewAppInfo）
+        // 有版本更新信息，构建VersionUpdateInfo（GetAppConfigApi.NewAppInfo）
         VersionUpdateInfo *versionInfo = [[VersionUpdateInfo alloc] init];
-        versionInfo.forceType = appInfo.forceType; // 对齐安卓：forceType
-        versionInfo.appVersion = appInfo.appVersion ?: @""; // 对齐安卓：appVersion
-        versionInfo.updateMsg = appInfo.updateMsg ?: @""; // 对齐安卓：updateMsg
-        versionInfo.appUrl = appInfo.appUrl ?: @""; // 对齐安卓：appUrl
-        versionInfo.appCode = appInfo.appCode ?: @"ios"; // 对齐安卓：appCode
-        versionInfo.appSize = appInfo.appSize ?: @""; // 对齐安卓：appSize
+        versionInfo.forceType = appInfo.forceType; // forceType
+        versionInfo.appVersion = appInfo.appVersion ?: @""; // appVersion
+        versionInfo.updateMsg = appInfo.updateMsg ?: @""; // updateMsg
+        versionInfo.appUrl = appInfo.appUrl ?: @""; // appUrl
+        versionInfo.appCode = appInfo.appCode ?: @"ios"; // appCode
+        versionInfo.appSize = appInfo.appSize ?: @""; // appSize
         
-        // 先显示版本更新弹窗，等关闭后再显示签到弹窗（对齐安卓：VersionUpdateDialog.showWithListener）
+        // 先显示版本更新弹窗，等关闭后再显示签到弹窗（VersionUpdateDialog.showWithListener）
         [VersionUpdateDialog showWithAppInfo:versionInfo onDismiss:^{
-            // 版本更新弹窗关闭后，显示签到弹窗（对齐安卓）
+            // 版本更新弹窗关闭后，显示签到弹窗）
             [self requestSignInfoAndMaybeShow];
         }];
         return;
     }
     
-    // 没有版本更新，直接显示签到弹窗（对齐安卓）
+    // 没有版本更新，直接显示签到弹窗）
     [self requestSignInfoAndMaybeShow];
 }
 
 /**
- * 请求签到信息并可能显示签到弹窗（对齐安卓：requestSignInfoAndMaybeShow）
+ * 请求签到信息并可能显示签到弹窗（requestSignInfoAndMaybeShow）
  */
 - (void)requestSignInfoAndMaybeShow {
-    // 调用SignInDialog.show，内部会请求数据并判断是否显示（对齐安卓）
+    // 调用SignInDialog.show，内部会请求数据并判断是否显示）
     [SignInDialog show];
 }
 

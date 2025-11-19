@@ -2,7 +2,7 @@
 //  ContactUsViewController.h
 //  Bunnyx
 //
-//  联系客服页面（对齐安卓ContactUsActivity）
+//  联系客服页面（ContactUsActivity）
 //
 
 #import "BaseViewController.h"

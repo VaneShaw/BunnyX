@@ -37,7 +37,7 @@
 #define BUNNYX_API_USER_UPDATE [NSString stringWithFormat:@"%@/user/update", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_AVATAR [NSString stringWithFormat:@"%@/user/avatar", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_PASSWORD [NSString stringWithFormat:@"%@/user/password", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_USER_DELETE [NSString stringWithFormat:@"%@/user/del/user", BUNNYX_API_BASE_URL] // 对齐安卓：删除账号接口
+#define BUNNYX_API_USER_DELETE [NSString stringWithFormat:@"%@/user/del/user", BUNNYX_API_BASE_URL] // 删除账号接口
 
 // MARK: - 服务器相关接口
 #define BUNNYX_API_SERVER_GET_APP_CONFIG [NSString stringWithFormat:@"%@/server/getAppConfig", BUNNYX_API_BASE_URL]
@@ -60,11 +60,11 @@
 #define BUNNYX_API_AWS_UPLOAD [NSString stringWithFormat:@"%@/oss/upload/aws", BUNNYX_API_BASE_URL]
 // 提交生成任务
 #define BUNNYX_API_GENERATE_CREATE [NSString stringWithFormat:@"%@/aitool/generateCreate", BUNNYX_API_BASE_URL]
-// 根据createIds获取生成任务列表（轮询进度，对齐安卓：aitool/getCreateByIds）
+// 根据createIds获取生成任务列表（轮询进度，aitool/getCreateByIds）
 #define BUNNYX_API_GENERATE_TASK_LIST [NSString stringWithFormat:@"%@/aitool/getCreateByIds", BUNNYX_API_BASE_URL]
 // 获取生成列表（我的页面）
 #define BUNNYX_API_GET_CREATE_LIST [NSString stringWithFormat:@"%@/aitool/getCreateList", BUNNYX_API_BASE_URL]
-// 删除生成接口（对齐安卓：DeleteCreateApi）
+// 删除生成接口（DeleteCreateApi）
 #define BUNNYX_API_DELETE_CREATE [NSString stringWithFormat:@"%@/aitool/deleteCreate", BUNNYX_API_BASE_URL]
 // 获取收藏素材列表（我的页面）
 #define BUNNYX_API_GET_FAVORITE_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getFavoriteMaterialList", BUNNYX_API_BASE_URL]
@@ -108,7 +108,7 @@
 #define BUNNYX_API_PAYMENT_HISTORY [NSString stringWithFormat:@"%@/payment/history", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_RECHARGE_LIST [NSString stringWithFormat:@"%@/pay/rechargeList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_RECHARGE_HISTORY [NSString stringWithFormat:@"%@/pay/rechargeHistory", BUNNYX_API_BASE_URL] // 已废弃，使用 BUNNYX_API_USER_BUDGET_LIST
-#define BUNNYX_API_USER_BUDGET_LIST [NSString stringWithFormat:@"%@/user/getUserBudgetList", BUNNYX_API_BASE_URL] // 对齐安卓：钱包明细列表接口
+#define BUNNYX_API_USER_BUDGET_LIST [NSString stringWithFormat:@"%@/user/getUserBudgetList", BUNNYX_API_BASE_URL] // 钱包明细列表接口
 #define BUNNYX_API_PAY_VIP_LIST [NSString stringWithFormat:@"%@/pay/vipList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_BUY_VIP [NSString stringWithFormat:@"%@/pay/buy/vip", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePayVerify", BUNNYX_API_BASE_URL]

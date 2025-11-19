@@ -175,7 +175,7 @@
         make.right.lessThanOrEqualTo(userInfoContainer).offset(-16);
     }];
     
-    // ID（对齐安卓：支持点击复制）
+    // ID（支持点击复制）
     self.userIdLabel = [[UILabel alloc] init];
     self.userIdLabel.text = [NSString stringWithFormat:LocalString(@"ID:%@"), @""];
     self.userIdLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
@@ -224,17 +224,17 @@
         make.height.mas_equalTo(22);
     }];
     
-    // 订阅按钮（对齐安卓：bg_mine_subscribe_button - 渐变背景 #F76E8C -> #FABDA9，圆角50dp）
+    // 订阅按钮（bg_mine_subscribe_button - 渐变背景 #F76E8C -> #FABDA9，圆角50dp）
     // 使用GradientButton实现渐变效果
     self.subscribeButton = [GradientButton buttonWithTitle:LocalString(@"订阅")
                                                   startColor:HEX_COLOR(0xF76E8C)  // #F76E8C
                                                     endColor:HEX_COLOR(0xFABDA9)]; // #FABDA9
     
-    // 设置文字样式（对应安卓：textColor="#333333", textSize="17sp", textStyle="bold"）
+    // 设置文字样式（textColor="#333333", textSize="17sp", textStyle="bold"）
     [self.subscribeButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
     self.subscribeButton.titleLabel.font = BOLD_FONT(17);
     
-    // 设置圆角（对应安卓：corners android:radius="50dp"）
+    // 设置圆角（corners radius="50dp"）
     self.subscribeButton.layer.cornerRadius = 20;
     self.subscribeButton.layer.masksToBounds = YES;
     // 注意按钮高度：paddingTop 15 + paddingBottom 14 = 29，加上文字高度约17，总高度约46
@@ -562,7 +562,7 @@
 }
 
 - (void)onUserIdClick {
-    // 对齐安卓：点击用户ID时复制到剪贴板
+    // 点击用户ID时复制到剪贴板
     if (self.userInfo && self.userInfo.account && self.userInfo.account.length > 0) {
         NSString *account = [self.userInfo.account stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         if (account.length > 0) {

@@ -99,7 +99,7 @@
 }
 
 - (void)setupGradientBackground {
-    // 对齐安卓：使用背景图片（如果有）或黑色背景
+    // 使用背景图片（如果有）或黑色背景
     self.view.backgroundColor = [UIColor blackColor];
     
     // 如果有充值页面背景图，可以在这里添加
@@ -145,24 +145,24 @@
 }
 
 - (void)setupBalanceView {
-    // 对齐安卓：余额显示区域
+    // 余额显示区域
     self.balanceView = [[UIView alloc] init];
     [self.view addSubview:self.balanceView];
     
     [self.balanceView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.customBackButton.mas_bottom).offset(30); // 对齐安卓：marginTop 30dp
+        make.top.equalTo(self.customBackButton.mas_bottom).offset(30); // marginTop 30dp
         make.centerX.equalTo(self.view);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20)); // 对齐安卓：paddingHorizontal 20dp
+        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 20, 0, 20)); // paddingHorizontal 20dp
         make.height.offset(75);
     }];
     
-    // 金币图标（对齐安卓：icon_mine_coin_default，使用图片资源）
+    // 金币图标（icon_mine_coin_default，使用图片资源）
     self.coinIconView = [[UIImageView alloc] init];
     self.coinIconView.image = [UIImage imageNamed:@"icon_mine_coin_default"];
     self.coinIconView.contentMode = UIViewContentModeScaleAspectFit;
     [self.balanceView addSubview:self.coinIconView];
     
-    // 余额数字（对齐安卓：字体32sp bold，颜色白色）
+    // 余额数字（字体32sp bold，颜色白色）
     self.balanceLabel = [[UILabel alloc] init];
     self.balanceLabel.text = @"0";
     self.balanceLabel.font = BOLD_FONT(FONT_SIZE_32);
@@ -172,10 +172,10 @@
     [self.coinIconView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.balanceView.mas_centerX).offset(-40);
         make.top.equalTo(self.balanceView.mas_top);
-        make.width.height.mas_equalTo(15); // 对齐安卓：50dp × 50dp
+        make.width.height.mas_equalTo(15); // 50dp × 50dp
     }];
     
-    // Coins标签（对齐安卓：文字颜色白色，字体16sp）
+    // Coins标签（文字颜色白色，字体16sp）
     UILabel *coinsTitleLabel = [[UILabel alloc] init];
     coinsTitleLabel.text = [NSString stringWithFormat:@"%@:", LocalString(@"Coins")];
     coinsTitleLabel.font = FONT(FONT_SIZE_16);
@@ -203,9 +203,9 @@
     [self.view addSubview:self.scrollView];
     
     [self.scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.balanceView.mas_bottom).offset(30); // 对齐安卓：marginTop 30dp
+        make.top.equalTo(self.balanceView.mas_bottom).offset(30); // marginTop 30dp
         make.left.right.equalTo(self.view);
-        make.bottom.equalTo(self.buyButton.mas_top).offset(-20); // 对齐安卓：marginBottom 20dp
+        make.bottom.equalTo(self.buyButton.mas_top).offset(-20); // marginBottom 20dp
     }];
     
     self.packagesContainerView = [[UIView alloc] init];
@@ -299,13 +299,13 @@
         self.selectedItem = self.rechargeList.firstObject;
     }
     
-    // 对齐安卓：计算布局参数（paddingHorizontal 20dp，itemSpacing 15dp，3列）
+    // 计算布局参数（paddingHorizontal 20dp，itemSpacing 15dp，3列）
     CGFloat screenWidth = SCREEN_WIDTH;
-    CGFloat margin = 20; // 对齐安卓：paddingHorizontal 20dp
-    CGFloat itemSpacing = 15; // 对齐安卓：itemSpacing 15dp
+    CGFloat margin = 20; // paddingHorizontal 20dp
+    CGFloat itemSpacing = 15; // itemSpacing 15dp
     NSInteger itemsPerRow = 3;
     CGFloat itemWidth = (screenWidth - margin * 2 - itemSpacing * (itemsPerRow - 1)) / itemsPerRow;
-    CGFloat itemHeight = 120; // 对齐安卓：itemHeight 120dp
+    CGFloat itemHeight = 120; // itemHeight 120dp
     
     BUNNYX_LOG(@"布局参数 - 屏幕宽度: %.1f, 每个卡片宽度: %.1f, 高度: %.1f", screenWidth, itemWidth, itemHeight);
     
@@ -322,7 +322,7 @@
         
         [packageView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.left.equalTo(self.packagesContainerView).offset(margin + col * (itemWidth + itemSpacing));
-            make.top.equalTo(self.packagesContainerView).offset(20 + row * (itemHeight + 15)); // 对齐安卓：marginTop 20dp，rowSpacing 15dp
+            make.top.equalTo(self.packagesContainerView).offset(20 + row * (itemHeight + 15)); // marginTop 20dp，rowSpacing 15dp
             make.width.mas_equalTo(itemWidth);
             make.height.mas_equalTo(itemHeight);
         }];
@@ -336,7 +336,7 @@
         BUNNYX_LOG(@"创建套餐卡片 %ld - 金币: %ld, 价格: %.2f, 位置: 行%ld 列%ld", (long)i, (long)item.buyNum, item.payMoney, (long)row, (long)col);
     }
     
-    // 更新容器高度（对齐安卓：marginTop 20dp，rowSpacing 15dp）
+    // 更新容器高度（marginTop 20dp，rowSpacing 15dp）
     NSInteger totalRows = (self.rechargeList.count + itemsPerRow - 1) / itemsPerRow;
     CGFloat containerHeight = 20 * 2 + totalRows * itemHeight + (totalRows - 1) * 15;
     
@@ -355,9 +355,9 @@
 }
 
 - (UIView *)createPackageViewWithItem:(RechargeItemModel *)item {
-    // 对齐安卓：套餐卡片样式
+    // 套餐卡片样式
     UIView *packageView = [[UIView alloc] init];
-    packageView.layer.cornerRadius = 12; // 对齐安卓：圆角12dp
+    packageView.layer.cornerRadius = 12; // 圆角12dp
     packageView.layer.masksToBounds = YES;
     packageView.layer.borderWidth = 0; // 未选中时无边框
     
@@ -375,26 +375,26 @@
     // 保存渐变层的引用，以便后续更新
     objc_setAssociatedObject(packageView, "gradientLayer", gradientLayer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
-    // 折扣标签（如果有）- 对齐安卓：粉色标签在左上角，圆角只设置左上和右下
+    // 折扣标签（如果有）- 粉色标签在左上角，圆角只设置左上和右下
     if (item.discountRemark && item.discountRemark.length > 0) {
         UIView *discountBadge = [[UIView alloc] init];
-        discountBadge.backgroundColor = HEX_COLOR(0xFF6B9D); // 对齐安卓：粉色#FF6B9D
+        discountBadge.backgroundColor = HEX_COLOR(0xFF6B9D); // 粉色#FF6B9D
         [packageView addSubview:discountBadge];
         
         UILabel *discountLabel = [[UILabel alloc] init];
         discountLabel.text = item.discountRemark;
-        discountLabel.font = BOLD_FONT(10); // 对齐安卓：10sp bold
+        discountLabel.font = BOLD_FONT(10); // 10sp bold
         discountLabel.textColor = [UIColor whiteColor];
         discountLabel.textAlignment = NSTextAlignmentCenter;
         [discountBadge addSubview:discountLabel];
         
         [discountBadge mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(packageView); // 对齐安卓：marginTop 0dp
-            make.left.equalTo(packageView); // 对齐安卓：marginLeft 0dp
+            make.top.equalTo(packageView); // marginTop 0dp
+            make.left.equalTo(packageView); // marginLeft 0dp
         }];
         
         [discountLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.edges.equalTo(discountBadge).insets(UIEdgeInsetsMake(3, 8, 3, 8)); // 对齐安卓：padding
+            make.edges.equalTo(discountBadge).insets(UIEdgeInsetsMake(3, 8, 3, 8)); // padding
         }];
         
         // 使用UIBezierPath创建只有左上和右下圆角的mask
@@ -402,7 +402,7 @@
         __weak UIView *weakBadge = discountBadge;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (weakBadge) {
-                CGFloat cornerRadius = 12.0; // 对齐安卓：圆角6dp
+                CGFloat cornerRadius = 12.0; // 圆角6dp
                 UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:weakBadge.bounds
                                                                byRoundingCorners:UIRectCornerTopLeft | UIRectCornerBottomRight
                                                                      cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
@@ -417,7 +417,7 @@
         objc_setAssociatedObject(discountBadge, "needsMaskUpdate", @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     
-    // 金币图标（对齐安卓：icon_mine_coin_default，居中偏上）
+    // 金币图标（icon_mine_coin_default，居中偏上）
     UIImageView *coinIcon = [[UIImageView alloc] init];
     coinIcon.image = [UIImage imageNamed:@"icon_mine_coin_default"];
     coinIcon.contentMode = UIViewContentModeScaleAspectFit;
@@ -425,25 +425,25 @@
     
     [coinIcon mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(packageView);
-        make.top.equalTo(packageView).offset(20); // 对齐安卓：marginTop 20dp
-        make.width.height.mas_equalTo(28); // 对齐安卓：28dp × 28dp
+        make.top.equalTo(packageView).offset(20); // marginTop 20dp
+        make.width.height.mas_equalTo(28); // 28dp × 28dp
     }];
     
-    // 金币数量（对齐安卓：绿色大字体#0AE971，20sp bold，marginTop 10dp）
+    // 金币数量（绿色大字体#0AE971，20sp bold，marginTop 10dp）
     UILabel *coinsLabel = [[UILabel alloc] init];
     coinsLabel.text = [NSString stringWithFormat:@"%ld", (long)item.buyNum];
     coinsLabel.font = BOLD_FONT(FONT_SIZE_20);
-    coinsLabel.textColor = HEX_COLOR(0x0AE971); // 对齐安卓：#0AE971
+    coinsLabel.textColor = HEX_COLOR(0x0AE971); // #0AE971
     coinsLabel.textAlignment = NSTextAlignmentCenter;
     [packageView addSubview:coinsLabel];
     
     [coinsLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(packageView);
-        make.top.equalTo(coinIcon.mas_bottom).offset(10); // 对齐安卓：marginTop 10dp
+        make.top.equalTo(coinIcon.mas_bottom).offset(10); // marginTop 10dp
         make.left.right.equalTo(packageView).insets(UIEdgeInsetsMake(0, 5, 0, 5));
     }];
     
-    // 价格（对齐安卓：白色字体，14sp，marginBottom 15dp）
+    // 价格（白色字体，14sp，marginBottom 15dp）
     UILabel *priceLabel = [[UILabel alloc] init];
     priceLabel.text = [NSString stringWithFormat:@"$ %.2f", item.payMoney];
     priceLabel.font = FONT(FONT_SIZE_14);
@@ -453,7 +453,7 @@
     
     [priceLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(packageView);
-        make.bottom.equalTo(packageView).offset(-15); // 对齐安卓：marginBottom 15dp
+        make.bottom.equalTo(packageView).offset(-15); // marginBottom 15dp
         make.left.right.equalTo(packageView).insets(UIEdgeInsetsMake(0, 5, 0, 5));
     }];
     
@@ -477,7 +477,7 @@
         for (UIView *subview in packageView.subviews) {
             NSNumber *needsMaskUpdate = objc_getAssociatedObject(subview, "needsMaskUpdate");
             if (needsMaskUpdate && [needsMaskUpdate boolValue] && subview.bounds.size.width > 0 && subview.bounds.size.height > 0) {
-                CGFloat cornerRadius = 12.0; // 对齐安卓：圆角6dp
+                CGFloat cornerRadius = 12.0; // 圆角6dp
                 UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:subview.bounds
                                                                byRoundingCorners:UIRectCornerTopLeft | UIRectCornerBottomRight
                                                                      cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
@@ -500,7 +500,7 @@
 }
 
 - (void)updateSelectedPackage {
-    // 对齐安卓：更新所有套餐视图的选中状态
+    // 更新所有套餐视图的选中状态
     for (NSInteger i = 0; i < self.packageViews.count; i++) {
         UIView *packageView = self.packageViews[i];
         CAGradientLayer *gradientLayer = objc_getAssociatedObject(packageView, "gradientLayer");
@@ -516,8 +516,8 @@
             RechargeItemModel *item = self.rechargeList[i];
             if (item == self.selectedItem) {
                 // 选中状态：有边框，显示渐变背景
-                packageView.layer.borderWidth = 2; // 对齐安卓：选中边框宽度2dp
-                packageView.layer.borderColor = HEX_COLOR(0x0AE971).CGColor; // 对齐安卓：选中边框色#0AE971
+                packageView.layer.borderWidth = 2; // 选中边框宽度2dp
+                packageView.layer.borderColor = HEX_COLOR(0x0AE971).CGColor; // 选中边框色#0AE971
             } else {
                 // 未选中状态：无边框，显示渐变背景
                 packageView.layer.borderWidth = 0; // 未选中时无边框

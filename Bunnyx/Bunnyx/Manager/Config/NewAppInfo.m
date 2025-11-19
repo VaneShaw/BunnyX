@@ -2,7 +2,7 @@
 //  NewAppInfo.m
 //  Bunnyx
 //
-//  新版本信息模型（对齐安卓GetAppConfigApi.NewAppInfo）
+//  新版本信息模型（GetAppConfigApi.NewAppInfo）
 //
 
 #import "NewAppInfo.h"

@@ -12,7 +12,7 @@
 
 @interface MaterialCollectionViewCell ()
 
-@property (nonatomic, strong) UIView *containerView; // 对应安卓的RelativeLayout，背景白色，圆角5dp
+@property (nonatomic, strong) UIView *containerView; // RelativeLayout，背景白色，圆角5dp
 @property (nonatomic, strong) UIImageView *imageView; // 素材图片
 @property (nonatomic, strong) UIImageView *vipIconView; // VIP图标，右上角
 @property (nonatomic, strong) UIView *likeContainerView; // 点赞容器，右下角
@@ -114,7 +114,7 @@
         make.centerY.equalTo(self.likeIconView); // 与图标垂直居中对齐
     }];
     
-    // 添加点赞容器点击事件（对齐安卓：点击点赞区域触发点赞）
+    // 添加点赞容器点击事件（点击点赞区域触发点赞）
     UITapGestureRecognizer *likeTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(likeContainerTapped:)];
     [self.likeContainerView addGestureRecognizer:likeTap];
     self.likeContainerView.userInteractionEnabled = YES;
@@ -122,14 +122,14 @@
 
 - (void)prepareForReuse {
     [super prepareForReuse];
-    // 对齐安卓：对于动态图，需要确保ViewHolder复用时不会停止动画
+    // 对于动态图，需要确保ViewHolder复用时不会停止动画
     // 不清除图片，让SDWebImage自己管理缓存和动画
     // 只清除其他UI状态
     self.likeCountLabel.text = @"";
     self.vipIconView.hidden = YES;
     // 重置点赞按钮显示状态为默认值
     self.showLikeButton = YES;
-    // 取消可能存在的视图动画（对齐安卓：onViewDetachedFromWindow中的处理）
+    // 取消可能存在的视图动画（onViewDetachedFromWindow中的处理）
     [self.imageView.layer removeAllAnimations];
     // 保持背景色#1D2B2C
     self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
@@ -138,7 +138,7 @@
 - (void)configureWithModel:(MaterialItemModel *)model {
     self.currentModel = model;
     
-    // 加载图片（对齐安卓：添加placeholder和error图片）
+    // 加载图片（添加placeholder和error图片）
     NSURL *url = [NSURL URLWithString:model.materialUrl];
     if (!url) {
         self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
@@ -169,7 +169,7 @@
     // 根据showLikeButton属性控制点赞按钮的显示/隐藏
     self.likeContainerView.hidden = !self.showLikeButton;
     
-    // 设置点赞状态和图标（对齐安卓：选中时用light图标，未选中用dark图标）
+    // 设置点赞状态和图标（选中时用light图标，未选中用dark图标）
     BOOL isFavorite = model.isFavorite;
     // 使用与安卓相同的图片资源命名：icon_home_collection_light / icon_home_collection_dark
     self.likeIconView.image = [UIImage imageNamed:isFavorite ? @"icon_home_collection_light" : @"icon_home_collection_dark"];
@@ -181,7 +181,7 @@
         self.likeCountLabel.text = @"0";
     }
     
-    // 设置VIP图标显示/隐藏（对齐安卓：onlyVip == 1时显示）
+    // 设置VIP图标显示/隐藏（onlyVip == 1时显示）
     self.vipIconView.hidden = (model.onlyVip != 1);
 }
 

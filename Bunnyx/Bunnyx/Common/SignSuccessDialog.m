@@ -2,7 +2,7 @@
 //  SignSuccessDialog.m
 //  Bunnyx
 //
-//  签到成功弹窗（对齐安卓SignSuccessDialog）
+//  签到成功弹窗（SignSuccessDialog）
 //
 
 #import "SignSuccessDialog.h"
@@ -57,7 +57,7 @@
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss)];
     [self.backgroundView addGestureRecognizer:tap];
     
-    // 内容容器（对齐安卓：marginHorizontal 20dp）
+    // 内容容器（marginHorizontal 20dp）
     self.containerView = [[UIView alloc] init];
     [self addSubview:self.containerView];
     
@@ -67,7 +67,7 @@
         make.height.offset(335);
     }];
     
-    // 背景图片（对齐安卓：bg_sign_success_topup，圆角20dp底部）
+    // 背景图片（bg_sign_success_topup，圆角20dp底部）
     self.backgroundImageView = [[UIImageView alloc] init];
     self.backgroundImageView.image = [UIImage imageNamed:@"bg_sign_success_topup"];
     self.backgroundImageView.contentMode = UIViewContentModeScaleToFill;
@@ -80,11 +80,11 @@
         make.edges.equalTo(self.containerView);
     }];
     
-    // 标题（对齐安卓：23sp bold，黑色#333333，marginTop 100dp）
+    // 标题（23sp bold，黑色#333333，marginTop 100dp）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"sign_success_title") ?: @"签到成功";
-    self.titleLabel.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.titleLabel.font = BOLD_FONT(23); // 对齐安卓：23sp bold
+    self.titleLabel.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.titleLabel.font = BOLD_FONT(23); // 23sp bold
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerView addSubview:self.titleLabel];
     
@@ -93,7 +93,7 @@
         make.top.equalTo(self.containerView).offset(100);
     }];
     
-    // 金币图标（对齐安卓：icon_mine_recharge_list_coin_default，50dp × 50dp，marginTop 14dp）
+    // 金币图标（icon_mine_recharge_list_coin_default，50dp × 50dp，marginTop 14dp）
     self.coinImageView = [[UIImageView alloc] init];
     self.coinImageView.image = [UIImage imageNamed:@"icon_mine_coin_default"];
     self.coinImageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -105,11 +105,11 @@
         make.top.equalTo(self.titleLabel.mas_bottom).offset(14);
     }];
     
-    // 奖励文本（对齐安卓：22sp bold，颜色#0AE971，marginTop 6dp）
+    // 奖励文本（22sp bold，颜色#0AE971，marginTop 6dp）
     self.rewardLabel = [[UILabel alloc] init];
     self.rewardLabel.text = [NSString stringWithFormat:@"+%ld", (long)self.reward];
-    self.rewardLabel.textColor = HEX_COLOR(0x0AE971); // 对齐安卓：#0AE971
-    self.rewardLabel.font = BOLD_FONT(22); // 对齐安卓：22sp bold
+    self.rewardLabel.textColor = HEX_COLOR(0x0AE971); // #0AE971
+    self.rewardLabel.font = BOLD_FONT(22); // 22sp bold
     self.rewardLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerView addSubview:self.rewardLabel];
     
@@ -118,14 +118,14 @@
         make.top.equalTo(self.coinImageView.mas_bottom).offset(6);
     }];
     
-    // OK按钮（对齐安卓：渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，marginHorizontal 16dp，marginTop 16dp）
+    // OK按钮（渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，marginHorizontal 16dp，marginTop 16dp）
     self.okButton = [GradientButton buttonWithTitle:LocalString(@"sign_ok") ?: @"OK"
-                                           startColor:HEX_COLOR(0x0AEA6F) // 对齐安卓：#0AEA6F
-                                             endColor:HEX_COLOR(0x1CB3C1)]; // 对齐安卓：#1CB3C1
-    self.okButton.cornerRadius = 20; // 对齐安卓：20dp
-    self.okButton.buttonHeight = 48; // 对齐安卓：48dp
-    [self.okButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
-    self.okButton.titleLabel.font = BOLD_FONT(16); // 对齐安卓：16sp bold
+                                           startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
+                                             endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
+    self.okButton.cornerRadius = 20; // 20dp
+    self.okButton.buttonHeight = 48; // 48dp
+    [self.okButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
+    self.okButton.titleLabel.font = BOLD_FONT(16); // 16sp bold
     [self.okButton addTarget:self action:@selector(okButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.containerView addSubview:self.okButton];
     

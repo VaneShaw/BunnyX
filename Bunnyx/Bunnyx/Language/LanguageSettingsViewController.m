@@ -38,20 +38,20 @@ extern NSString * const LanguageDidChangeNotification;
 #pragma mark - 初始化
 
 - (void)setupUI {
-    // 对齐安卓：background="#0A1C1B"
+    // background="#0A1C1B"
     self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
     self.title = LocalString(@"语言设置");
     
-    // 对齐安卓：使用和设置页面一样的TableView样式
+    // 使用和设置页面一样的TableView样式
     self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
     self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone; // 对齐安卓：使用CardView，不需要分隔线
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone; // 使用CardView，不需要分隔线
     self.tableView.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.tableView];
     
-    // 对齐安卓：RecyclerView layout_weight=1，占据剩余空间
+    // RecyclerView layout_weight=1，占据剩余空间
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.customBackButton.mas_bottom).offset(18);
         make.left.right.equalTo(self.view);
@@ -106,7 +106,7 @@ extern NSString * const LanguageDidChangeNotification;
         cell.selectionStyle = UITableViewCellSelectionStyleNone; // 去掉点击时的颜色效果
         cell.backgroundColor = [UIColor clearColor]; // 透明背景，让CardView样式显示
         
-        // 对齐安卓：CardView样式，cardBackgroundColor=#0DFFFFFF (半透明白色), cardCornerRadius=dp_15
+        // CardView样式，cardBackgroundColor=#0DFFFFFF (半透明白色), cardCornerRadius=dp_15
         UIView *cardView = [[UIView alloc] init];
         cardView.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.05]; // #0DFFFFFF 转换为 RGBA
         cardView.layer.cornerRadius = 15.0; // dp_15
@@ -114,8 +114,8 @@ extern NSString * const LanguageDidChangeNotification;
         cardView.tag = 1000; // 用于后续查找
         [cell.contentView addSubview:cardView];
         
-        // 对齐安卓：paddingVertical=dp_16, paddingHorizontal=dp_16, marginBottom=dp_16
-        // 对齐设置页面：cardView左右边距16（对齐安卓：RecyclerView paddingHorizontal=dp_16）
+        // paddingVertical=dp_16, paddingHorizontal=dp_16, marginBottom=dp_16
+        // 对齐设置页面：cardView左右边距16（RecyclerView paddingHorizontal=dp_16）
         [cardView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.left.equalTo(cell.contentView).offset(16);
             make.right.equalTo(cell.contentView).offset(-16);
@@ -123,7 +123,7 @@ extern NSString * const LanguageDidChangeNotification;
             make.height.mas_equalTo(52); // 固定高度52dp（CardView内容高度）
         }];
         
-        // 对齐安卓：自定义标题Label（textSize=sp_15, textStyle=bold, textColor=white）
+        // 自定义标题Label（textSize=sp_15, textStyle=bold, textColor=white）
         UILabel *titleLabel = [[UILabel alloc] init];
         titleLabel.textColor = [UIColor whiteColor];
         titleLabel.font = BOLD_FONT(15);
@@ -135,7 +135,7 @@ extern NSString * const LanguageDidChangeNotification;
             make.right.lessThanOrEqualTo(cardView).offset(-50); // 为checkmark留出空间
         }];
         
-        // 对齐安卓：选中状态图标（checkmark）
+        // 选中状态图标（checkmark）
         UIImageView *checkmarkImageView = [[UIImageView alloc] init];
         // 使用系统checkmark图标，如果没有则使用箭头图标
         if (@available(iOS 13.0, *)) {
@@ -173,7 +173,7 @@ extern NSString * const LanguageDidChangeNotification;
     // 设置选中状态
     if (languageType == self.currentLanguage) {
         checkmarkImageView.hidden = NO; // 显示checkmark
-        // 对齐安卓：选中状态可以使用不同颜色，但这里保持白色（对齐安卓没有特殊颜色）
+        // 选中状态可以使用不同颜色，但这里保持白色
         titleLabel.textColor = [UIColor whiteColor];
     } else {
         checkmarkImageView.hidden = YES; // 隐藏checkmark
@@ -202,24 +202,24 @@ extern NSString * const LanguageDidChangeNotification;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+    // CardView高度52dp + marginBottom=dp_16 = 68dp
     return 53.0;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 53.0; // 对齐安卓：CardView高度52dp + marginBottom=dp_16 = 68dp
+    return 53.0; // CardView高度52dp + marginBottom=dp_16 = 68dp
 }
 
-// 对齐安卓：每个CardView有marginBottom=dp_16，通过section间距实现
+// 每个CardView有marginBottom=dp_16，通过section间距实现
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 0.01; // 最小高度（对齐安卓：没有section header）
+    return 0.01; // 最小高度（没有section header）
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
     return 0.01; // 最小高度
 }
 
-// 对齐安卓：列表项之间的间距（marginBottom=dp_16）
+// 列表项之间的间距（marginBottom=dp_16）
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
     return [[UIView alloc] init];
 }

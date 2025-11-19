@@ -7,7 +7,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// 页面类型常量（对齐安卓：VideoDetailActivity）
+// 页面类型常量（VideoDetailActivity）
 typedef NS_ENUM(NSInteger, MaterialDetailPageType) {
     MaterialDetailPageTypeMaterial = 0,  // 素材详情
     MaterialDetailPageTypeGenerate = 1,   // 生成详情（从我的页面生成列表进入）

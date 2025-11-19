@@ -21,7 +21,7 @@ static UIImage *_defaultLoadingImage = nil;
 }
 
 + (UIImage *)generateVectorImageWithSize:(CGSize)size {
-    // 默认大小180x180（对应Android的dp_180）
+    // 默认大小180x180（dp_180）
     if (CGSizeEqualToSize(size, CGSizeZero)) {
         size = CGSizeMake(90, 90);
     }
@@ -34,10 +34,10 @@ static UIImage *_defaultLoadingImage = nil;
         return nil;
     }
     
-    // 设置填充颜色：黑色，透明度0.18（对应Android的fillAlpha="0.18"）
+    // 设置填充颜色：黑色，透明度0.18（fillAlpha="0.18"）
     UIColor *fillColor = [[UIColor blackColor] colorWithAlphaComponent:0.18];
     
-    // 计算缩放比例（Android viewport是180x180）
+    // 计算缩放比例（viewport是180x180）
     CGFloat scaleX = size.width / 180.0;
     CGFloat scaleY = size.height / 180.0;
     

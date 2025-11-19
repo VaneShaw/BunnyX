@@ -2,7 +2,7 @@
 //  UploadHistoryDialog.m
 //  Bunnyx
 //
-//  上传历史记录选择弹窗（对齐安卓UploadHistoryDialog）
+//  上传历史记录选择弹窗（UploadHistoryDialog）
 //
 
 #import "UploadHistoryDialog.h"
@@ -15,13 +15,13 @@
 static NSString *const kHistoryItemCellId = @"HistoryItemCell";
 static NSString *const kAddNewCellId = @"AddNewCell";
 
-/// 添加新项数据模型（对齐安卓AddNewItem）
+/// 添加新项数据模型（AddNewItem）
 @interface AddNewItem : NSObject
 @end
 @implementation AddNewItem
 @end
 
-/// 历史记录项Cell（对齐安卓HistoryItemViewHolder）
+/// 历史记录项Cell（HistoryItemViewHolder）
 @interface HistoryItemCell : UICollectionViewCell
 
 @property (nonatomic, strong) UIImageView *imageView;
@@ -45,11 +45,11 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 }
 
 - (void)setupUI {
-    // 历史记录图片（对齐安卓：60x60dp，scaleType centerCrop）
+    // 历史记录图片（60x60dp，scaleType centerCrop）
     self.imageView = [[UIImageView alloc] init];
     self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.clipsToBounds = YES;
-    self.imageView.layer.cornerRadius = 10; // 对齐安卓：圆角10dp
+    self.imageView.layer.cornerRadius = 10; // 圆角10dp
     self.imageView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.imageView];
     
@@ -58,7 +58,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         make.width.height.mas_equalTo(60);
     }];
     
-    // 删除按钮（对齐安卓：icon_photo_delete，在右下角，padding 5dp）
+    // 删除按钮（icon_photo_delete，在右下角，padding 5dp）
     self.deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.deleteButton setImage:[UIImage imageNamed:@"icon_photo_delete"] forState:UIControlStateNormal];
     self.deleteButton.backgroundColor = [UIColor clearColor];
@@ -70,7 +70,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         make.height.offset(18);
     }];
     
-    // 选中状态指示器（对齐安卓：bg_image_selected，覆盖整个item）
+    // 选中状态指示器（bg_image_selected，覆盖整个item）
     self.selectedView = [[UIView alloc] init];
     // TODO: 使用切图bg_image_selected，暂时使用边框表示选中
     self.selectedView.layer.borderWidth = 2;
@@ -90,7 +90,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         return;
     }
     
-    // 对齐安卓：优先使用AWS URL显示图片（如果本地文件不存在）
+    // 优先使用AWS URL显示图片（如果本地文件不存在）
     // 1. 如果是HTTP/HTTPS URL，直接使用
     if ([item.imageUri hasPrefix:@"http://"] || [item.imageUri hasPrefix:@"https://"]) {
         [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.imageUri]
@@ -105,7 +105,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         return;
     }
     
-    // 3. 本地文件不存在，尝试使用AWS路径（对齐安卓：如果本地文件不存在，使用AWS URL）
+    // 3. 本地文件不存在，尝试使用AWS路径（如果本地文件不存在，使用AWS URL）
     if (item.awsFullPath && item.awsFullPath.length > 0) {
         // 如果awsFullPath是完整URL，直接使用
         if ([item.awsFullPath hasPrefix:@"http://"] || [item.awsFullPath hasPrefix:@"https://"]) {
@@ -140,7 +140,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 
 @end
 
-/// 添加新项Cell（对齐安卓AddNewViewHolder）
+/// 添加新项Cell（AddNewViewHolder）
 @interface AddNewCell : UICollectionViewCell
 
 @end
@@ -156,12 +156,12 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 }
 
 - (void)setupUI {
-    // 背景（对齐安卓：bg_image_rounded）
+    // 背景（bg_image_rounded）
     self.contentView.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
     self.contentView.layer.cornerRadius = 10;
     self.contentView.layer.masksToBounds = YES;
     
-    // 添加图标（对齐安卓：icon_photo_add，60x60dp）
+    // 添加图标（icon_photo_add，60x60dp）
     UIImageView *addIcon = [[UIImageView alloc] init];
     addIcon.image = [UIImage imageNamed:@"icon_photo_add"];
     addIcon.contentMode = UIViewContentModeScaleAspectFit;
@@ -214,7 +214,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     self.frame = window.bounds;
     [window addSubview:self];
     
-    // 背景遮罩（对齐安卓：点击关闭）
+    // 背景遮罩（点击关闭）
     self.backgroundView = [[UIView alloc] init];
     self.backgroundView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
     [self addSubview:self.backgroundView];
@@ -225,7 +225,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss)];
     [self.backgroundView addGestureRecognizer:tap];
     
-    // 对话框（对齐安卓：从底部弹出，padding 20dp，背景bottom_sheet_background）
+    // 对话框（从底部弹出，padding 20dp，背景bottom_sheet_background）
     self.dialogView = [[UIView alloc] init];
     // TODO: 使用切图bottom_sheet_background，暂时使用黑色背景
     self.dialogView.backgroundColor = HEX_COLOR(0x00191A);
@@ -238,7 +238,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         // 高度自适应，但需要设置最大高度
     }];
     
-    // 标题栏（对齐安卓：关闭按钮在右上角，marginBottom 20dp）
+    // 标题栏（关闭按钮在右上角，marginBottom 20dp）
     UIView *titleBar = [[UIView alloc] init];
     [self.dialogView addSubview:titleBar];
     
@@ -248,7 +248,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         make.height.mas_equalTo(44);
     }];
     
-    // 关闭按钮（对齐安卓：icon_popup_delete，padding 5dp）
+    // 关闭按钮（icon_popup_delete，padding 5dp）
     self.closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.closeButton setImage:[UIImage imageNamed:@"icon_popup_delete"] forState:UIControlStateNormal];
     [self.closeButton addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
@@ -260,7 +260,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         make.width.height.mas_equalTo(23);
     }];
     
-    // 历史记录列表（对齐安卓：RecyclerView，GridLayoutManager 4列，高度120dp，marginBottom 20dp，paddingHorizontal 4dp）
+    // 历史记录列表（RecyclerView，GridLayoutManager 4列，高度120dp，marginBottom 20dp，paddingHorizontal 4dp）
     // 注意：安卓GridLayoutManager(4)表示垂直方向4列，水平滚动。RecyclerView高度120dp，item高度60dp，所以可以显示2行
     // 在iOS中，水平滚动时：垂直方向是"行"，水平方向是"列"。要实现4列，需要让垂直方向有2行，每行2列（或者用自定义布局）
     // 简化实现：使用水平滚动，垂直方向显示2行，每行可以水平滚动多个item
@@ -282,15 +282,15 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     [self.collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(titleBar.mas_bottom).offset(20);
         make.left.right.equalTo(self.dialogView);
-        make.height.mas_equalTo(120); // 对齐安卓：高度120dp
+        make.height.mas_equalTo(120); // 高度120dp
     }];
     
-    // Upload按钮（对齐安卓：高度48dp，圆角12dp，渐变#0AEA6F到#1CB3C1，marginBottom 12dp）
+    // Upload按钮（高度48dp，圆角12dp，渐变#0AEA6F到#1CB3C1，marginBottom 12dp）
     self.uploadButton = [GradientButton buttonWithTitle:LocalString(@"上传")
                                                startColor:RGB(10, 234, 111)
                                                  endColor:RGB(28, 179, 193)];
-    [self.uploadButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：black3
-    self.uploadButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+    [self.uploadButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // black3
+    self.uploadButton.titleLabel.font = FONT(16); // 16sp
     self.uploadButton.cornerRadius = CORNER_RADIUS_12;
     self.uploadButton.buttonHeight = 48;
     [self.uploadButton addTarget:self action:@selector(uploadButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
@@ -302,19 +302,19 @@ static NSString *const kAddNewCellId = @"AddNewCell";
         make.height.mas_equalTo(48);
     }];
     
-    // Generate按钮（对齐安卓：高度48dp，圆角12dp，渐变#85FAFF到#E7FCC4）
+    // Generate按钮（高度48dp，圆角12dp，渐变#85FAFF到#E7FCC4）
     self.generateButton = [GradientButton buttonWithTitle:LocalString(@"生成")
                                                 startColor:RGB(133, 250, 255)  // #85FAFF
                                                   endColor:RGB(231, 252, 196)]; // #E7FCC4
-    [self.generateButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：black3
-    self.generateButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+    [self.generateButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // black3
+    self.generateButton.titleLabel.font = FONT(16); // 16sp
     self.generateButton.cornerRadius = CORNER_RADIUS_12;
     self.generateButton.buttonHeight = 48;
     [self.generateButton addTarget:self action:@selector(generateButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.dialogView addSubview:self.generateButton];
     
     [self.generateButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.uploadButton.mas_bottom).offset(12); // 对齐安卓：marginBottom 12dp
+        make.top.equalTo(self.uploadButton.mas_bottom).offset(12); // marginBottom 12dp
         make.left.right.equalTo(self.dialogView).insets(UIEdgeInsetsMake(0, 20, 0, 20));
         make.height.mas_equalTo(48);
         make.bottom.equalTo(self.dialogView).offset(-20);
@@ -327,14 +327,14 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 - (void)loadHistoryData {
     [self.dataList removeAllObjects];
     
-    // 添加"添加新图片"项（对齐安卓：第一个是AddNewItem）
+    // 添加"添加新图片"项（第一个是AddNewItem）
     [self.dataList addObject:[[AddNewItem alloc] init]];
     
     // 添加历史记录项
     NSArray<UploadHistoryItem *> *historyList = [self.historyManager getUploadHistoryList];
     [self.dataList addObjectsFromArray:historyList];
     
-    // 自动选中最新的历史记录（如果有的话，对齐安卓逻辑）
+    // 自动选中最新的历史记录（如果有的话，）
     if (self.dataList.count > 1) {
         // 第一个是添加按钮，第二个是最新的历史记录
         self.selectedIndex = 1;
@@ -366,7 +366,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 #pragma mark - Actions
 
 - (void)uploadButtonTapped:(UIButton *)sender {
-    // 对齐安卓：点击Upload按钮，打开相册选择新图片
+    // 点击Upload按钮，打开相册选择新图片
     if ([self.delegate respondsToSelector:@selector(uploadHistoryDialogDidRequestImageSelection:)]) {
         [self.delegate uploadHistoryDialogDidRequestImageSelection:self];
     }
@@ -374,7 +374,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 }
 
 - (void)generateButtonTapped:(UIButton *)sender {
-    // 对齐安卓：点击Generate按钮，使用选中的历史记录生成
+    // 点击Generate按钮，使用选中的历史记录生成
     UploadHistoryItem *selectedItem = nil;
     if (self.selectedIndex >= 0 && self.selectedIndex < self.dataList.count) {
         id item = self.dataList[self.selectedIndex];
@@ -384,7 +384,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     }
     
     if (!selectedItem) {
-        // 如果没有选中任何项，使用最新的历史记录（对齐安卓逻辑）
+        // 如果没有选中任何项，使用最新的历史记录（）
         selectedItem = [self.historyManager getLatestHistoryItem];
         if (!selectedItem) {
             // TODO: 显示提示
@@ -435,13 +435,13 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     id item = self.dataList[indexPath.item];
     
     if ([item isKindOfClass:[AddNewItem class]]) {
-        // 点击添加新图片（对齐安卓逻辑）
+        // 点击添加新图片（）
         if ([self.delegate respondsToSelector:@selector(uploadHistoryDialogDidRequestImageSelection:)]) {
             [self.delegate uploadHistoryDialogDidRequestImageSelection:self];
         }
         [self dismiss];
     } else if ([item isKindOfClass:[UploadHistoryItem class]]) {
-        // 点击历史记录项，选中状态由内部处理（对齐安卓逻辑）
+        // 点击历史记录项，选中状态由内部处理（）
         NSInteger oldIndex = self.selectedIndex;
         self.selectedIndex = indexPath.item;
         
@@ -460,7 +460,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
 #pragma mark - UICollectionViewDelegateFlowLayout
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 对齐安卓：历史记录项60x60dp，添加新项也是60x60dp
+    // 历史记录项60x60dp，添加新项也是60x60dp
     // RecyclerView高度120dp，可以显示2行，每行item高度60dp
     // 由于是水平滚动，item宽度和高度都是60
     return CGSizeMake(60, 60);
@@ -479,7 +479,7 @@ static NSString *const kAddNewCellId = @"AddNewCell";
     
     UploadHistoryItem *historyItem = (UploadHistoryItem *)item;
     
-    // 删除历史记录（对齐安卓逻辑）
+    // 删除历史记录（）
     [self.historyManager removeUploadHistory:historyItem.imageUri];
     
     // 重新加载数据

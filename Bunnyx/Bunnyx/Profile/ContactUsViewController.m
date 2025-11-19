@@ -2,7 +2,7 @@
 //  ContactUsViewController.m
 //  Bunnyx
 //
-//  联系客服页面（对齐安卓ContactUsActivity）
+//  联系客服页面（ContactUsActivity）
 //
 
 #import "ContactUsViewController.h"
@@ -35,7 +35,7 @@ static const NSInteger kMaxImageCount = 3;
 }
 
 - (void)setupUI {
-    // 图片视图（对齐安卓：item大小，圆角8dp）
+    // 图片视图（item大小，圆角8dp）
     self.imageView = [[UIImageView alloc] init];
     self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.layer.masksToBounds = YES;
@@ -46,7 +46,7 @@ static const NSInteger kMaxImageCount = 3;
         make.edges.equalTo(self.contentView);
     }];
     
-    // 删除按钮（对齐安卓：右上角删除图标）
+    // 删除按钮（右上角删除图标）
     self.deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.deleteButton setImage:[UIImage imageNamed:@"icon_photo_delete"] forState:UIControlStateNormal];
     [self.deleteButton addTarget:self action:@selector(deleteButtonTapped) forControlEvents:UIControlEventTouchUpInside];
@@ -64,7 +64,7 @@ static const NSInteger kMaxImageCount = 3;
         self.imageView.image = image;
         self.deleteButton.hidden = !showDelete;
     } else {
-        // 添加按钮（对齐安卓：icon_add_new）
+        // 添加按钮（icon_add_new）
         self.imageView.image = [UIImage imageNamed:@"icon_photo_add"];
 //        self.imageView.contentMode = UIViewContentModeCenter;
         self.deleteButton.hidden = YES;
@@ -85,30 +85,30 @@ static const NSInteger kMaxImageCount = 3;
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) UIView *contentView;
 
-// 标题标签（对齐安卓：TitleBar，19sp，白色）
+// 标题标签（TitleBar，19sp，白色）
 @property (nonatomic, strong) UILabel *titleLabel;
 
-// 描述标签（对齐安卓：16sp，白色，marginTop 20dp，marginBottom 8dp）
+// 描述标签（16sp，白色，marginTop 20dp，marginBottom 8dp）
 @property (nonatomic, strong) UILabel *descriptionLabel;
 
-// 描述输入框（对齐安卓：120dp高度，padding 12dp，radius 10dp，背景#0DFFFFFF）
+// 描述输入框（120dp高度，padding 12dp，radius 10dp，背景#0DFFFFFF）
 @property (nonatomic, strong) UITextView *descriptionTextView;
 @property (nonatomic, strong) UILabel *placeholderLabel;
 
-// 上传图片标签（对齐安卓：16sp，白色，marginTop 24dp，marginBottom 12dp）
+// 上传图片标签（16sp，白色，marginTop 24dp，marginBottom 12dp）
 @property (nonatomic, strong) UILabel *uploadImageCountLabel;
 
-// 图片列表（对齐安卓：RecyclerView，4列网格，minHeight 120dp）
+// 图片列表（RecyclerView，4列网格，minHeight 120dp）
 @property (nonatomic, strong) UICollectionView *imagesCollectionView;
 
-// 提交按钮（对齐安卓：48dp高度，渐变背景#0AEA6F到#1CB3C1，radius 12dp）
+// 提交按钮（48dp高度，渐变背景#0AEA6F到#1CB3C1，radius 12dp）
 @property (nonatomic, strong) GradientButton *submitButton;
 
-// 数据源（对齐安卓：mImagePaths）
+// 数据源（mImagePaths）
 @property (nonatomic, strong) NSMutableArray<UIImage *> *selectedImages;
 @property (nonatomic, strong) NSMutableArray<NSString *> *imagePaths; // 本地图片路径数组
 
-// 上传状态跟踪（对齐安卓）
+// 上传状态跟踪）
 @property (nonatomic, assign) NSInteger uploadingCount; // mUploadingCount
 @property (nonatomic, strong) NSMutableArray<NSString *> *uploadedRelativePaths; // mUploadedRelativePaths
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *imagePathToRelativePath; // mImagePathToRelativePath
@@ -136,7 +136,7 @@ static const NSInteger kMaxImageCount = 3;
 #pragma mark - UI Setup
 
 - (void)setupUI {
-    // ScrollView容器（对齐安卓：ScrollView包裹所有内容）
+    // ScrollView容器（ScrollView包裹所有内容）
     self.scrollView = [[UIScrollView alloc] init];
     self.scrollView.showsVerticalScrollIndicator = NO;
     [self.view addSubview:self.scrollView];
@@ -153,49 +153,49 @@ static const NSInteger kMaxImageCount = 3;
         make.width.equalTo(self.scrollView);
     }];
     
-    // 标题标签（对齐安卓：TitleBar，19sp，白色，paddingHorizontal 16dp）
+    // 标题标签（TitleBar，19sp，白色，paddingHorizontal 16dp）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"联系我们");
     self.titleLabel.textColor = [UIColor whiteColor];
-    self.titleLabel.font = FONT(19); // 对齐安卓：19sp
+    self.titleLabel.font = FONT(19); // 19sp
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.view addSubview:self.titleLabel];
     
     [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.customBackButton.mas_centerY);
-        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // 对齐安卓：paddingHorizontal 16dp
+        make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // paddingHorizontal 16dp
         make.height.mas_equalTo(44); // 标题栏高度
     }];
     
-    // 描述标签（对齐安卓：16sp，白色，marginTop 20dp，marginBottom 8dp）
+    // 描述标签（16sp，白色，marginTop 20dp，marginBottom 8dp）
     self.descriptionLabel = [[UILabel alloc] init];
     self.descriptionLabel.text = LocalString(@"描述:");
     self.descriptionLabel.textColor = [UIColor whiteColor];
-    self.descriptionLabel.font = FONT(16); // 对齐安卓：16sp
+    self.descriptionLabel.font = FONT(16); // 16sp
     [self.contentView addSubview:self.descriptionLabel];
     
     [self.descriptionLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.contentView).offset(STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT+30); // 对齐安卓：marginTop 20dp
-        make.left.equalTo(self.contentView).offset(16); // 对齐安卓：paddingHorizontal 16dp
+        make.top.equalTo(self.contentView).offset(STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT+30); // marginTop 20dp
+        make.left.equalTo(self.contentView).offset(16); // paddingHorizontal 16dp
         make.right.equalTo(self.contentView).offset(-16);
     }];
     
-    // 描述输入框（对齐安卓：120dp高度，padding 12dp，radius 10dp，背景#0DFFFFFF）
+    // 描述输入框（120dp高度，padding 12dp，radius 10dp，背景#0DFFFFFF）
     self.descriptionTextView = [[UITextView alloc] init];
-    self.descriptionTextView.backgroundColor = RGBA(255, 255, 255, 13.0/255.0); // 对齐安卓：#0DFFFFFF
+    self.descriptionTextView.backgroundColor = RGBA(255, 255, 255, 13.0/255.0); // #0DFFFFFF
     self.descriptionTextView.textColor = [UIColor whiteColor];
-    self.descriptionTextView.font = FONT(16); // 对齐安卓：16sp
-    self.descriptionTextView.layer.cornerRadius = 10.0; // 对齐安卓：radius 10dp
+    self.descriptionTextView.font = FONT(16); // 16sp
+    self.descriptionTextView.layer.cornerRadius = 10.0; // radius 10dp
     self.descriptionTextView.layer.masksToBounds = YES;
-    self.descriptionTextView.textContainerInset = UIEdgeInsetsMake(12, 12, 12, 12); // 对齐安卓：padding 12dp
+    self.descriptionTextView.textContainerInset = UIEdgeInsetsMake(12, 12, 12, 12); // padding 12dp
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textViewDidChange:) name:UITextViewTextDidChangeNotification object:self.descriptionTextView];
     [self.contentView addSubview:self.descriptionTextView];
     
-    // 占位符标签（对齐安卓：textColorHint #80FFFFFF）
+    // 占位符标签（textColorHint #80FFFFFF）
     self.placeholderLabel = [[UILabel alloc] init];
     self.placeholderLabel.text = LocalString(@"请输入您的问题或建议");
-    self.placeholderLabel.textColor = RGBA(255, 255, 255, 0.5); // 对齐安卓：#80FFFFFF
-    self.placeholderLabel.font = FONT(16); // 对齐安卓：16sp
+    self.placeholderLabel.textColor = RGBA(255, 255, 255, 0.5); // #80FFFFFF
+    self.placeholderLabel.font = FONT(16); // 16sp
     self.placeholderLabel.numberOfLines = 0;
     [self.descriptionTextView addSubview:self.placeholderLabel];
     
@@ -206,26 +206,26 @@ static const NSInteger kMaxImageCount = 3;
     }];
     
     [self.descriptionTextView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.descriptionLabel.mas_bottom).offset(8); // 对齐安卓：marginBottom 8dp
-        make.left.equalTo(self.contentView).offset(16); // 对齐安卓：paddingHorizontal 16dp
+        make.top.equalTo(self.descriptionLabel.mas_bottom).offset(8); // marginBottom 8dp
+        make.left.equalTo(self.contentView).offset(16); // paddingHorizontal 16dp
         make.right.equalTo(self.contentView).offset(-16);
-        make.height.mas_equalTo(120); // 对齐安卓：120dp
+        make.height.mas_equalTo(120); // 120dp
     }];
     
-    // 上传图片标签（对齐安卓：16sp，白色，marginTop 24dp，marginBottom 12dp）
+    // 上传图片标签（16sp，白色，marginTop 24dp，marginBottom 12dp）
     self.uploadImageCountLabel = [[UILabel alloc] init];
     [self updateImageCountDisplay];
     self.uploadImageCountLabel.textColor = [UIColor whiteColor];
-    self.uploadImageCountLabel.font = FONT(16); // 对齐安卓：16sp
+    self.uploadImageCountLabel.font = FONT(16); // 16sp
     [self.contentView addSubview:self.uploadImageCountLabel];
     
     [self.uploadImageCountLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.descriptionTextView.mas_bottom).offset(24); // 对齐安卓：marginTop 24dp
-        make.left.equalTo(self.contentView).offset(16); // 对齐安卓：paddingHorizontal 16dp
+        make.top.equalTo(self.descriptionTextView.mas_bottom).offset(24); // marginTop 24dp
+        make.left.equalTo(self.contentView).offset(16); // paddingHorizontal 16dp
         make.right.equalTo(self.contentView).offset(-16);
     }];
     
-    // 图片列表（对齐安卓：RecyclerView，4列网格，minHeight 120dp）
+    // 图片列表（RecyclerView，4列网格，minHeight 120dp）
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.minimumLineSpacing = 12.0; // 行间距
     layout.minimumInteritemSpacing = 12.0; // 列间距
@@ -239,28 +239,28 @@ static const NSInteger kMaxImageCount = 3;
     [self.contentView addSubview:self.imagesCollectionView];
     
     [self.imagesCollectionView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.uploadImageCountLabel.mas_bottom).offset(12); // 对齐安卓：marginBottom 12dp
-        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // 对齐安卓：paddingHorizontal 16dp
-        make.height.mas_greaterThanOrEqualTo(120); // 对齐安卓：minHeight 120dp
+        make.top.equalTo(self.uploadImageCountLabel.mas_bottom).offset(12); // marginBottom 12dp
+        make.left.right.equalTo(self.contentView).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // paddingHorizontal 16dp
+        make.height.mas_greaterThanOrEqualTo(120); // minHeight 120dp
     }];
     
-    // 提交按钮（对齐安卓：48dp高度，渐变背景#0AEA6F到#1CB3C1，radius 12dp）
+    // 提交按钮（48dp高度，渐变背景#0AEA6F到#1CB3C1，radius 12dp）
     self.submitButton = [GradientButton buttonWithTitle:LocalString(@"提交")
-                                               startColor:HEX_COLOR(0x0AEA6F) // 对齐安卓：#0AEA6F
-                                                 endColor:HEX_COLOR(0x1CB3C1)]; // 对齐安卓：#1CB3C1
-    self.submitButton.cornerRadius = 12.0; // 对齐安卓：radius 12dp
-    self.submitButton.buttonHeight = 48.0; // 对齐安卓：48dp
+                                               startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
+                                                 endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
+    self.submitButton.cornerRadius = 12.0; // radius 12dp
+    self.submitButton.buttonHeight = 48.0; // 48dp
     [self.submitButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.submitButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+    self.submitButton.titleLabel.font = FONT(16); // 16sp
     [self.submitButton addTarget:self action:@selector(submitButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.submitButton];
     
     [self.submitButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.imagesCollectionView.mas_bottom).offset(50); // 对齐安卓：marginTop 50dp
-        make.left.equalTo(self.contentView).offset(16); // 对齐安卓：paddingHorizontal 16dp
+        make.top.equalTo(self.imagesCollectionView.mas_bottom).offset(50); // marginTop 50dp
+        make.left.equalTo(self.contentView).offset(16); // paddingHorizontal 16dp
         make.right.equalTo(self.contentView).offset(-16);
-        make.height.mas_equalTo(48); // 对齐安卓：48dp
-        make.bottom.equalTo(self.contentView).offset(-24); // 对齐安卓：marginBottom 24dp
+        make.height.mas_equalTo(48); // 48dp
+        make.bottom.equalTo(self.contentView).offset(-24); // marginBottom 24dp
     }];
 }
 
@@ -313,7 +313,7 @@ static const NSInteger kMaxImageCount = 3;
 #pragma mark - UICollectionViewDelegateFlowLayout
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 对齐安卓：4列网格布局
+    // 4列网格布局
     CGFloat width = collectionView.bounds.size.width;
     CGFloat spacing = 12.0; // 列间距
     CGFloat itemWidth = (width - spacing * 3) / 4.0; // 4列，3个间距
@@ -348,7 +348,7 @@ static const NSInteger kMaxImageCount = 3;
 }
 
 - (void)submitButtonTapped {
-    // 提交工单（对齐安卓：submitWorkOrder）
+    // 提交工单（submitWorkOrder）
     NSString *description = [self.descriptionTextView.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     if (description.length == 0) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"请输入问题或建议")];
@@ -360,7 +360,7 @@ static const NSInteger kMaxImageCount = 3;
         return;
     }
     
-    // 根据当前图片列表，构建上传路径列表（对齐安卓）
+    // 根据当前图片列表，构建上传路径列表）
     NSMutableArray<NSString *> *currentUploadedPaths = [NSMutableArray array];
     for (NSString *imagePath in self.imagePaths) {
         NSString *relativePath = self.imagePathToRelativePath[imagePath];
@@ -369,14 +369,14 @@ static const NSInteger kMaxImageCount = 3;
         }
     }
     
-    // 构建图片路径字符串（用逗号分隔，对齐安卓）
+    // 构建图片路径字符串（用逗号分隔）
     NSString *imagePaths = [currentUploadedPaths componentsJoinedByString:@","];
     
     BUNNYX_LOG(@"当前图片数量: %ld", (long)self.imagePaths.count);
     BUNNYX_LOG(@"已上传路径数量: %ld", (long)currentUploadedPaths.count);
     BUNNYX_LOG(@"图片路径: %@", imagePaths);
     
-    // 调用提交接口（对齐安卓：SubmitWorkOrderApi）
+    // 调用提交接口（SubmitWorkOrderApi）
     [SVProgressHUD show];
     
     NSDictionary *params = @{
@@ -393,7 +393,7 @@ static const NSInteger kMaxImageCount = 3;
         
         if (code == 0) {
             [SVProgressHUD showSuccessWithStatus:LocalString(@"提交成功")];
-            // 延迟返回上一页（对齐安卓：finish()）
+            // 延迟返回上一页（finish()）
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self.navigationController popViewControllerAnimated:YES];
             });
@@ -413,7 +413,7 @@ static const NSInteger kMaxImageCount = 3;
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey, id> *)info {
     UIImage *image = info[UIImagePickerControllerOriginalImage];
     if (image && self.selectedImages.count < kMaxImageCount) {
-        // 保存图片到临时目录（对齐安卓：copyUriToPrivateFile）
+        // 保存图片到临时目录（copyUriToPrivateFile）
         NSString *imagePath = [self saveImageToTempDirectory:image];
         if (imagePath) {
             [self.selectedImages addObject:image];
@@ -421,7 +421,7 @@ static const NSInteger kMaxImageCount = 3;
             [self.imagesCollectionView reloadData];
             [self updateImageCountDisplay];
             
-            // 开始上传到AWS（对齐安卓：uploadImageToAws）
+            // 开始上传到AWS（uploadImageToAws）
             [self uploadImageToAws:imagePath];
         } else {
             [SVProgressHUD showErrorWithStatus:LocalString(@"处理图片失败")];
@@ -437,7 +437,7 @@ static const NSInteger kMaxImageCount = 3;
 #pragma mark - Image Upload
 
 - (NSString *)saveImageToTempDirectory:(UIImage *)image {
-    // 保存图片到临时目录（对齐安卓：copyUriToPrivateFile）
+    // 保存图片到临时目录（copyUriToPrivateFile）
     NSData *imageData = UIImageJPEGRepresentation(image, 0.8);
     if (!imageData) {
         return nil;
@@ -455,20 +455,20 @@ static const NSInteger kMaxImageCount = 3;
 }
 
 - (void)uploadImageToAws:(NSString *)imagePath {
-    // 上传图片到AWS（对齐安卓：uploadImageToAws）
+    // 上传图片到AWS（uploadImageToAws）
     [SVProgressHUD show];
     self.uploadingCount++;
     
-    // 获取文件后缀（对齐安卓）
+    // 获取文件后缀）
     NSString *fileName = [imagePath lastPathComponent];
     NSString *suffix = [fileName pathExtension];
     if (suffix.length == 0) {
         suffix = @"jpg";
     }
     
-    // 调用AWS上传接口获取配置（对齐安卓：AwsUploadApi，typeCode=WORK_ORDER）
+    // 调用AWS上传接口获取配置（AwsUploadApi，typeCode=WORK_ORDER）
     NSDictionary *params = @{
-        @"typeCode": @"workOrder", // 对齐安卓：AwsUploadApi.TypeCode.WORK_ORDER
+        @"typeCode": @"workOrder", // AwsUploadApi.TypeCode.WORK_ORDER
         @"suffix": suffix
     };
     
@@ -488,7 +488,7 @@ static const NSInteger kMaxImageCount = 3;
             NSString *filePathName = uploadData[@"filePathName"];
             
             if (poolId && region && bucket && filePathName) {
-                // 上传到S3（对齐安卓：uploadToS3）
+                // 上传到S3（uploadToS3）
                 UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
                 if (image) {
                     [[AWSUploader sharedUploader] uploadImage:image
@@ -498,7 +498,7 @@ static const NSInteger kMaxImageCount = 3;
                                                   filePathName:filePathName
                                                       progress:nil
                                                        success:^(NSString *fullUrl, NSString *relativePath) {
-                        // 上传成功，保存相对路径（对齐安卓）
+                        // 上传成功，保存相对路径）
                         [self.uploadedRelativePaths addObject:relativePath];
                         self.imagePathToRelativePath[imagePath] = relativePath;
                         self.uploadingCount--;
@@ -552,7 +552,7 @@ static const NSInteger kMaxImageCount = 3;
 #pragma mark - Delete Image
 
 - (void)deleteImageAtIndex:(NSInteger)index {
-    // 删除图片（对齐安卓：onDeleteClick）
+    // 删除图片（onDeleteClick）
     if (index >= 0 && index < self.imagePaths.count) {
         NSString *imagePath = self.imagePaths[index];
         // 同时移除对应的上传路径

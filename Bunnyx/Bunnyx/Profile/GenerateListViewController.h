@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// 通知名称：生成详情页删除成功（对应安卓的ActivityResultLauncher）
+// 通知名称：生成详情页删除成功（ActivityResultLauncher）
 extern NSString *const kGenerateDetailDeletedNotification;
 extern NSString *const kGenerateDetailDeletedCreateIdKey;
 
@@ -21,7 +21,7 @@ extern NSString *const kGenerateDetailDeletedCreateIdKey;
 /// 表格视图（用于嵌套滚动）
 @property (nonatomic, strong, readonly) UITableView *tableView;
 
-/// 根据createId删除item（对应安卓的adapter.removeByCreateId）
+/// 根据createId删除item（adapter.removeByCreateId）
 - (NSInteger)removeByCreateId:(NSString *)createId;
 
 @end

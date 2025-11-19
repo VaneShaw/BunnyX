@@ -31,7 +31,7 @@
     model.lastSyncTime = [dict[@"lastSyncTime"] isKindOfClass:[NSString class]] ? dict[@"lastSyncTime"] : @"";
     model.isEnable = [dict[@"isEnable"] integerValue];
     model.favoriteDate = [dict[@"favoriteDate"] isKindOfClass:[NSString class]] ? dict[@"favoriteDate"] : @"";
-    // 对齐安卓：解析onlyVip字段
+    // 解析onlyVip字段
     model.onlyVip = [dict[@"onlyVip"] integerValue];
     
     return model;

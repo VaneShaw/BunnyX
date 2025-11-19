@@ -25,7 +25,7 @@ extern NSString *const kRefreshMaterialListNotification;
 @property (nonatomic, strong) UILabel *emptyLabel;
 @property (nonatomic, strong) UIImageView *backgroundImageView;
 @property (nonatomic, assign) NSInteger currentIndex;
-@property (nonatomic, assign) BOOL hasLoadedData; // 是否已经加载过数据（对齐安卓）
+@property (nonatomic, assign) BOOL hasLoadedData; // 是否已经加载过数据
 
 @end
 
@@ -43,7 +43,7 @@ extern NSString *const kRefreshMaterialListNotification;
     [self setupEmptyLabel];
     [self fetchCategories];
     
-    // 对齐安卓：监听刷新列表通知
+    // 监听刷新列表通知
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleRefreshMaterialListNotification:)
                                                  name:kRefreshMaterialListNotification
@@ -56,7 +56,7 @@ extern NSString *const kRefreshMaterialListNotification;
 }
 
 - (void)handleRefreshMaterialListNotification:(NSNotification *)notification {
-    // 对齐安卓：收到刷新通知时，刷新所有MaterialListViewController
+    // 收到刷新通知时，刷新所有MaterialListViewController
     [self refreshData];
 }
 
@@ -74,7 +74,7 @@ extern NSString *const kRefreshMaterialListNotification;
 }
 
 
-// 顶部横向可滚动分类Tab（对齐安卓UI交互）
+// 顶部横向可滚动分类Tab
 - (void)setupTopTabs {
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
@@ -145,7 +145,7 @@ extern NSString *const kRefreshMaterialListNotification;
 #pragma mark - Networking
 
 - (void)fetchCategories {
-    // 只有在没有加载过数据时才加载（对齐安卓）
+    // 只有在没有加载过数据时才加载
     if (self.hasLoadedData) {
         return;
     }
@@ -163,7 +163,7 @@ extern NSString *const kRefreshMaterialListNotification;
 }
 
 - (void)refreshData {
-    // 刷新数据（对齐安卓：refreshData方法）
+    // 刷新数据（refreshData方法）
     // 如果已经有数据，直接通知所有MaterialListViewController刷新
     if (self.hasLoadedData && self.pages.count > 0) {
         for (MaterialListViewController *vc in self.pages) {
@@ -287,12 +287,12 @@ extern NSString *const kRefreshMaterialListNotification;
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     MaterialTypeModel *m = self.types[indexPath.item];
     NSString *title = [m displayName] ?: @"";
-    // 对齐安卓：文字大小 20pt（选中和未选中一样）
+    // 文字大小 20pt（选中和未选中一样）
     UIFont *font = [UIFont systemFontOfSize:20 weight:UIFontWeightRegular];
     CGSize textSize = [title sizeWithAttributes:@{NSFontAttributeName: font}];
-    // 对齐安卓：左右 padding 各 25pt（paddingHorizontal="25dp"）
+    // 左右 padding 各 25pt（paddingHorizontal="25dp"）
     CGFloat horizontalPadding = 25.0 * 2;
-    // 对齐安卓：上下 padding 各 12pt（paddingVertical="12dp"）
+    // 上下 padding 各 12pt（paddingVertical="12dp"）
     CGFloat verticalPadding = 12.0 * 2;
     CGFloat width = ceil(textSize.width) + horizontalPadding;
     CGFloat height = ceil(textSize.height) + verticalPadding;

@@ -179,7 +179,7 @@
         make.edges.equalTo(statusBackgroundView).insets(UIEdgeInsetsMake(0, 8, 0, 8)); // paddingStart/End: 8dp
     }];
     
-    // 进度点容器（对齐安卓：根据position显示不同数量的点）
+    // 进度点容器（根据position显示不同数量的点）
     self.progressDotsContainer = [[UIView alloc] init];
     self.progressDotsContainer.backgroundColor = [UIColor clearColor];
     [self.statusRowView addSubview:self.progressDotsContainer];
@@ -187,7 +187,7 @@
     [self.progressDotsContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.statusLabel.mas_right).offset(8);
         make.centerY.equalTo(self.statusRowView);
-        make.height.mas_equalTo(8); // 对齐安卓：点的高度8dp
+        make.height.mas_equalTo(8); // 点的高度8dp
     }];
     
     // 初始化进度点视图数组
@@ -334,11 +334,11 @@
     // 显示状态标签行
     self.statusRowView.hidden = NO;
     
-    // 对齐安卓：根据position显示不同数量的进度点
+    // 根据position显示不同数量的进度点
     [self updateProgressDots:createTask];
 }
 
-// 对齐安卓：根据position显示不同数量的进度点
+// 根据position显示不同数量的进度点
 - (void)updateProgressDots:(CreateTaskModel *)createTask {
     // 清除旧的进度点
     for (UIView *dotView in self.progressDotViews) {
@@ -352,7 +352,7 @@
         position = [createTask.position integerValue];
     }
     
-    // 对齐安卓：根据position显示不同数量的点（最多5个点）
+    // 根据position显示不同数量的点（最多5个点）
     // position=1显示1个点，position=2显示2个点，以此类推，最多5个点
     NSInteger dotCount = MIN(MAX(position, 0), 5); // 限制在0-5之间
     
@@ -365,7 +365,7 @@
     // 显示容器
     self.progressDotsContainer.hidden = NO;
     
-    // 创建进度点（对齐安卓：LoadingDotsView的样式）
+    // 创建进度点（LoadingDotsView的样式）
     // 方块尺寸：8dp，间距：4dp
     CGFloat dotSize = 8;
     CGFloat spacing = 4;
@@ -376,7 +376,7 @@
         make.width.mas_equalTo(totalWidth);
     }];
     
-    // 创建点视图（对齐安卓：颜色从深蓝到浅蓝）
+    // 创建点视图（颜色从深蓝到浅蓝）
     NSArray *dotColors = @[
         HEX_COLOR(0x1E3A8A), // 深蓝
         HEX_COLOR(0x3B82F6), // 中深蓝
@@ -388,7 +388,7 @@
     for (NSInteger i = 0; i < dotCount; i++) {
         UIView *dotView = [[UIView alloc] init];
         dotView.backgroundColor = dotColors[MIN(i, dotColors.count - 1)];
-        dotView.layer.cornerRadius = 2; // 对齐安卓：圆角2dp
+        dotView.layer.cornerRadius = 2; // 圆角2dp
         dotView.layer.masksToBounds = YES;
         [self.progressDotsContainer addSubview:dotView];
         [self.progressDotViews addObject:dotView];

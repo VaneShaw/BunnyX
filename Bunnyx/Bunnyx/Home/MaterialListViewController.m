@@ -21,7 +21,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 
 @property (nonatomic, assign) NSInteger typeId;
 @property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) UIView *emptyView; // 空状态视图（对齐安卓：layout_empty）
+@property (nonatomic, strong) UIView *emptyView; // 空状态视图（layout_empty）
 @property (nonatomic, strong) NSMutableArray<MaterialItemModel *> *items;
 @property (nonatomic, assign) NSInteger index;
 @property (nonatomic, assign) NSInteger count;
@@ -56,7 +56,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 
 - (void)setupCollectionView {
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
-    // 对齐安卓：间距16dp（对应iOS的16pt）
+    // 间距16dp（对应iOS的16pt）
     // GridSpacingItemDecoration(2, 16, true) 表示：
     // - 行间距：16dp（对应minimumLineSpacing）
     // - 列间距：16dp（对应minimumInteritemSpacing）
@@ -69,14 +69,14 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     _collectionView.alwaysBounceVertical = YES;
     _collectionView.dataSource = self;
     _collectionView.delegate = self;
-    // 对齐安卓：禁用默认动画，减少闪烁（setItemAnimator(null)）
+    // 禁用默认动画，减少闪烁（setItemAnimator(null)）
     // iOS中通过禁用UIView动画来达到类似效果
     [_collectionView registerClass:[MaterialCollectionViewCell class] forCellWithReuseIdentifier:kMaterialCellId];
     [self.view addSubview:_collectionView];
 }
 
 - (void)setupEmptyView {
-    // 对齐安卓：layout_empty，使用icon_mine_default_image
+    // layout_empty，使用icon_mine_default_image
     self.emptyView = [[UIView alloc] init];
     self.emptyView.backgroundColor = [UIColor clearColor];
     self.emptyView.hidden = YES;
@@ -96,12 +96,12 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)setupNotifications {
-    // 监听详情页返回后的收藏状态更新通知（对齐安卓：ActivityResultLauncher）
+    // 监听详情页返回后的收藏状态更新通知（ActivityResultLauncher）
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMaterialDetailFavoriteChanged:)
                                                  name:@"MaterialDetailFavoriteChangedNotification"
                                                object:nil];
-    // 监听素材被举报/屏蔽的通知（对齐安卓：material_reported）
+    // 监听素材被举报/屏蔽的通知（material_reported）
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMaterialReported:)
                                                  name:@"MaterialReportedNotification"
@@ -113,7 +113,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)handleMaterialDetailFavoriteChanged:(NSNotification *)notification {
-    // 对齐安卓：精确更新对应item的收藏状态，避免整体刷新
+    // 精确更新对应item的收藏状态，避免整体刷新
     NSDictionary *userInfo = notification.userInfo;
     if (!userInfo) {
         return;
@@ -140,7 +140,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)handleMaterialReported:(NSNotification *)notification {
-    // 对齐安卓：从列表中移除被举报/屏蔽的item（对应material_reported）
+    // 从列表中移除被举报/屏蔽的item（对应material_reported）
     NSDictionary *userInfo = notification.userInfo;
     if (!userInfo) {
         return;
@@ -216,7 +216,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             [self.collectionView.mj_footer resetNoMoreData];
         }
         
-        // 对齐安卓：根据数据是否为空显示/隐藏空状态
+        // 根据数据是否为空显示/隐藏空状态
         if (self.items.count > 0) {
             self.emptyView.hidden = YES;
             self.collectionView.hidden = NO;
@@ -225,7 +225,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             self.collectionView.hidden = YES;
         }
         
-        // 对齐安卓：禁用动画，减少闪烁
+        // 禁用动画，减少闪烁
         [UIView performWithoutAnimation:^{
             [self.collectionView reloadData];
         }];
@@ -245,7 +245,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     MaterialCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kMaterialCellId forIndexPath:indexPath];
     cell.delegate = self;
     
-    // 对齐安卓：按顺序加载图片，避免动效混乱
+    // 按顺序加载图片，避免动效混乱
     // 直接配置，SDWebImage会自动处理加载顺序和缓存
     MaterialItemModel *model = self.items[indexPath.item];
     [cell configureWithModel:model];
@@ -257,18 +257,18 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     CGFloat width = collectionView.bounds.size.width;
     UIEdgeInsets inset = ((UICollectionViewFlowLayout *)collectionView.collectionViewLayout).sectionInset;
     CGFloat spacing = ((UICollectionViewFlowLayout *)collectionView.collectionViewLayout).minimumInteritemSpacing;
-    // 对齐安卓：GridSpacingItemDecoration with includeEdge=true
+    // GridSpacingItemDecoration with includeEdge=true
     // 可用宽度 = 总宽度 - 左边缘 - 右边缘 - 中间间距
     // 由于sectionInset已经设置了左右各16pt，minimumInteritemSpacing为16pt
     CGFloat available = width - inset.left - inset.right - spacing;
     CGFloat itemW = floor(available / 2.0);
-    // 对齐安卓：固定高度220dp（对应iOS的220pt）
+    // 固定高度220dp（对应iOS的220pt）
     CGFloat itemH = 220.0;
     return CGSizeMake(itemW, itemH);
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 防重复点击（对齐安卓：600ms防重复点击）
+    // 防重复点击（600ms防重复点击）
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970] * 1000;
     if (now - self.lastItemClickTime < 600) {
         return;
@@ -278,7 +278,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     
     MaterialItemModel *model = self.items[indexPath.item];
     
-    // 预加载图片（对齐安卓：点击后预加载详情页需要的大图）
+    // 预加载图片（点击后预加载详情页需要的大图）
     if (model.materialUrl && model.materialUrl.length > 0) {
         NSURL *url = [NSURL URLWithString:model.materialUrl];
         [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:@[url]];
@@ -292,10 +292,10 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 #pragma mark - MaterialCollectionViewCellDelegate
 
 - (void)materialCollectionViewCell:(MaterialCollectionViewCell *)cell didTapLikeWithModel:(MaterialItemModel *)model {
-    // 切换点赞状态（对齐安卓：点击点赞区域切换状态）
+    // 切换点赞状态（点击点赞区域切换状态）
     BOOL newFavoriteState = !model.isFavorite;
     
-    // 调用点赞接口（对齐安卓：FavoriteMaterialApi）
+    // 调用点赞接口（FavoriteMaterialApi）
     NSDictionary *params = @{
         @"materialId": @(model.materialId),
         @"add": @(newFavoriteState)
@@ -304,7 +304,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     [[NetworkManager sharedManager] POST:BUNNYX_API_MATERIAL_FAVORITE_ADD parameters:params success:^(id  _Nonnull responseObject) {
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 点赞成功，更新本地数据（对齐安卓：更新model状态和数量）
+            // 点赞成功，更新本地数据（更新model状态和数量）
             model.isFavorite = newFavoriteState;
             
             // 更新点赞数量
@@ -330,7 +330,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 #pragma mark - Public Methods
 
 - (void)refreshData {
-    // 刷新数据（对齐安卓：refreshData方法）
+    // 刷新数据（refreshData方法）
     [self.collectionView.mj_header beginRefreshing];
 }
 

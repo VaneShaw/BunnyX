@@ -52,10 +52,10 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 
 @implementation UploadingViewController
 
-// 对齐安卓：不再需要这个初始化方法，上传在PhotoUploadActivity中完成
+// 不再需要这个初始化方法，上传在PhotoUploadActivity中完成
 // 保留此方法以兼容旧代码，但会直接返回错误
 - (instancetype)initWithMaterialId:(NSInteger)materialId image:(UIImage *)image {
-    // 对齐安卓：UploadingActivity不再处理上传，只处理轮询
+    // UploadingActivity不再处理上传，只处理轮询
     // 如果传入了image，说明流程错误，应该使用createIds初始化
     return [self initWithMaterialId:materialId 
                               image:nil 
@@ -85,7 +85,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = LocalString(@"创建灵感中...");
-    // 对齐安卓：使用bg_login作为背景
+    // 使用bg_login作为背景
     UIImage *bgLogin = [UIImage imageNamed:@"bg_login"];
     if (bgLogin) {
         self.view.backgroundColor = [UIColor colorWithPatternImage:bgLogin];
@@ -95,7 +95,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     self.progressStepViews = [NSMutableArray array];
     [self setupUI];
     
-    // 对齐安卓：UploadingActivity只处理轮询，上传在PhotoUploadActivity中完成
+    // UploadingActivity只处理轮询，上传在PhotoUploadActivity中完成
     // 如果传入了createIds，直接开始轮询
     if (self.createIds && self.createIds.length > 0) {
         [self startPolling];
@@ -116,7 +116,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     
-    // 更新虚线边框路径（对齐安卓：strokeDashSize 1dp）
+    // 更新虚线边框路径（strokeDashSize 1dp）
     if (self.dashedBorderLayer && self.backgroundButton) {
         self.dashedBorderLayer.frame = self.backgroundButton.bounds;
         UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:self.backgroundButton.bounds 
@@ -137,7 +137,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 #pragma mark - UI Setup
 
 - (void)setupUI {
-    // 标题栏（对齐安卓：高度60dp，marginTop 30dp，paddingHorizontal 16dp，文字18sp bold，居中）
+    // 标题栏（高度60dp，marginTop 30dp，paddingHorizontal 16dp，文字18sp bold，居中）
     UIView *titleBar = [[UIView alloc] init];
     titleBar.backgroundColor = [UIColor clearColor];
     [self.view addSubview:titleBar];
@@ -151,7 +151,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"灵感创建中...");
     self.titleLabel.textColor = [UIColor whiteColor];
-    self.titleLabel.font = BOLD_FONT(18); // 对齐安卓：18sp bold
+    self.titleLabel.font = BOLD_FONT(18); // 18sp bold
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [titleBar addSubview:self.titleLabel];
     
@@ -160,7 +160,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         make.left.right.equalTo(titleBar).insets(UIEdgeInsetsMake(0, 16, 0, 16));
     }];
     
-    // 主要内容区域（对齐安卓：marginTop 60dp，paddingHorizontal 20dp，paddingTop 40dp）
+    // 主要内容区域（marginTop 60dp，paddingHorizontal 20dp，paddingTop 40dp）
     UIView *contentView = [[UIView alloc] init];
     [self.view addSubview:contentView];
     
@@ -169,18 +169,18 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         make.left.right.bottom.equalTo(self.view);
     }];
     
-    // 三个图片区域（对齐安卓：水平排列，居中）
+    // 三个图片区域（水平排列，居中）
     UIView *imagesContainer = [[UIView alloc] init];
     [contentView addSubview:imagesContainer];
     
     [imagesContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(contentView).offset(40); // 对齐安卓：paddingTop 40dp
-        make.left.right.equalTo(contentView).insets(UIEdgeInsetsMake(0, 20, 0, 20)); // 对齐安卓：paddingHorizontal 20dp
+        make.top.equalTo(contentView).offset(40); // paddingTop 40dp
+        make.left.right.equalTo(contentView).insets(UIEdgeInsetsMake(0, 20, 0, 20)); // paddingHorizontal 20dp
         make.height.mas_equalTo(220); // 模板图片高度220dp
     }];
     
-    // 上传的图片（左侧，对齐安卓：100x100dp，marginStart 15dp，marginEnd 5dp，背景bg_image_rounded）
-    // 对齐安卓：使用bg_image_rounded作为背景，实际图片显示在上面
+    // 上传的图片（左侧，100x100dp，marginStart 15dp，marginEnd 5dp，背景bg_image_rounded）
+    // 使用bg_image_rounded作为背景，实际图片显示在上面
     UIView *uploadedImageContainer = [[UIView alloc] init];
     UIImage *bgImageRounded = [UIImage imageNamed:@"bg_image_rounded"];
     if (bgImageRounded) {
@@ -188,14 +188,14 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     } else {
         uploadedImageContainer.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
     }
-    uploadedImageContainer.layer.cornerRadius = 10; // 对齐安卓：bg_image_rounded圆角
+    uploadedImageContainer.layer.cornerRadius = 10; // bg_image_rounded圆角
     uploadedImageContainer.layer.masksToBounds = YES;
     [imagesContainer addSubview:uploadedImageContainer];
     
     self.uploadedImageView = [[UIImageView alloc] init];
-    self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFill; // 对齐安卓：centerCrop
+    self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFill; // centerCrop
     self.uploadedImageView.clipsToBounds = YES;
-    self.uploadedImageView.layer.cornerRadius = 10; // 对齐安卓：bg_image_rounded圆角
+    self.uploadedImageView.layer.cornerRadius = 10; // bg_image_rounded圆角
     self.uploadedImageView.layer.masksToBounds = YES;
     [uploadedImageContainer addSubview:self.uploadedImageView];
     
@@ -203,14 +203,14 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         make.edges.equalTo(uploadedImageContainer);
     }];
     
-    // 箭头图标（中间，对齐安卓：75x75dp，icon_photo_arrow）
+    // 箭头图标（中间，75x75dp，icon_photo_arrow）
     self.arrowImageView = [[UIImageView alloc] init];
     self.arrowImageView.image = [UIImage imageNamed:@"icon_photo_arrow"];
     self.arrowImageView.contentMode = UIViewContentModeScaleAspectFit;
     [imagesContainer addSubview:self.arrowImageView];
     
-    // 模板图片（右侧，对齐安卓：175x220dp，marginStart 5dp，marginEnd 15dp，背景bg_image_rounded）
-    // 对齐安卓：使用bg_image_rounded作为背景，实际图片显示在上面
+    // 模板图片（右侧，175x220dp，marginStart 5dp，marginEnd 15dp，背景bg_image_rounded）
+    // 使用bg_image_rounded作为背景，实际图片显示在上面
     UIView *templateImageContainer = [[UIView alloc] init];
     UIImage *bgImageRoundedTemplate = [UIImage imageNamed:@"bg_image_rounded"];
     if (bgImageRoundedTemplate) {
@@ -218,14 +218,14 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     } else {
         templateImageContainer.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
     }
-    templateImageContainer.layer.cornerRadius = 10; // 对齐安卓：bg_image_rounded圆角
+    templateImageContainer.layer.cornerRadius = 10; // bg_image_rounded圆角
     templateImageContainer.layer.masksToBounds = YES;
     [imagesContainer addSubview:templateImageContainer];
     
     self.templateImageView = [[UIImageView alloc] init];
-    self.templateImageView.contentMode = UIViewContentModeScaleAspectFill; // 对齐安卓：centerCrop
+    self.templateImageView.contentMode = UIViewContentModeScaleAspectFill; // centerCrop
     self.templateImageView.clipsToBounds = YES;
-    self.templateImageView.layer.cornerRadius = 10; // 对齐安卓：bg_image_rounded圆角
+    self.templateImageView.layer.cornerRadius = 10; // bg_image_rounded圆角
     self.templateImageView.layer.masksToBounds = YES;
     [templateImageContainer addSubview:self.templateImageView];
     
@@ -233,27 +233,27 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         make.edges.equalTo(templateImageContainer);
     }];
     
-    // 动态设置图片尺寸（对齐安卓：setupDynamicImageSizes）
+    // 动态设置图片尺寸（setupDynamicImageSizes）
     CGFloat uploadedImageSize = [self getUploadedImageSize];
     NSArray *templateImageSize = [self getTemplateImageSize];
     CGFloat templateWidth = [templateImageSize[0] floatValue];
     CGFloat templateHeight = [templateImageSize[1] floatValue];
     
     [uploadedImageContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(imagesContainer).offset(15); // 对齐安卓：marginStart 15dp
+        make.left.equalTo(imagesContainer).offset(15); // marginStart 15dp
         make.centerY.equalTo(imagesContainer);
         make.width.height.mas_equalTo(uploadedImageSize);
     }];
     
     [self.arrowImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(uploadedImageContainer.mas_right).offset(5); // 对齐安卓：marginEnd 5dp（上传图片的marginEnd）
+        make.left.equalTo(uploadedImageContainer.mas_right).offset(5); // marginEnd 5dp（上传图片的marginEnd）
         make.centerY.equalTo(imagesContainer);
-        make.width.height.mas_equalTo(75); // 对齐安卓：75x75dp
+        make.width.height.mas_equalTo(75); // 75x75dp
     }];
     
     [templateImageContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.arrowImageView.mas_right).offset(5); // 对齐安卓：marginStart 5dp（模板图片的marginStart）
-        make.right.equalTo(imagesContainer).offset(-15); // 对齐安卓：marginEnd 15dp
+        make.left.equalTo(self.arrowImageView.mas_right).offset(5); // marginStart 5dp（模板图片的marginStart）
+        make.right.equalTo(imagesContainer).offset(-15); // marginEnd 15dp
         make.centerY.equalTo(imagesContainer);
         make.width.mas_equalTo(templateWidth);
         make.height.mas_equalTo(templateHeight);
@@ -262,20 +262,20 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     // 设置图片内容
     [self setupImages];
     
-    // 渐变进度条（对齐安卓：GradientProgressView，90x20dp，marginTop 80dp，居中）
+    // 渐变进度条（GradientProgressView，90x20dp，marginTop 80dp，居中）
     self.progressStepsContainer = [[UIView alloc] init];
     [contentView addSubview:self.progressStepsContainer];
     
     [self.progressStepsContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(imagesContainer.mas_bottom).offset(80); // 对齐安卓：marginTop 80dp
+        make.top.equalTo(imagesContainer.mas_bottom).offset(80); // marginTop 80dp
         make.centerX.equalTo(contentView);
-        make.width.mas_equalTo(90); // 对齐安卓：90dp
-        make.height.mas_equalTo(20); // 对齐安卓：20dp
+        make.width.mas_equalTo(90); // 90dp
+        make.height.mas_equalTo(20); // 20dp
     }];
     
     [self setupProgressSteps];
     
-    // 进度条（对齐安卓：CustomProgressBar，高度8dp，marginHorizontal 50dp，marginTop 24dp）
+    // 进度条（CustomProgressBar，高度8dp，marginHorizontal 50dp，marginTop 24dp）
     self.progressView = [[UIProgressView alloc] initWithProgressViewStyle:UIProgressViewStyleDefault];
     self.progressView.progressTintColor = [UIColor colorWithRed:0.0 green:0.8 blue:0.5 alpha:1.0];
     self.progressView.trackTintColor = [UIColor colorWithWhite:0.3 alpha:1.0];
@@ -285,26 +285,26 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     [contentView addSubview:self.progressView];
     
     [self.progressView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.progressStepsContainer.mas_bottom).offset(24); // 对齐安卓：marginTop 24dp
-        make.left.right.equalTo(contentView).insets(UIEdgeInsetsMake(0, 50, 0, 50)); // 对齐安卓：marginHorizontal 50dp
-        make.height.mas_equalTo(8); // 对齐安卓：8dp
+        make.top.equalTo(self.progressStepsContainer.mas_bottom).offset(24); // marginTop 24dp
+        make.left.right.equalTo(contentView).insets(UIEdgeInsetsMake(0, 50, 0, 50)); // marginHorizontal 50dp
+        make.height.mas_equalTo(8); // 8dp
     }];
     
-    // 队列信息标签（对齐安卓：文字12sp，颜色#999999，marginTop 16dp，居中）
+    // 队列信息标签（文字12sp，颜色#999999，marginTop 16dp，居中）
     self.queueInfoLabel = [[UILabel alloc] init];
     self.queueInfoLabel.text = @"";
-    self.queueInfoLabel.textColor = HEX_COLOR(0x999999); // 对齐安卓：uploading_queue_text
-    self.queueInfoLabel.font = FONT(12); // 对齐安卓：12sp
+    self.queueInfoLabel.textColor = HEX_COLOR(0x999999); // uploading_queue_text
+    self.queueInfoLabel.font = FONT(12); // 12sp
     self.queueInfoLabel.textAlignment = NSTextAlignmentCenter;
     self.queueInfoLabel.hidden = YES;
     [contentView addSubview:self.queueInfoLabel];
     
     [self.queueInfoLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.progressView.mas_bottom).offset(16); // 对齐安卓：marginTop 16dp
+        make.top.equalTo(self.progressView.mas_bottom).offset(16); // marginTop 16dp
         make.centerX.equalTo(contentView);
     }];
     
-    // 占位View（对齐安卓：layout_weight=1，用于撑开空间）
+    // 占位View（layout_weight=1，用于撑开空间）
     UIView *spacerView = [[UIView alloc] init];
     [contentView addSubview:spacerView];
     
@@ -314,49 +314,49 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         make.height.greaterThanOrEqualTo(@1);
     }];
     
-    // 底部按钮区域（对齐安卓：marginTop 100dp，marginBottom 20dp）
+    // 底部按钮区域（marginTop 100dp，marginBottom 20dp）
     UIView *buttonsContainer = [[UIView alloc] init];
     [contentView addSubview:buttonsContainer];
     
     [buttonsContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(spacerView.mas_bottom).offset(100); // 对齐安卓：marginTop 100dp
+        make.top.equalTo(spacerView.mas_bottom).offset(100); // marginTop 100dp
         make.left.right.equalTo(contentView).insets(UIEdgeInsetsMake(0, 20, 0, 20));
-        make.bottom.equalTo(contentView.mas_safeAreaLayoutGuideBottom).offset(-20); // 对齐安卓：marginBottom 20dp
+        make.bottom.equalTo(contentView.mas_safeAreaLayoutGuideBottom).offset(-20); // marginBottom 20dp
     }];
     
-    // VIP加速按钮（对齐安卓：高度48dp，圆角12dp，渐变#0AEA6F到#1CB3C1，文字16sp）
+    // VIP加速按钮（高度48dp，圆角12dp，渐变#0AEA6F到#1CB3C1，文字16sp）
     self.vipButton = [GradientButton buttonWithTitle:LocalString(@"开通会员加速生成")
                                              startColor:RGB(10, 234, 111)  // #0AEA6F
                                                endColor:RGB(28, 179, 193)]; // #1CB3C1
     [self.vipButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.vipButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+    self.vipButton.titleLabel.font = FONT(16); // 16sp
     self.vipButton.cornerRadius = CORNER_RADIUS_12;
     self.vipButton.buttonHeight = 48;
     [self.vipButton addTarget:self action:@selector(vipButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [buttonsContainer addSubview:self.vipButton];
     
-    // 移到后台按钮（对齐安卓：高度48dp，圆角12dp，背景色#0F2A29，边框色#1AB8B9，虚线边框，marginTop 12dp）
+    // 移到后台按钮（高度48dp，圆角12dp，背景色#0F2A29，边框色#1AB8B9，虚线边框，marginTop 12dp）
     self.backgroundButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.backgroundButton setTitle:LocalString(@"列入后台") forState:UIControlStateNormal];
     [self.backgroundButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.backgroundButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
-    self.backgroundButton.backgroundColor = HEX_COLOR(0x0F2A29); // 对齐安卓：color_0F2A29
+    self.backgroundButton.titleLabel.font = FONT(16); // 16sp
+    self.backgroundButton.backgroundColor = HEX_COLOR(0x0F2A29); // color_0F2A29
     self.backgroundButton.layer.cornerRadius = CORNER_RADIUS_12;
     self.backgroundButton.layer.masksToBounds = YES;
     [self.backgroundButton addTarget:self action:@selector(backgroundButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [buttonsContainer addSubview:self.backgroundButton];
     
-    // 虚线边框（对齐安卓：strokeColor #1AB8B9，strokeDashSize 1dp）
+    // 虚线边框（strokeColor #1AB8B9，strokeDashSize 1dp）
     // 使用CAShapeLayer实现虚线边框
     self.dashedBorderLayer = [CAShapeLayer layer];
-    self.dashedBorderLayer.strokeColor = HEX_COLOR(0x1AB8B9).CGColor; // 对齐安卓：uploading_button_border
+    self.dashedBorderLayer.strokeColor = HEX_COLOR(0x1AB8B9).CGColor; // uploading_button_border
     self.dashedBorderLayer.fillColor = [UIColor clearColor].CGColor;
-    self.dashedBorderLayer.lineWidth = 1; // 对齐安卓：strokeDashSize 1dp
+    self.dashedBorderLayer.lineWidth = 1; // strokeDashSize 1dp
     self.dashedBorderLayer.lineDashPattern = @[@2, @2]; // 虚线样式
     self.dashedBorderLayer.cornerRadius = CORNER_RADIUS_12;
     [self.backgroundButton.layer addSublayer:self.dashedBorderLayer];
     
-    // TODO: 根据用户VIP状态显示/隐藏VIP按钮（对齐安卓逻辑）
+    // TODO: 根据用户VIP状态显示/隐藏VIP按钮
     BOOL isVip = NO; // 需要从用户信息获取
     self.vipButton.hidden = isVip;
     
@@ -367,7 +367,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     }];
     
     [self.backgroundButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.vipButton.mas_bottom).offset(12); // 对齐安卓：marginTop 12dp
+        make.top.equalTo(self.vipButton.mas_bottom).offset(12); // marginTop 12dp
         make.left.right.equalTo(buttonsContainer);
         make.height.mas_equalTo(48);
         make.bottom.equalTo(buttonsContainer);
@@ -375,7 +375,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 - (void)setupImages {
-    // 对齐安卓：placeholder使用icon_photo_upload，error使用image_error_ic
+    // placeholder使用icon_photo_upload，error使用image_error_ic
     UIImage *placeholderImage = [UIImage imageNamed:@"icon_photo_upload"];
     UIImage *errorImage = [UIImage imageNamed:@"image_error_ic"];
     if (!placeholderImage) {
@@ -385,7 +385,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         errorImage = placeholderImage;
     }
     
-    // 设置上传的图片（对齐安卓：setupImages方法）
+    // 设置上传的图片（setupImages方法）
     if (self.uploadedImagePath && self.uploadedImagePath.length > 0) {
         // 从历史记录传入的图片路径
         if ([self.uploadedImagePath hasPrefix:@"http://"] || [self.uploadedImagePath hasPrefix:@"https://"]) {
@@ -394,7 +394,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
                                                 options:SDWebImageRetryFailed | SDWebImageHighPriority
                                               completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
                 if (error || !image) {
-                    // 对齐安卓：加载失败显示错误图片
+                    // 加载失败显示错误图片
                     self.uploadedImageView.image = errorImage;
                     self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFit;
                 } else {
@@ -402,31 +402,31 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
                 }
             }];
         } else {
-            // 本地路径（对齐安卓：支持文件路径）
+            // 本地路径（支持文件路径）
             UIImage *localImage = [UIImage imageWithContentsOfFile:self.uploadedImagePath];
             if (localImage) {
                 self.uploadedImageView.image = localImage;
                 self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFill;
             } else {
-                // 对齐安卓：加载失败显示错误图片
+                // 加载失败显示错误图片
                 self.uploadedImageView.image = errorImage;
                 self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFit;
             }
         }
     } else {
-        // 对齐安卓：上传图片路径为空，使用默认图片icon_photo_upload
+        // 上传图片路径为空，使用默认图片icon_photo_upload
         self.uploadedImageView.image = placeholderImage;
         self.uploadedImageView.contentMode = UIViewContentModeScaleAspectFit;
     }
     
-    // 设置模板图片（对齐安卓：支持WebP动图，placeholder使用icon_photo_upload，error使用image_error_ic）
+    // 设置模板图片（支持WebP动图，placeholder使用icon_photo_upload，error使用image_error_ic）
     if (self.templateImageUrl && self.templateImageUrl.length > 0) {
         [self.templateImageView sd_setImageWithURL:[NSURL URLWithString:self.templateImageUrl] 
                                   placeholderImage:placeholderImage
                                            options:SDWebImageRetryFailed | SDWebImageHighPriority
                                          completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
             if (error || !image) {
-                // 对齐安卓：加载失败显示错误图片
+                // 加载失败显示错误图片
                 self.templateImageView.image = errorImage;
                 self.templateImageView.contentMode = UIViewContentModeScaleAspectFit;
             } else {
@@ -435,7 +435,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         }];
         BUNNYX_LOG(@"设置模板图片URL: %@", self.templateImageUrl);
     } else {
-        // 对齐安卓：模板图片URL为空，使用默认图片icon_photo_upload
+        // 模板图片URL为空，使用默认图片icon_photo_upload
         self.templateImageView.image = placeholderImage;
         self.templateImageView.contentMode = UIViewContentModeScaleAspectFit;
         BUNNYX_LOG(@"模板图片URL为空，使用占位图");
@@ -443,7 +443,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 - (void)setupProgressSteps {
-    // 创建5个小方块进度指示器（对齐安卓：GradientProgressView内部有5个小方块）
+    // 创建5个小方块进度指示器（GradientProgressView内部有5个小方块）
     // 容器宽度90dp，高度20dp，需要居中排列5个小方块
     CGFloat stepSize = 12;
     CGFloat spacing = 8;
@@ -463,7 +463,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     }
 }
 
-/// 计算上传图片的动态尺寸（对齐安卓：ScreenUtils.getUploadedImageSize）
+/// 计算上传图片的动态尺寸（ScreenUtils.getUploadedImageSize）
 - (CGFloat)getUploadedImageSize {
     CGFloat screenWidth = SCREEN_WIDTH;
     CGFloat screenWidthDp = screenWidth / ([UIScreen mainScreen].scale > 2 ? 3 : 2); // 简化计算
@@ -489,7 +489,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     return MAX(minSize, MIN(maxSize, imageSize));
 }
 
-/// 计算模板图片的动态尺寸（对齐安卓：ScreenUtils.getTemplateImageSize）
+/// 计算模板图片的动态尺寸（ScreenUtils.getTemplateImageSize）
 - (NSArray<NSNumber *> *)getTemplateImageSize {
     CGFloat screenWidth = SCREEN_WIDTH;
     CGFloat screenWidthDp = screenWidth / ([UIScreen mainScreen].scale > 2 ? 3 : 2);
@@ -537,7 +537,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 #pragma mark - Upload Flow
-// 对齐安卓：上传逻辑已移到PhotoUploadActivity（iOS的UploadMaterialViewController）中
+// 上传逻辑已移到PhotoUploadActivity（iOS的UploadMaterialViewController）中
 // UploadingActivity（iOS的UploadingViewController）只负责轮询
 
 #pragma mark - Polling
@@ -585,9 +585,9 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         return;
     }
     
-    // 对齐安卓：GetCreateByIdsApi参数名是ids（虽然方法名是setCreateIds）
+    // GetCreateByIdsApi参数名是ids（虽然方法名是setCreateIds）
     NSDictionary *parameters = @{
-        @"ids": self.createIds  // 对齐安卓：参数名是ids
+        @"ids": self.createIds  // 参数名是ids
     };
     
     [[NetworkManager sharedManager] GET:BUNNYX_API_GENERATE_TASK_LIST
@@ -639,7 +639,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         return;
     }
     
-    // 对齐安卓：安全提取字段值，处理NSNull情况
+    // 安全提取字段值，处理NSNull情况
     NSInteger status = 0;
     CGFloat progress = 0.0;
     NSInteger position = 0;
@@ -675,10 +675,10 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         self.queueInfoLabel.hidden = NO;
         self.titleLabel.text = LocalString(@"创建灵感中...");
     } else if (status == 2) {
-        // 处理中（对齐安卓：status==2时queueInfoView.setVisibility(View.GONE)，但会设置文本"进行中... %d%%"）
+        // 处理中（status==2时queueInfoView.setVisibility(View.GONE)，但会设置文本"进行中... %d%%"）
         NSInteger progressPercent = (NSInteger)(progress * 100);
         self.queueInfoLabel.text = [NSString stringWithFormat:LocalString(@"进行中... %ld%%"), (long)progressPercent];
-        self.queueInfoLabel.hidden = YES; // 对齐安卓：status==2时隐藏队列信息
+        self.queueInfoLabel.hidden = YES; // status==2时隐藏队列信息
         self.titleLabel.text = LocalString(@"创建灵感中...");
     } else if (status == 3) {
         // 完成
@@ -699,10 +699,10 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 - (void)handleGenerationComplete:(NSDictionary *)statusData {
-    // 对齐安卓：延迟2秒后跳转到生成详情页，并携带必要ID参数
+    // 延迟2秒后跳转到生成详情页，并携带必要ID参数
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (!self.isCancelled) {
-            // 对齐安卓：从statusData中提取createId、resultImageUrl、materialId（安全提取，处理NSNull）
+            // 从statusData中提取createId、resultImageUrl、materialId（安全提取，处理NSNull）
             NSString *createId = nil;
             NSString *resultImageUrl = nil;
             
@@ -722,19 +722,19 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
             BUNNYX_LOG(@"生成完成，准备跳转到详情页 - createId: %@, imageUrl: %@, materialId: %ld", 
                       createId, resultImageUrl, (long)self.materialId);
             
-            // 对齐安卓：跳转到生成详情页（VideoDetailActivity.startForGenerate）
+            // 跳转到生成详情页（VideoDetailActivity.startForGenerate）
             if (createId && createId.length > 0) {
-                // 创建CreateTaskModel对象（对齐安卓：CreateTask）
+                // 创建CreateTaskModel对象（CreateTask）
                 CreateTaskModel *createTask = [[CreateTaskModel alloc] init];
                 createTask.createId = createId;
-                // 对齐安卓：优先设置videoUrl，如果没有则设置imageUrl
+                // 优先设置videoUrl，如果没有则设置imageUrl
                 // 但GetCreateByIdsApi只返回resultImageUrl，所以这里只设置imageUrl
                 if (resultImageUrl && resultImageUrl.length > 0) {
                     createTask.imageUrl = resultImageUrl;
                 }
                 createTask.materialId = self.materialId;
                 
-                // 跳转到生成详情页（对齐安卓：MaterialDetailPageTypeGenerateFromUploading）
+                // 跳转到生成详情页（MaterialDetailPageTypeGenerateFromUploading）
                 MaterialDetailViewController *detailVC = [[MaterialDetailViewController alloc] initWithMaterialId:self.materialId 
                                                                                                          pageType:MaterialDetailPageTypeGenerateFromUploading 
                                                                                                         createTask:createTask];
@@ -749,7 +749,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 - (void)handleGenerationFailed:(NSDictionary *)statusData {
-    // 对齐安卓：安全提取error字段，处理NSNull情况
+    // 安全提取error字段，处理NSNull情况
     NSString *errorMessage = nil;
     id errorValue = statusData[@"error"];
     if (errorValue && ![errorValue isKindOfClass:[NSNull class]] && [errorValue isKindOfClass:[NSString class]]) {

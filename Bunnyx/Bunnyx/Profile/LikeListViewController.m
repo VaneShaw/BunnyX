@@ -75,7 +75,7 @@ static NSString *const kLikeCellId = @"LikeListCell";
         make.edges.equalTo(self.view);
     }];
     
-    // 空状态视图（对齐安卓的layout_empty）
+    // 空状态视图（layout_empty）
     self.emptyView = [[UIView alloc] init];
     self.emptyView.hidden = YES;
     self.emptyView.backgroundColor = [UIColor clearColor];
@@ -86,7 +86,7 @@ static NSString *const kLikeCellId = @"LikeListCell";
         make.height.offset(350);
     }];
     
-    // 空状态图标（对应安卓的icon_mine_default_image，80dp x 80dp）
+    // 空状态图标（icon_mine_default_image，80dp x 80dp）
     UIImageView *emptyIcon = [[UIImageView alloc] init];
     emptyIcon.image = [UIImage imageNamed:@"icon_mine_default_image"];
     emptyIcon.contentMode = UIViewContentModeScaleAspectFit;
@@ -233,7 +233,7 @@ static NSString *const kLikeCellId = @"LikeListCell";
 }
 
 - (void)handleCellSelectionAtIndexPath:(NSIndexPath *)indexPath {
-    // 防重复点击（对齐安卓：600ms防重复点击）
+    // 防重复点击（600ms防重复点击）
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970] * 1000;
     if (now - self.lastItemClickTime < 600) {
         return;
@@ -244,13 +244,13 @@ static NSString *const kLikeCellId = @"LikeListCell";
     if (indexPath.item >= 0 && indexPath.item < self.dataList.count) {
         MaterialItemModel *model = self.dataList[indexPath.item];
         
-        // 预加载图片（对齐安卓：点击后预加载详情页需要的大图）
+        // 预加载图片（点击后预加载详情页需要的大图）
         if (model.materialUrl && model.materialUrl.length > 0) {
             NSURL *url = [NSURL URLWithString:model.materialUrl];
             [[SDWebImagePrefetcher sharedImagePrefetcher] prefetchURLs:@[url]];
         }
         
-        // 跳转到素材详情页（对齐安卓：MaterialDetailActivity）
+        // 跳转到素材详情页（MaterialDetailActivity）
         MaterialDetailViewController *detailVC = [[MaterialDetailViewController alloc] initWithMaterialId:model.materialId];
         detailVC.hidesBottomBarWhenPushed = YES;
         [self.navigationController pushViewController:detailVC animated:YES];

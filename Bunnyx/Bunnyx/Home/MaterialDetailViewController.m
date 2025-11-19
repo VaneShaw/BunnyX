@@ -31,20 +31,20 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 @interface MaterialDetailViewController ()
 
 @property (nonatomic, assign) NSInteger materialId;
-@property (nonatomic, assign) MaterialDetailPageType pageType; // 页面类型（对齐安卓：mPageType）
-@property (nonatomic, strong) CreateTaskModel *createTask; // 生成任务（对齐安卓：mCreateTask，用于删除功能）
+@property (nonatomic, assign) MaterialDetailPageType pageType; // 页面类型（mPageType）
+@property (nonatomic, strong) CreateTaskModel *createTask; // 生成任务（mCreateTask，用于删除功能）
 @property (nonatomic, strong) MaterialDetailModel *detailModel;
 @property (nonatomic, strong) UIImageView *materialImageView;
-@property (nonatomic, strong) UIView *videoContainer; // 视频容器（对齐安卓：fl_video_container）
-@property (nonatomic, strong) AVPlayer *videoPlayer; // 视频播放器（对齐安卓：VideoView）
+@property (nonatomic, strong) UIView *videoContainer; // 视频容器（fl_video_container）
+@property (nonatomic, strong) AVPlayer *videoPlayer; // 视频播放器（VideoView）
 @property (nonatomic, strong) AVPlayerLayer *videoPlayerLayer; // 视频播放器图层
-@property (nonatomic, strong) NSString *currentVideoUrl; // 当前视频URL（对齐安卓：mCurrentVideoUrl）
-@property (nonatomic, assign) BOOL hasSwitchedToVideo; // 是否已切换到视频显示（对齐安卓：mHasSwitchedToVideo）
-@property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（对齐安卓：icon_home_detail_more_light）
+@property (nonatomic, strong) NSString *currentVideoUrl; // 当前视频URL（mCurrentVideoUrl）
+@property (nonatomic, assign) BOOL hasSwitchedToVideo; // 是否已切换到视频显示（mHasSwitchedToVideo）
+@property (nonatomic, strong) UIButton *moreButton; // 右上角更多按钮（icon_home_detail_more_light）
 @property (nonatomic, strong) GradientButton *favoriteButton; // 点赞按钮（使用按钮自带的image和title）
-@property (nonatomic, strong) UIButton *saveToAlbumButton; // 保存到相册按钮（对齐安卓：mBtnSaveToAlbum，使用黑色半透明背景）
+@property (nonatomic, strong) UIButton *saveToAlbumButton; // 保存到相册按钮（mBtnSaveToAlbum，使用黑色半透明背景）
 @property (nonatomic, strong) GradientButton *generateButton; // 生成按钮
-@property (nonatomic, assign) BOOL hasFavoriteAction; // 标记是否有收藏操作（对齐安卓：mHasFavoriteAction）
+@property (nonatomic, assign) BOOL hasFavoriteAction; // 标记是否有收藏操作（mHasFavoriteAction）
 
 @end
 
@@ -129,9 +129,9 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 - (void)setupUI {
     self.view.backgroundColor = [UIColor blackColor];
     
-    // 素材图片作为背景（对齐安卓：centerCrop，支持WebP动图）
+    // 素材图片作为背景（centerCrop，支持WebP动图）
     self.materialImageView = [[UIImageView alloc] init];
-    self.materialImageView.contentMode = UIViewContentModeScaleAspectFill; // 对应安卓的centerCrop
+    self.materialImageView.contentMode = UIViewContentModeScaleAspectFill; // centerCrop
     self.materialImageView.backgroundColor = [UIColor colorWithWhite:0.1 alpha:1.0];
     self.materialImageView.clipsToBounds = YES;
     self.materialImageView.userInteractionEnabled = NO; // 背景图片不拦截点击事件
@@ -140,7 +140,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         make.edges.equalTo(self.view);
     }];
     
-    // 视频播放器容器（对齐安卓：fl_video_container，初始隐藏）
+    // 视频播放器容器（fl_video_container，初始隐藏）
     self.videoContainer = [[UIView alloc] init];
     self.videoContainer.backgroundColor = [UIColor blackColor];
     self.videoContainer.hidden = YES; // 初始隐藏
@@ -150,7 +150,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }];
     
 
-    // 右上角更多按钮（对齐安卓：icon_home_detail_more_light，在TitleBar右侧）
+    // 右上角更多按钮（icon_home_detail_more_light，在TitleBar右侧）
     self.moreButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.moreButton setImage:[UIImage imageNamed:@"icon_home_detail_more_light"] forState:UIControlStateNormal];
     self.moreButton.tintColor = [UIColor whiteColor];
@@ -163,7 +163,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         make.width.height.mas_equalTo(22); // 标准导航栏按钮尺寸
     }];
     
-    // 底部内容区域容器（对齐安卓：LinearLayout，layout_gravity="bottom"，marginBottom 30dp）
+    // 底部内容区域容器（LinearLayout，layout_gravity="bottom"，marginBottom 30dp）
     UIView *bottomContainer = [[UIView alloc] init];
     bottomContainer.backgroundColor = [UIColor clearColor];
     bottomContainer.userInteractionEnabled = YES; // 确保容器可以响应点击事件
@@ -174,10 +174,10 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         make.height.offset(200);
     }];
     
-    // 对齐安卓：生成按钮在底部（第一个子视图在LinearLayout中在上方，但marginBottom使其在底部）
-    // 生成按钮（对齐安卓：高度48dp，marginHorizontal 30dp，marginBottom 20dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，文字17sp，bold）
+    // 生成按钮在底部（第一个子视图在LinearLayout中在上方，但marginBottom使其在底部）
+    // 生成按钮（高度48dp，marginHorizontal 30dp，marginBottom 20dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，文字17sp，bold）
     self.generateButton = [GradientButton buttonWithTitle:[NSString stringWithFormat:@"Generate(0Coins)"]];
-    // 对齐安卓渐变颜色：#0AEA6F到#1CB3C1
+    // 渐变颜色：#0AEA6F到#1CB3C1
     self.generateButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
     self.generateButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
     [self.generateButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -190,11 +190,11 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     [bottomContainer addSubview:self.generateButton];
     [self.generateButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(bottomContainer).insets(UIEdgeInsetsMake(0, 30, 0, 30)); // marginHorizontal 30dp
-        make.bottom.equalTo(bottomContainer).offset(-20); // marginBottom 20dp（对齐安卓：距离底部容器底部20dp）
+        make.bottom.equalTo(bottomContainer).offset(-20); // marginBottom 20dp（距离底部容器底部20dp）
         make.height.mas_equalTo(48); // dp_48 = 48dp
     }];
     
-    // 对齐安卓：点赞按钮在生成按钮上方（高度48dp，marginHorizontal 30dp，marginBottom 20dp，背景like_count_bg，圆角10dp）
+    // 点赞按钮在生成按钮上方（高度48dp，marginHorizontal 30dp，marginBottom 20dp，背景like_count_bg，圆角10dp）
     self.favoriteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     self.favoriteButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5]; // like_count_bg: #80000000
     self.favoriteButton.layer.cornerRadius = 10.0; // dp_10 = 10dp
@@ -215,17 +215,17 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         make.height.mas_equalTo(48); // dp_48 = 48dp
     }];
     
-    // 对齐安卓：保存到相册按钮（生成详情模式显示，素材详情模式隐藏）
+    // 保存到相册按钮（生成详情模式显示，素材详情模式隐藏）
     // 注意：在安卓布局中，保存到相册按钮在LinearLayout中位于生成按钮之后（下方），但实际显示时应该在生成按钮上方
-    // 对齐安卓布局：btn_video_detail_save_to_album 在 btn_video_detail_generate 之后，但通过约束让它显示在生成按钮上方
-    // 对齐安卓：保存到相册按钮在生成详情模式下使用黑色半透明背景（like_count_bg: #80000000），圆角10dp
+    // 布局：btn_video_detail_save_to_album 在 btn_video_detail_generate 之后，但通过约束让它显示在生成按钮上方
+    // 保存到相册按钮在生成详情模式下使用黑色半透明背景（like_count_bg: #80000000），圆角10dp
     self.saveToAlbumButton = [UIButton buttonWithType:UIButtonTypeCustom];
     self.saveToAlbumButton.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5]; // like_count_bg: #80000000
-    self.saveToAlbumButton.layer.cornerRadius = 10.0; // dp_10 = 10dp（对齐安卓：like_count_bg的圆角）
+    self.saveToAlbumButton.layer.cornerRadius = 10.0; // dp_10 = 10dp（like_count_bg的圆角）
     self.saveToAlbumButton.layer.masksToBounds = YES;
     [self.saveToAlbumButton setTitle:LocalString(@"保存到相册") forState:UIControlStateNormal];
     [self.saveToAlbumButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    self.saveToAlbumButton.titleLabel.font = BOLD_FONT(17); // 17sp，bold（对齐安卓：sp_17）
+    self.saveToAlbumButton.titleLabel.font = BOLD_FONT(17); // 17sp，bold（sp_17）
     self.saveToAlbumButton.userInteractionEnabled = YES;
     [self.saveToAlbumButton addTarget:self action:@selector(saveToAlbumButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [bottomContainer addSubview:self.saveToAlbumButton];
@@ -239,7 +239,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 }
 
 - (void)backButtonTapped:(UIButton *)sender {
-    // 对齐安卓：如果有收藏操作，返回首页并刷新列表
+    // 如果有收藏操作，返回首页并刷新列表
     if (self.hasFavoriteAction) {
         // 发送通知刷新首页列表
         [[NSNotificationCenter defaultCenter] postNotificationName:kRefreshMaterialListNotification object:nil];
@@ -271,7 +271,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 - (void)updateUI {
     if (!self.detailModel) { return; }
     
-    // 对齐安卓：根据页面类型显示/隐藏按钮
+    // 根据页面类型显示/隐藏按钮
     if (self.pageType == MaterialDetailPageTypeMaterial) {
         // 素材详情模式：显示点赞按钮，隐藏保存到相册按钮
         self.favoriteButton.hidden = NO;
@@ -282,7 +282,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         NSString *favoriteCountText = [NSString stringWithFormat:@"%ld", (long)favoriteCount];
         [self.favoriteButton setTitle:favoriteCountText forState:UIControlStateNormal];
         
-        // 对齐安卓：已点赞使用icon_home_collection_light，未点赞使用icon_home_collection_dark
+        // 已点赞使用icon_home_collection_light，未点赞使用icon_home_collection_dark
         UIImage *heartImage = nil;
         if (self.detailModel.isFavorite) {
             heartImage = [UIImage imageNamed:@"icon_home_collection_light"];
@@ -297,20 +297,20 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         self.favoriteButton.hidden = YES;
         self.saveToAlbumButton.hidden = NO;
         
-        // 对齐安卓：生成按钮保持绿色渐变（不改变颜色）
+        // 生成按钮保持绿色渐变（不改变颜色）
         // 注意：虽然安卓代码中设置了like_count_bg，但用户要求生成按钮保持绿色
         // 保持原有的绿色渐变颜色
         self.generateButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
         self.generateButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
     }
     
-    // 加载图片（对齐安卓：支持WebP动图，使用AUTOMATIC缓存策略）
+    // 加载图片（支持WebP动图，使用AUTOMATIC缓存策略）
     // 注意：只有从"我的"生成列表进入（PAGE_TYPE_GENERATE）时才判断materialMode == 2
     // 从其他列表进入（PAGE_TYPE_MATERIAL）时默认执行图片逻辑
     BOOL shouldCheckVideoMode = (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading);
     
     if (shouldCheckVideoMode && self.detailModel.materialMode == 2 && self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
-        // 视频类型，materialUrl就是视频URL（对齐安卓：materialMode == 2）
+        // 视频类型，materialUrl就是视频URL（materialMode == 2）
         // 先显示封面图，等视频加载完成后再显示视频
         self.materialImageView.hidden = NO;
         self.videoContainer.hidden = YES;
@@ -339,14 +339,14 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         }
     }
     
-    // 更新生成按钮（对齐安卓：Generate(XXCoins)，17sp，bold）
+    // 更新生成按钮（Generate(XXCoins)，17sp，bold）
     NSString *generateTitle = [NSString stringWithFormat:@"Generate(%ldCoins)", (long)self.detailModel.generatePrice];
     [self.generateButton setTitle:generateTitle forState:UIControlStateNormal];
 }
 
 #pragma mark - Video Playback
 
-// 对齐安卓：prepareVideoDisplay - 准备视频显示
+// prepareVideoDisplay - 准备视频显示
 - (void)prepareVideoDisplay {
     if (!self.currentVideoUrl || self.currentVideoUrl.length == 0) {
         return;
@@ -375,13 +375,13 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     
     // 创建AVPlayerLayer
     self.videoPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:self.videoPlayer];
-    self.videoPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill; // 对齐安卓：centerCrop效果
+    self.videoPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill; // centerCrop效果
     [self.videoContainer.layer addSublayer:self.videoPlayerLayer];
     
     // 设置图层frame（在viewDidLayoutSubviews中更新）
     [self.view setNeedsLayout];
     
-    // 监听播放完成，实现循环播放（对齐安卓：OnCompletionListener）
+    // 监听播放完成，实现循环播放（OnCompletionListener）
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(videoDidPlayToEnd:)
                                                  name:AVPlayerItemDidPlayToEndTimeNotification
@@ -390,7 +390,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     // 监听播放状态，当视频准备好后切换到视频显示
     [playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
     
-    // 延迟一点再开始播放，确保设置完成（对齐安卓：post延迟）
+    // 延迟一点再开始播放，确保设置完成（post延迟）
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (self.videoPlayer && self.currentVideoUrl) {
             [self.videoPlayer play];
@@ -403,7 +403,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     if ([keyPath isEqualToString:@"status"]) {
         AVPlayerItem *playerItem = (AVPlayerItem *)object;
         if (playerItem.status == AVPlayerItemStatusReadyToPlay) {
-            // 视频准备好后，切换到视频显示（对齐安卓：切换到VideoView）
+            // 视频准备好后，切换到视频显示（切换到VideoView）
             if (!self.hasSwitchedToVideo) {
                 self.hasSwitchedToVideo = YES;
                 self.materialImageView.hidden = YES;
@@ -420,10 +420,10 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }
 }
 
-// 对齐安卓：视频播放完成，循环播放
+// 视频播放完成，循环播放
 - (void)videoDidPlayToEnd:(NSNotification *)notification {
     if (self.videoPlayer) {
-        // 重新开始播放（对齐安卓：seekTo(0) + start()）
+        // 重新开始播放（seekTo(0) + start()）
         [self.videoPlayer seekToTime:kCMTimeZero];
         [self.videoPlayer play];
         NSLog(@"[MaterialDetailViewController] 视频循环播放");
@@ -441,7 +441,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 #pragma mark - Actions
 
 - (void)moreButtonTapped:(UIButton *)sender {
-    // 对齐安卓：根据页面类型显示不同的弹窗
+    // 根据页面类型显示不同的弹窗
     if (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading) {
         // 生成详情模式：显示删除底部弹窗
         [self showDeleteActionSheet];
@@ -484,7 +484,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 }
 
 - (void)reportMaterialWithType:(NSInteger)type {
-    // 对齐安卓：调用reportMaterial API，参数materialId和type（0:report, 1:block）
+    // 调用reportMaterial API，参数materialId和type（0:report, 1:block）
     if (self.materialId <= 0) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"素材ID无效")];
         return;
@@ -500,7 +500,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         [SVProgressHUD dismiss];
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 对齐安卓：成功后关闭当前页面，通知列表页移除对应item（对应material_reported）
+            // 成功后关闭当前页面，通知列表页移除对应item（对应material_reported）
             // 发送通知，通知列表页移除对应item
             [[NSNotificationCenter defaultCenter] postNotificationName:kMaterialReportedNotification
                                                                 object:nil
@@ -532,7 +532,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     
     BOOL willFavorite = !self.detailModel.isFavorite;
     NSLog(@"[MaterialDetailViewController] 将要设置为收藏状态: %@", willFavorite ? @"YES" : @"NO");
-    // 对齐安卓：使用FavoriteMaterialApi，参数materialId和add
+    // 使用FavoriteMaterialApi，参数materialId和add
     NSDictionary *params = @{
         @"materialId": @(self.detailModel.materialId),
         @"add": @(willFavorite)
@@ -543,10 +543,10 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         [SVProgressHUD dismiss];
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 对齐安卓：标记有收藏操作
+            // 标记有收藏操作
             self.hasFavoriteAction = YES;
             
-            // 对齐安卓：更新本地状态和数量
+            // 更新本地状态和数量
             self.detailModel.isFavorite = willFavorite;
             NSInteger currentCount = self.detailModel.favoriteQty ? [self.detailModel.favoriteQty integerValue] : 0;
             if (willFavorite) {
@@ -556,7 +556,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             }
             [self updateUI];
             
-            // 对齐安卓：发送通知，通知列表页更新对应item的收藏状态（对应ActivityResultLauncher）
+            // 发送通知，通知列表页更新对应item的收藏状态（对应ActivityResultLauncher）
             NSInteger likeCount = self.detailModel.favoriteQty ? [self.detailModel.favoriteQty integerValue] : 0;
             [[NSNotificationCenter defaultCenter] postNotificationName:@"MaterialDetailFavoriteChangedNotification"
                                                                 object:nil
@@ -599,7 +599,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 #pragma mark - Check Surplus API
 
 - (void)checkSurplusAndProceed:(NSInteger)materialId {
-    // 对齐安卓：先检查金币余额
+    // 先检查金币余额
     NSDictionary *params = @{ @"materialId": @(materialId) };
     [SVProgressHUD showWithStatus:LocalString(@"加载中")];
     [[NetworkManager sharedManager] GET:BUNNYX_API_CHECK_SURPLUS_MXD
@@ -618,10 +618,10 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             }
         }
         if (ok) {
-            // 余额足够，检查VIP权限（对齐安卓：checkVipAndGenerate）
+            // 余额足够，检查VIP权限（checkVipAndGenerate）
             [self checkVipAndGenerate];
         } else {
-            // 余额不足，提醒去充值（对齐安卓：showRechargeDialog）
+            // 余额不足，提醒去充值（showRechargeDialog）
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"金币不足")
                                                                            message:LocalString(@"您的金币不足，是否前往充值？")
                                                                     preferredStyle:UIAlertControllerStyleAlert];
@@ -643,31 +643,31 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }];
 }
 
-// 对齐安卓：检查VIP权限并继续生成流程
+// 检查VIP权限并继续生成流程
 - (void)checkVipAndGenerate {
     if (!self.detailModel) {
-        // 如果Material对象不存在，需要先获取（对齐安卓：loadMaterialForVipCheck）
+        // 如果Material对象不存在，需要先获取（loadMaterialForVipCheck）
         [self loadMaterialForVipCheck];
         return;
     }
     
-    // 检查onlyVip字段（对齐安卓）
+    // 检查onlyVip字段
     NSInteger onlyVip = self.detailModel.onlyVip;
     if (onlyVip == 1) {
-        // 检查用户是否是VIP（对齐安卓：UserInfoManager.getInstance(this).isVip()）
+        // 检查用户是否是VIP（UserInfoManager.getInstance(this).isVip()）
         BOOL isVip = [[UserInfoManager sharedManager] isVip];
         if (!isVip) {
-            // 不是VIP，显示VIP提示弹窗（对齐安卓：showVipRequiredDialog）
+            // 不是VIP，显示VIP提示弹窗（showVipRequiredDialog）
             [self showVipRequiredDialog];
             return;
         }
     }
     
-    // VIP检查通过，继续生成流程（对齐安卓：proceedToGenerate）
+    // VIP检查通过，继续生成流程（proceedToGenerate）
     [self proceedToGenerate];
 }
 
-// 对齐安卓：加载素材信息用于VIP检查
+// 加载素材信息用于VIP检查
 - (void)loadMaterialForVipCheck {
     [SVProgressHUD show];
     NSDictionary *params = @{ @"materialId": @(self.materialId) };
@@ -703,7 +703,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }];
 }
 
-// 对齐安卓：显示VIP要求弹窗
+// 显示VIP要求弹窗
 - (void)showVipRequiredDialog {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"仅VIP可用")
                                                                      message:LocalString(@"此素材仅VIP用户可用，是否前往订阅？")
@@ -711,7 +711,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     UIAlertAction *subscribeAction = [UIAlertAction actionWithTitle:LocalString(@"去订阅")
                                                             style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * _Nonnull action) {
-        // 对齐安卓：关闭当前页面并跳转到首页第三个tab（订阅页面，索引2）
+        // 关闭当前页面并跳转到首页第三个tab（订阅页面，索引2）
         UITabBarController *tabBarController = self.tabBarController;
         if (tabBarController && tabBarController.viewControllers.count > 2) {
             tabBarController.selectedIndex = 2; // 第三个tab索引为2
@@ -726,22 +726,22 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-// 对齐安卓：继续生成流程
+// 继续生成流程
 - (void)proceedToGenerate {
     [self navigateToUploadMaterial];
 }
 
 #pragma mark - Save to Album
 
-// 对齐安卓：保存到相册
+// 保存到相册
 - (void)saveToAlbumButtonTapped:(UIButton *)sender {
-    // 对齐安卓：从CreateTask获取videoUrl或imageUrl（生成详情模式）
+    // 从CreateTask获取videoUrl或imageUrl（生成详情模式）
     // 或者从detailModel获取materialUrl（素材详情模式，但生成详情不应该走这个分支）
     NSString *saveUrl = nil;
     BOOL isVideo = NO;
     
     if (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading) {
-        // 生成详情模式：优先使用CreateTask的videoUrl，其次使用imageUrl（对齐安卓：mGenerateImageUrl）
+        // 生成详情模式：优先使用CreateTask的videoUrl，其次使用imageUrl（mGenerateImageUrl）
         if (self.createTask && self.createTask.videoUrl && self.createTask.videoUrl.length > 0) {
             saveUrl = self.createTask.videoUrl;
             isVideo = YES;
@@ -782,7 +782,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }
     
     if (isVideo) {
-        // 保存视频（对齐安卓：使用mGenerateImageUrl）
+        // 保存视频（使用mGenerateImageUrl）
         NSString *videoUrl = saveUrl;
         if (!videoUrl || videoUrl.length == 0) {
             [SVProgressHUD dismiss];
@@ -816,7 +816,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         }];
         [downloadTask resume];
     } else {
-        // 保存图片（对齐安卓：使用mGenerateImageUrl）
+        // 保存图片（使用mGenerateImageUrl）
         NSString *imageUrl = saveUrl;
         NSURL *url = [NSURL URLWithString:imageUrl];
         [[SDWebImageManager sharedManager] loadImageWithURL:url
@@ -843,7 +843,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 
 #pragma mark - Delete Action
 
-// 对齐安卓：显示删除底部弹窗
+// 显示删除底部弹窗
 - (void)showDeleteActionSheet {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil 
                                                                      message:nil 
@@ -872,7 +872,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-// 对齐安卓：显示删除确认对话框
+// 显示删除确认对话框
 - (void)showDeleteConfirmDialog {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"删除素材")
                                                                      message:LocalString(@"确定要删除这个素材吗？")
@@ -894,7 +894,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-// 对齐安卓：删除生成的素材
+// 删除生成的素材
 - (void)deleteGenerateMaterial {
     if (!self.createTask || !self.createTask.createId || self.createTask.createId.length == 0) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败：素材信息无效")];
@@ -902,7 +902,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }
     
     [SVProgressHUD show];
-    // 对齐安卓：DeleteCreateApi，参数ids（多个用,号分隔）
+    // DeleteCreateApi，参数ids（多个用,号分隔）
     NSDictionary *params = @{
         @"ids": self.createTask.createId
     };
@@ -911,7 +911,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         [SVProgressHUD dismiss];
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 对齐安卓：删除成功后返回并通知列表刷新
+            // 删除成功后返回并通知列表刷新
             [[NSNotificationCenter defaultCenter] postNotificationName:kGenerateDetailDeletedNotification 
                                                                 object:nil 
                                                               userInfo:@{kGenerateDetailDeletedCreateIdKey: self.createTask.createId}];

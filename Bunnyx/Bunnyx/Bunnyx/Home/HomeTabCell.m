@@ -31,16 +31,16 @@
 - (void)setupViews {
     self.contentView.backgroundColor = [UIColor clearColor];
     
-    // 外层容器：左右 padding 25pt（对齐安卓 paddingHorizontal="25dp"）
+    // 外层容器：左右 padding 25pt（ paddingHorizontal="25dp"）
     UIView *container = [[UIView alloc] initWithFrame:CGRectZero];
     container.backgroundColor = [UIColor clearColor];
     [self.contentView addSubview:container];
     self.containerView = container;
     
-    // 文字标签：上下 padding 12pt（对齐安卓 paddingVertical="12dp"）
+    // 文字标签：上下 padding 12pt（ paddingVertical="12dp"）
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-    label.textColor = HEX_COLOR(0x999999); // 未选中时 #999999（对齐安卓 black9）
-    label.font = [UIFont systemFontOfSize:20 weight:UIFontWeightRegular]; // 20pt（对齐安卓 20sp）
+    label.textColor = HEX_COLOR(0x999999); // 未选中时 #999999（ black9）
+    label.font = [UIFont systemFontOfSize:20 weight:UIFontWeightRegular]; // 20pt（ 20sp）
     label.textAlignment = NSTextAlignmentCenter;
     [container addSubview:label];
     self.titleLabel = label;
@@ -62,7 +62,7 @@
 
 - (void)configureWithTitle:(NSString *)title selected:(BOOL)selected {
     self.titleLabel.text = title;
-    // 对齐安卓样式：选中和未选中都是 20sp，选中时白色，未选中时 #999999
+    // 样式：选中和未选中都是 20sp，选中时白色，未选中时 #999999
     if (selected) {
         self.titleLabel.textColor = [UIColor whiteColor];
         self.titleLabel.font = [UIFont systemFontOfSize:20 weight:UIFontWeightRegular];

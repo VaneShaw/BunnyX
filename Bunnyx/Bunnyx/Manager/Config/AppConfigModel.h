@@ -130,7 +130,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSString *weixinClientId;
 /// 助手消息配置
 @property (nonatomic, strong) NSDictionary *helperMsg;
-/// Android配置
+/// 其他平台配置字段（保留此字段用于兼容）
 @property (nonatomic, strong) NSDictionary *android;
 /// 信鸽配置
 @property (nonatomic, strong) NSString *msgXingeConfig;
@@ -205,7 +205,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// VIP折扣提示
 @property (nonatomic, strong) NSString *vipDiscountTips;
 
-/// 新版本信息（对齐安卓：new_app_info）
+/// 新版本信息（new_app_info）
 @property (nonatomic, strong) NewAppInfo *latestAppInfo;
 
 #pragma mark - 便利方法

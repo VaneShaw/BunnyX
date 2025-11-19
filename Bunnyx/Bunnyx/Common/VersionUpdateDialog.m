@@ -2,7 +2,7 @@
 //  VersionUpdateDialog.m
 //  Bunnyx
 //
-//  版本更新弹窗（对齐安卓VersionUpdateDialog）
+//  版本更新弹窗（VersionUpdateDialog）
 //
 
 #import "VersionUpdateDialog.h"
@@ -53,7 +53,7 @@
     VersionUpdateDialog *dialog = [[VersionUpdateDialog alloc] init];
     dialog.appInfo = appInfo;
     dialog.onDismissListener = onDismissListener;
-    // 判断是否强制更新（对齐安卓：forceType == 1）
+    // 判断是否强制更新（forceType == 1）
     dialog.isForceUpdate = (appInfo.forceType == 1);
     BUNNYX_LOG(@"  isForceUpdate: %@", dialog.isForceUpdate ? @"YES" : @"NO");
     
@@ -98,7 +98,7 @@
     // 确保弹窗显示在最上层，不被其他视图遮挡
     [window bringSubviewToFront:self];
     
-    // 背景遮罩（对齐安卓：paddingBottom 35dp）
+    // 背景遮罩（paddingBottom 35dp）
     self.backgroundView = [[UIView alloc] init];
     self.backgroundView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
     [self addSubview:self.backgroundView];
@@ -107,23 +107,23 @@
         make.edges.equalTo(self);
     }];
     
-    // 如果非强制更新，允许点击背景关闭（对齐安卓：setCancelable(false), setCanceledOnTouchOutside(false)）
+    // 如果非强制更新，允许点击背景关闭（setCancelable(false), setCanceledOnTouchOutside(false)）
     if (!self.isForceUpdate) {
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss)];
         [self.backgroundView addGestureRecognizer:tap];
     }
     
-    // 内容容器（对齐安卓：335dp × 445dp，marginHorizontal 30dp，marginBottom 5dp）
+    // 内容容器（335dp × 445dp，marginHorizontal 30dp，marginBottom 5dp）
     self.containerView = [[UIView alloc] init];
     [self addSubview:self.containerView];
     
     [self.containerView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.center.equalTo(self);
-        make.width.mas_equalTo(335); // 对齐安卓：335dp
-        make.height.mas_equalTo(445); // 对齐安卓：445dp
+        make.width.mas_equalTo(335); // 335dp
+        make.height.mas_equalTo(445); // 445dp
     }];
     
-    // 背景图片（对齐安卓：bg_version_topup，335dp × 445dp，scaleType fitXY）
+    // 背景图片（bg_version_topup，335dp × 445dp，scaleType fitXY）
     self.backgroundImageView = [[UIImageView alloc] init];
     self.backgroundImageView.image = [UIImage imageNamed:@"bg_version_topup"];
     self.backgroundImageView.contentMode = UIViewContentModeScaleToFill;
@@ -134,67 +134,67 @@
         make.edges.equalTo(self.containerView);
     }];
     
-    // 内容区域（对齐安卓：paddingHorizontal 20dp，paddingTop 107dp，paddingBottom 20dp）
+    // 内容区域（paddingHorizontal 20dp，paddingTop 107dp，paddingBottom 20dp）
     UIView *contentView = [[UIView alloc] init];
     [self.containerView addSubview:contentView];
     
     [contentView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.edges.equalTo(self.containerView).insets(UIEdgeInsetsMake(107, 20, 20, 20)); // 对齐安卓：padding
+        make.edges.equalTo(self.containerView).insets(UIEdgeInsetsMake(107, 20, 20, 20)); // padding
     }];
     
-    // 标题（对齐安卓：23sp bold，黑色#333333，marginTop 25dp，居中）
+    // 标题（23sp bold，黑色#333333，marginTop 25dp，居中）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"发现新版本");
-    self.titleLabel.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.titleLabel.font = BOLD_FONT(23); // 对齐安卓：23sp bold
+    self.titleLabel.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.titleLabel.font = BOLD_FONT(23); // 23sp bold
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [contentView addSubview:self.titleLabel];
     
     [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(contentView).offset(25); // 对齐安卓：marginTop 25dp
+        make.top.equalTo(contentView).offset(25); // marginTop 25dp
         make.left.right.equalTo(contentView);
     }];
     
-    // 稍后提醒按钮（对齐安卓：48dp高度，透明背景，1dp绿色边框#0AEA6F，圆角50dp）
+    // 稍后提醒按钮（48dp高度，透明背景，1dp绿色边框#0AEA6F，圆角50dp）
     self.laterButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.laterButton setTitle:LocalString(@"以后再说") forState:UIControlStateNormal];
-    [self.laterButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
-    self.laterButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
-    self.laterButton.backgroundColor = [UIColor clearColor]; // 对齐安卓：#00FFFFFF
-    self.laterButton.layer.cornerRadius = 25.0; // 对齐安卓：50dp
-    self.laterButton.layer.borderWidth = 1.0; // 对齐安卓：1dp
-    self.laterButton.layer.borderColor = HEX_COLOR(0x0AEA6F).CGColor; // 对齐安卓：#0AEA6F
+    [self.laterButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
+    self.laterButton.titleLabel.font = FONT(16); // 16sp
+    self.laterButton.backgroundColor = [UIColor clearColor]; // #00FFFFFF
+    self.laterButton.layer.cornerRadius = 25.0; // 50dp
+    self.laterButton.layer.borderWidth = 1.0; // 1dp
+    self.laterButton.layer.borderColor = HEX_COLOR(0x0AEA6F).CGColor; // #0AEA6F
     [self.laterButton addTarget:self action:@selector(laterButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [contentView addSubview:self.laterButton];
     
     [self.laterButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(contentView);
-        make.height.mas_equalTo(48); // 对齐安卓：48dp
+        make.height.mas_equalTo(48); // 48dp
         make.bottom.equalTo(contentView);
     }];
     
-    // 更新按钮（对齐安卓：48dp高度，渐变背景#0AEA6F到#1CB3C1，圆角50dp，marginBottom 15dp）
+    // 更新按钮（48dp高度，渐变背景#0AEA6F到#1CB3C1，圆角50dp，marginBottom 15dp）
     self.updateButton = [GradientButton buttonWithTitle:LocalString(@"立即更新")
-                                               startColor:HEX_COLOR(0x0AEA6F) // 对齐安卓：#0AEA6F
-                                                 endColor:HEX_COLOR(0x1CB3C1)]; // 对齐安卓：#1CB3C1
-    self.updateButton.cornerRadius = 25.0; // 对齐安卓：50dp
-    self.updateButton.buttonHeight = 48.0; // 对齐安卓：48dp
-    [self.updateButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
-    self.updateButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+                                               startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
+                                                 endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
+    self.updateButton.cornerRadius = 25.0; // 50dp
+    self.updateButton.buttonHeight = 48.0; // 48dp
+    [self.updateButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
+    self.updateButton.titleLabel.font = FONT(16); // 16sp
     [self.updateButton addTarget:self action:@selector(updateButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [contentView addSubview:self.updateButton];
     
     [self.updateButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(contentView);
-        make.height.mas_equalTo(48); // 对齐安卓：48dp
-        make.bottom.equalTo(self.laterButton.mas_top).offset(-15); // 对齐安卓：marginBottom 15dp
+        make.height.mas_equalTo(48); // 48dp
+        make.bottom.equalTo(self.laterButton.mas_top).offset(-15); // marginBottom 15dp
     }];
     
-    // 更新内容（对齐安卓：15sp，黑色#333333，marginHorizontal 30dp，marginTop 30dp，marginBottom 15dp，weight=1）
+    // 更新内容（15sp，黑色#333333，marginHorizontal 30dp，marginTop 30dp，marginBottom 15dp，weight=1）
     self.contentTextView = [[UITextView alloc] init];
     self.contentTextView.backgroundColor = [UIColor clearColor];
-    self.contentTextView.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.contentTextView.font = FONT(15); // 对齐安卓：15sp
+    self.contentTextView.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.contentTextView.font = FONT(15); // 15sp
     self.contentTextView.editable = NO;
     self.contentTextView.scrollEnabled = YES;
     self.contentTextView.textContainerInset = UIEdgeInsetsZero;
@@ -202,13 +202,13 @@
     [contentView addSubview:self.contentTextView];
     
     [self.contentTextView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.titleLabel.mas_bottom).offset(30); // 对齐安卓：marginTop 30dp
-        make.left.equalTo(contentView).offset(30); // 对齐安卓：marginHorizontal 30dp
+        make.top.equalTo(self.titleLabel.mas_bottom).offset(30); // marginTop 30dp
+        make.left.equalTo(contentView).offset(30); // marginHorizontal 30dp
         make.right.equalTo(contentView).offset(-30);
-        make.bottom.equalTo(self.updateButton.mas_top).offset(-15); // 对齐安卓：marginBottom 15dp，weight=1
+        make.bottom.equalTo(self.updateButton.mas_top).offset(-15); // marginBottom 15dp，weight=1
     }];
     
-    // 外部关闭按钮（对齐安卓：icon_home_pop_up_close_default，marginBottom -35dp，底部居中，仅在非强制更新时显示）
+    // 外部关闭按钮（icon_home_pop_up_close_default，marginBottom -35dp，底部居中，仅在非强制更新时显示）
     self.closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.closeButton setImage:[UIImage imageNamed:@"icon_home_pop_up_close_default"] forState:UIControlStateNormal];
     [self.closeButton addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
@@ -221,7 +221,7 @@
         make.width.height.offset(30);
     }];
     
-    // 根据是否强制更新设置关闭按钮的显示（对齐安卓）
+    // 根据是否强制更新设置关闭按钮的显示
     self.closeButton.hidden = self.isForceUpdate;
     
     // 设置内容
@@ -239,7 +239,7 @@
         return;
     }
     
-    // 设置更新内容（对齐安卓）
+    // 设置更新内容
     NSString *releaseNotes = LocalString(@"更新说明：");
     NSString *updateMsg = self.appInfo.updateMsg ?: @"";
     if (updateMsg.length > 0) {
@@ -252,17 +252,17 @@
 #pragma mark - Actions
 
 - (void)updateButtonTapped {
-    // 跳转到App Store（对齐安卓：openGooglePlayStore）
+    // 跳转到App Store（openGooglePlayStore）
     [self openAppStore];
 }
 
 - (void)laterButtonTapped {
-    // 稍后提醒按钮（对齐安卓）
+    // 稍后提醒按钮
     if (self.isForceUpdate) {
-        // 强制更新：退出APP（对齐安卓：finish(), System.exit(0)）
+        // 强制更新：退出APP（finish(), System.exit(0)）
         exit(0);
     } else {
-        // 非强制更新：关闭弹窗（对齐安卓：dismiss()）
+        // 非强制更新：关闭弹窗（dismiss()）
         [self dismiss];
     }
 }
@@ -277,7 +277,7 @@
 #pragma mark - App Store
 
 - (void)openAppStore {
-    // 打开App Store（对齐安卓：openGooglePlayStore）
+    // 打开App Store（openGooglePlayStore）
     // 优先使用appUrl（如果提供）
     NSString *appUrl = self.appInfo.appUrl;
     if (appUrl && appUrl.length > 0) {
@@ -304,7 +304,7 @@
         if (@available(iOS 10.0, *)) {
             [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
                 if (!success) {
-                    // 如果itms协议失败，使用网页版（对齐安卓：openGooglePlayWeb）
+                    // 如果itms协议失败，使用网页版（openGooglePlayWeb）
                     NSString *webURL = [NSString stringWithFormat:@"https://apps.apple.com/app/id%@", bundleId];
                     NSURL *webUrl = [NSURL URLWithString:webURL];
                     if (webUrl) {

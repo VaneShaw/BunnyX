@@ -2,7 +2,7 @@
 //  UploadHistoryDialog.h
 //  Bunnyx
 //
-//  上传历史记录选择弹窗（对齐安卓UploadHistoryDialog）
+//  上传历史记录选择弹窗（UploadHistoryDialog）
 //
 
 #import <UIKit/UIKit.h>
@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class UploadHistoryDialog;
 
-/// 历史记录动作监听器（对齐安卓OnHistoryActionListener）
+/// 历史记录动作监听器（OnHistoryActionListener）
 @protocol UploadHistoryDialogDelegate <NSObject>
 
 @optional
@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 代理
 @property (nonatomic, weak) id<UploadHistoryDialogDelegate> delegate;
 
-/// 显示弹窗（对齐安卓Builder模式）
+/// 显示弹窗（Builder模式）
 + (void)showWithDelegate:(id<UploadHistoryDialogDelegate>)delegate;
 
 /// 关闭弹窗

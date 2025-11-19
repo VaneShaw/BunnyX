@@ -85,7 +85,7 @@
             navigationBar.scrollEdgeAppearance = appearance;
         }
         
-        // 设置导航栏返回按钮图标（对齐安卓：使用icon_login_account_back，图片显示尺寸23*23）
+        // 设置导航栏返回按钮图标（使用icon_login_account_back，图片显示尺寸23*23）
         // 使用44x44的容器（iOS标准触摸区域），但图片显示为23x23
         UIView *buttonContainer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 44, 44)];
         buttonContainer.backgroundColor = [UIColor clearColor];
@@ -121,7 +121,7 @@
 }
 
 - (void)backButtonTapped:(UIButton *)sender {
-    // 对齐安卓：返回按钮点击事件
+    // 返回按钮点击事件
     if (self.navigationController && self.navigationController.viewControllers.count > 1) {
         [self.navigationController popViewControllerAnimated:YES];
     } else if (self.presentingViewController) {

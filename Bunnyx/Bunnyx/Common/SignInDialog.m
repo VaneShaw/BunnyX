@@ -2,7 +2,7 @@
 //  SignInDialog.m
 //  Bunnyx
 //
-//  签到弹窗（对齐安卓SignInDialog）
+//  签到弹窗（SignInDialog）
 //
 
 #import "SignInDialog.h"
@@ -44,7 +44,7 @@
 @implementation SignInDialog
 
 + (void)show {
-    // 先请求签到数据，然后显示弹窗（对齐安卓）
+    // 先请求签到数据，然后显示弹窗）
     [self requestSignDataAndShow];
 }
 
@@ -56,36 +56,36 @@
 }
 
 + (void)requestSignDataAndShow {
-    // 请求签到数据（对齐安卓：GetUserSignListApi）
-    // 拼上baseUrl（对齐安卓）
+    // 请求签到数据（GetUserSignListApi）
+    // 拼上baseUrl）
     NSString *url = [NSString stringWithFormat:@"%@/user/task/getUserSignList", BUNNYX_API_BASE_URL];
     [[NetworkManager sharedManager] GET:url
                              parameters:nil
                                 success:^(id responseObject) {
-        // 解析响应（对齐安卓：GetUserSignListApi.Bean）
-        // 对齐安卓：if (result == null || result.getData() == null) { return; }
+        // 解析响应（GetUserSignListApi.Bean）
+        // if (result == null || result.getData() == null) { return; }
         if (![responseObject isKindOfClass:[NSDictionary class]]) {
             return;
         }
         NSDictionary *response = (NSDictionary *)responseObject;
         NSInteger code = [response[@"code"] integerValue];
         
-        // 对齐安卓：只有code == 0时才处理
+        // 只有code == 0时才处理
         if (code == 0) {
             NSDictionary *dataDict = response[@"data"];
-            // 对齐安卓：if (result.getData() == null) { return; }
+            // if (result.getData() == null) { return; }
             if (!dataDict) {
                 return;
             }
             
-            // 构建SignInData（对齐安卓）
+            // 构建SignInData）
             SignInData *signData = [[SignInData alloc] init];
             signData.consecutiveDay = [dataDict[@"consecutiveDay"] integerValue];
             signData.signIn = [dataDict[@"signIn"] boolValue];
             signData.result = dataDict[@"result"] ?: @[];
             signData.signRewards = dataDict[@"signRewards"] ?: @[];
             
-            // 如果当天未签到，显示签到弹窗（对齐安卓：!data.isSignIn()）
+            // 如果当天未签到，显示签到弹窗（!data.isSignIn()）
             if (!signData.signIn) {
                 [self showWithData:signData];
             }
@@ -93,7 +93,7 @@
     }
                                 failure:^(NSError *error) {
         BUNNYX_ERROR(@"获取签到数据失败: %@", error);
-        // 对齐安卓：请求失败时不显示弹窗（安卓的HttpCallback只有onSucceed，失败时不会调用，所以不会显示弹窗）
+        // 请求失败时不显示弹窗（安卓的HttpCallback只有onSucceed，失败时不会调用，所以不会显示弹窗）
         // 不显示弹窗，直接返回
     }];
 }
@@ -112,7 +112,7 @@
     self.frame = window.bounds;
     [window addSubview:self];
     
-    // 背景遮罩（对齐安卓：paddingBottom 35dp）
+    // 背景遮罩（paddingBottom 35dp）
     self.backgroundView = [[UIView alloc] init];
     self.backgroundView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
     [self addSubview:self.backgroundView];
@@ -124,7 +124,7 @@
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss)];
     [self.backgroundView addGestureRecognizer:tap];
     
-    // 内容容器（对齐安卓：marginHorizontal 20dp，marginBottom 5dp，居中显示，不占满全屏）
+    // 内容容器（marginHorizontal 20dp，marginBottom 5dp，居中显示，不占满全屏）
     self.containerView = [[UIView alloc] init];
     [self addSubview:self.containerView];
     
@@ -134,13 +134,13 @@
         make.height.offset(445);
     }];
     
-    // 背景图片（对齐安卓：bg_sign_topup，在containerView内部，不占满全屏）
+    // 背景图片（bg_sign_topup，在containerView内部，不占满全屏）
     self.backgroundImageView = [[UIImageView alloc] init];
     self.backgroundImageView.image = [UIImage imageNamed:@"bg_sign_topup"];
     self.backgroundImageView.contentMode = UIViewContentModeScaleToFill;
     self.backgroundImageView.clipsToBounds = YES;
-    // 设置圆角（对齐安卓：确保四个角都有圆角）
-    self.backgroundImageView.layer.cornerRadius = 20; // 对齐安卓：圆角20dp
+    // 设置圆角（确保四个角都有圆角）
+    self.backgroundImageView.layer.cornerRadius = 20; // 圆角20dp
     self.backgroundImageView.layer.masksToBounds = YES;
     [self.containerView addSubview:self.backgroundImageView];
     
@@ -150,7 +150,7 @@
         // 底部约束在spacerBottom创建后设置
     }];
     
-    // 创建辅助视图用于百分比定位（对齐安卓：Guideline）
+    // 创建辅助视图用于百分比定位（Guideline）
     UIView *sideStartGuide = [[UIView alloc] init];
     sideStartGuide.backgroundColor = [UIColor clearColor];
     [self.containerView addSubview:sideStartGuide];
@@ -181,11 +181,11 @@
         make.left.right.equalTo(self.containerView);
     }];
     
-    // 标题（对齐安卓：23sp bold，黑色#333333，24%位置）
+    // 标题（23sp bold，黑色#333333，24%位置）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"sign_title") ?: @"每日签到";
-    self.titleLabel.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.titleLabel.font = BOLD_FONT(23); // 对齐安卓：23sp bold
+    self.titleLabel.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.titleLabel.font = BOLD_FONT(23); // 23sp bold
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerView addSubview:self.titleLabel];
     
@@ -195,11 +195,11 @@
         make.top.equalTo(titleTopGuide.mas_bottom);
     }];
     
-    // 副标题（对齐安卓：14sp，黑色#333333，marginTop 6dp）
+    // 副标题（14sp，黑色#333333，marginTop 6dp）
     self.subtitleLabel = [[UILabel alloc] init];
     self.subtitleLabel.text = LocalString(@"sign_subtitle") ?: @"VIP会员可获得双倍奖励";
-    self.subtitleLabel.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.subtitleLabel.font = FONT(14); // 对齐安卓：14sp
+    self.subtitleLabel.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.subtitleLabel.font = FONT(14); // 14sp
     self.subtitleLabel.textAlignment = NSTextAlignmentCenter;
     [self.containerView addSubview:self.subtitleLabel];
     
@@ -208,10 +208,10 @@
         make.top.equalTo(self.titleLabel.mas_bottom).offset(6);
     }];
     
-    // 天列表容器（对齐安卓：13% 黑 + 圆角13dp，padding 5dp，38%位置）
+    // 天列表容器（13% 黑 + 圆角13dp，padding 5dp，38%位置）
     self.daysContainerView = [[UIView alloc] init];
-    self.daysContainerView.backgroundColor = RGBA(0, 0, 0, 0.13); // 对齐安卓：#21000000
-    self.daysContainerView.layer.cornerRadius = 13; // 对齐安卓：13dp
+    self.daysContainerView.backgroundColor = RGBA(0, 0, 0, 0.13); // #21000000
+    self.daysContainerView.layer.cornerRadius = 13; // 13dp
     self.daysContainerView.layer.masksToBounds = YES;
     [self.containerView addSubview:self.daysContainerView];
     
@@ -222,7 +222,7 @@
         make.height.mas_equalTo(80); // 临时高度，后续根据内容调整
     }];
     
-    // 天列表CollectionView（对齐安卓：横向滚动，LinearLayoutManager.HORIZONTAL）
+    // 天列表CollectionView（横向滚动，LinearLayoutManager.HORIZONTAL）
     UICollectionViewFlowLayout *daysLayout = [[UICollectionViewFlowLayout alloc] init];
     daysLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal; // 横向滚动
     daysLayout.minimumInteritemSpacing = 6;
@@ -233,7 +233,7 @@
     self.daysCollectionView.backgroundColor = [UIColor clearColor];
     self.daysCollectionView.dataSource = self;
     self.daysCollectionView.delegate = self;
-    self.daysCollectionView.showsHorizontalScrollIndicator = NO; // 对齐安卓：overScrollMode="never"
+    self.daysCollectionView.showsHorizontalScrollIndicator = NO; // overScrollMode="never"
     self.daysCollectionView.alwaysBounceHorizontal = YES; // 允许横向滚动
     [self.daysCollectionView registerClass:[SignDayCell class] forCellWithReuseIdentifier:@"SignDayCell"];
     [self.daysContainerView addSubview:self.daysCollectionView];
@@ -242,11 +242,11 @@
         make.edges.equalTo(self.daysContainerView);
     }];
     
-    // 天数描述（对齐安卓：14sp，黑色#333333，50%位置，marginTop 10dp）
+    // 天数描述（14sp，黑色#333333，50%位置，marginTop 10dp）
     self.daysDescLabel = [[UILabel alloc] init];
     self.daysDescLabel.text = LocalString(@"sign_days_desc") ?: @"已连续签到 1 天\n持续签到奖励更多金币";
-    self.daysDescLabel.textColor = HEX_COLOR(0x333333); // 对齐安卓：@color/black3
-    self.daysDescLabel.font = FONT(14); // 对齐安卓：14sp
+    self.daysDescLabel.textColor = HEX_COLOR(0x333333); // @color/black3
+    self.daysDescLabel.font = FONT(14); // 14sp
     self.daysDescLabel.textAlignment = NSTextAlignmentCenter;
     self.daysDescLabel.numberOfLines = 0;
     [self.containerView addSubview:self.daysDescLabel];
@@ -257,10 +257,10 @@
         make.top.equalTo(self.daysContainerView.mas_bottom).offset(10);
     }];
     
-    // 奖励列表容器（对齐安卓：同样样式，62%位置）
+    // 奖励列表容器（同样样式，62%位置）
     self.rewardsContainerView = [[UIView alloc] init];
-    self.rewardsContainerView.backgroundColor = RGBA(0, 0, 0, 0.13); // 对齐安卓：#21000000
-    self.rewardsContainerView.layer.cornerRadius = 13; // 对齐安卓：13dp
+    self.rewardsContainerView.backgroundColor = RGBA(0, 0, 0, 0.13); // #21000000
+    self.rewardsContainerView.layer.cornerRadius = 13; // 13dp
     self.rewardsContainerView.layer.masksToBounds = YES;
     [self.containerView addSubview:self.rewardsContainerView];
     
@@ -271,7 +271,7 @@
         make.height.mas_equalTo(80); // 临时高度，后续根据内容调整
     }];
     
-    // 奖励列表CollectionView（对齐安卓：横向滚动，LinearLayoutManager.HORIZONTAL）
+    // 奖励列表CollectionView（横向滚动，LinearLayoutManager.HORIZONTAL）
     UICollectionViewFlowLayout *rewardsLayout = [[UICollectionViewFlowLayout alloc] init];
     rewardsLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal; // 横向滚动
     rewardsLayout.minimumInteritemSpacing = 6;
@@ -282,7 +282,7 @@
     self.rewardsCollectionView.backgroundColor = [UIColor clearColor];
     self.rewardsCollectionView.dataSource = self;
     self.rewardsCollectionView.delegate = self;
-    self.rewardsCollectionView.showsHorizontalScrollIndicator = NO; // 对齐安卓：overScrollMode="never"
+    self.rewardsCollectionView.showsHorizontalScrollIndicator = NO; // overScrollMode="never"
     self.rewardsCollectionView.alwaysBounceHorizontal = YES; // 允许横向滚动
     [self.rewardsCollectionView registerClass:[SignRewardCell class] forCellWithReuseIdentifier:@"SignRewardCell"];
     [self.rewardsContainerView addSubview:self.rewardsCollectionView];
@@ -291,14 +291,14 @@
         make.edges.equalTo(self.rewardsContainerView);
     }];
     
-    // 签到按钮（对齐安卓：渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，80%位置）
+    // 签到按钮（渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，80%位置）
     self.signButton = [GradientButton buttonWithTitle:LocalString(@"sign_button") ?: @"签到"
-                                            startColor:HEX_COLOR(0x0AEA6F) // 对齐安卓：#0AEA6F
-                                              endColor:HEX_COLOR(0x1CB3C1)]; // 对齐安卓：#1CB3C1
-    self.signButton.cornerRadius = 20; // 对齐安卓：20dp
-    self.signButton.buttonHeight = 48; // 对齐安卓：48dp
-    [self.signButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // 对齐安卓：@color/black3
-    self.signButton.titleLabel.font = FONT(16); // 对齐安卓：16sp
+                                            startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
+                                              endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
+    self.signButton.cornerRadius = 20; // 20dp
+    self.signButton.buttonHeight = 48; // 48dp
+    [self.signButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
+    self.signButton.titleLabel.font = FONT(16); // 16sp
     [self.signButton addTarget:self action:@selector(signButtonTapped) forControlEvents:UIControlEventTouchUpInside];
     [self.containerView addSubview:self.signButton];
     
@@ -309,7 +309,7 @@
         make.height.mas_equalTo(48);
     }];
     
-    // 背景底部占位视图（对齐安卓：spacer_bottom，高度20dp）
+    // 背景底部占位视图（spacer_bottom，高度20dp）
     UIView *spacerBottom = [[UIView alloc] init];
     spacerBottom.backgroundColor = [UIColor clearColor];
     [self.containerView addSubview:spacerBottom];
@@ -322,12 +322,12 @@
         make.bottom.equalTo(self.containerView);
     }];
     
-    // 设置背景图的底部约束（对齐安卓：背景图约束到spacer_bottom）
+    // 设置背景图的底部约束（背景图约束到spacer_bottom）
     [self.backgroundImageView mas_updateConstraints:^(MASConstraintMaker *make) {
         make.bottom.equalTo(spacerBottom.mas_bottom);
     }];
     
-    // 外部关闭按钮（对齐安卓：icon_home_pop_up_close_default，marginBottom -35dp，底部居中）
+    // 外部关闭按钮（icon_home_pop_up_close_default，marginBottom -35dp，底部居中）
     self.closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.closeButton setImage:[UIImage imageNamed:@"icon_home_pop_up_close_default"] forState:UIControlStateNormal];
     [self.closeButton addTarget:self action:@selector(dismiss) forControlEvents:UIControlEventTouchUpInside];
@@ -344,13 +344,13 @@
     if (self.signData) {
         [self updateUIWithData:self.signData];
     } else {
-        // 如果没有数据，使用默认占位数据（对齐安卓）
+        // 如果没有数据，使用默认占位数据）
         [self setupDefaultData];
     }
 }
 
 - (void)setupDefaultData {
-    // 默认填充占位项，保证首屏至少 4 个（对齐安卓）
+    // 默认填充占位项，保证首屏至少 4 个）
     NSMutableArray *days = [NSMutableArray array];
     [days addObject:@{@"coinText": @"+2", @"dateText": @"24/10"}];
     [days addObject:@{@"coinText": @"+2", @"dateText": @"25/10"}];
@@ -370,13 +370,13 @@
 }
 
 - (void)updateUIWithData:(SignInData *)data {
-    // 顶部描述（对齐安卓）
+    // 顶部描述）
     if (data.consecutiveDay > 0) {
         NSString *desc = [NSString stringWithFormat:LocalString(@"sign_days_desc") ?: @"已连续签到 %d 天\n持续签到奖励更多金币", (int)data.consecutiveDay];
         self.daysDescLabel.text = desc;
     }
     
-    // 上方天列表（对齐安卓）
+    // 上方天列表）
     NSMutableArray *days = [NSMutableArray array];
     if (data.result && data.result.count > 0) {
         for (NSDictionary *item in data.result) {
@@ -391,7 +391,7 @@
         [self.daysCollectionView reloadData];
     }
     
-    // 下方奖励列表（对齐安卓）
+    // 下方奖励列表）
     NSMutableArray *rewards = [NSMutableArray array];
     if (data.signRewards && data.signRewards.count > 0) {
         for (NSDictionary *sr in data.signRewards) {
@@ -408,7 +408,7 @@
 }
 
 - (NSString *)formatMonthDay:(NSInteger)yyyymmdd {
-    // yyyymmdd -> MM/dd（对齐安卓）
+    // yyyymmdd -> MM/dd）
     NSInteger month = (yyyymmdd / 100) % 100;
     NSInteger day = yyyymmdd % 100;
     return [NSString stringWithFormat:@"%ld/%02ld", (long)month, (long)day];
@@ -460,12 +460,12 @@
 #pragma mark - UICollectionViewDelegateFlowLayout
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 对齐安卓：item使用wrap_content，宽度根据内容自适应
+    // item使用wrap_content，宽度根据内容自适应
     // 两个collectionView的cell应该使用相同的宽度计算方式，确保宽度一致
     
-    // 统一的宽度计算函数（对齐安卓：两个item布局结构相同）
+    // 统一的宽度计算函数（两个item布局结构相同）
     CGFloat (^calculateCellWidth)(NSString *, NSString *) = ^(NSString *coinText, NSString *bottomText) {
-        // 计算文本宽度（对齐安卓：18sp bold金币文本 + 11sp底部文本）
+        // 计算文本宽度（18sp bold金币文本 + 11sp底部文本）
         UIFont *coinFont = BOLD_FONT(18);
         UIFont *bottomFont = FONT(11);
         
@@ -479,11 +479,11 @@
         CGSize bottomSize = [bottomText sizeWithAttributes:@{NSFontAttributeName: bottomFont}];
         CGFloat bottomTextWidth = bottomSize.width;
         
-        // 取两者较大值，加上padding（对齐安卓：外层padding 6dp，内层padding 8dp）
+        // 取两者较大值，加上padding（外层padding 6dp，内层padding 8dp）
         CGFloat contentWidth = MAX(coinTextWidth, bottomTextWidth);
         CGFloat cellWidth = 6 * 2 + 8 * 2 + contentWidth; // padding 6*2 + container padding 8*2 + 内容
         
-        // 确保最小宽度（对齐安卓：wrap_content但要有合理的最小值）
+        // 确保最小宽度（wrap_content但要有合理的最小值）
         return MAX(cellWidth, 70);
     };
     
@@ -519,36 +519,36 @@
 #pragma mark - Actions
 
 - (void)signButtonTapped {
-    // 调用签到接口（对齐安卓）
+    // 调用签到接口）
     [self performSignIn];
 }
 
 - (void)performSignIn {
-    // 调用签到接口（对齐安卓：user/task/everyday/signIn）
-    // 注意：签到状态由接口返回决定，不在这里改变（对齐安卓）
+    // 调用签到接口（user/task/everyday/signIn）
+    // 注意：签到状态由接口返回决定，不在这里改变）
     BUNNYX_LOG(@"执行签到");
     
     // 显示加载提示
     [SVProgressHUD showWithStatus:LocalString(@"signing") ?: @"签到中..."];
     
-    // 调用签到接口（拼上baseUrl，对齐安卓）
+    // 调用签到接口（拼上baseUrl）
     NSString *url = [NSString stringWithFormat:@"%@/user/task/everyday/signIn", BUNNYX_API_BASE_URL];
     [[NetworkManager sharedManager] POST:url
                                parameters:nil
                                   success:^(id responseObject) {
         [SVProgressHUD dismiss];
         
-        // 解析响应（对齐安卓：EverydaySignInApi.Bean）
+        // 解析响应（EverydaySignInApi.Bean）
         if ([responseObject isKindOfClass:[NSDictionary class]]) {
             NSDictionary *response = (NSDictionary *)responseObject;
             NSInteger code = [response[@"code"] integerValue];
             
             if (code == 0) {
-                // 签到成功（对齐安卓：成功后关闭弹窗并显示成功弹窗，不改变当前弹窗状态）
+                // 签到成功（成功后关闭弹窗并显示成功弹窗，不改变当前弹窗状态）
                 NSDictionary *data = response[@"data"];
                 if (data && data[@"signReward"]) {
                     NSInteger reward = [data[@"signReward"] integerValue];
-                    // 先关闭当前弹窗，再显示成功弹窗（对齐安卓）
+                    // 先关闭当前弹窗，再显示成功弹窗）
                     [self dismiss];
                     [SignSuccessDialog showWithReward:reward];
                 } else {
@@ -557,7 +557,7 @@
                     [SignSuccessDialog showWithReward:0];
                 }
             } else {
-                // 签到失败（对齐安卓：失败时不关闭弹窗，只显示错误提示）
+                // 签到失败（失败时不关闭弹窗，只显示错误提示）
                 NSString *message = response[@"message"] ?: (LocalString(@"sign_failed") ?: @"签到失败");
                 [SVProgressHUD showErrorWithStatus:message];
             }
@@ -568,7 +568,7 @@
                                   failure:^(NSError *error) {
         [SVProgressHUD dismiss];
         BUNNYX_ERROR(@"签到失败: %@", error);
-        // 失败时不关闭弹窗，只显示错误提示（对齐安卓）
+        // 失败时不关闭弹窗，只显示错误提示）
         [SVProgressHUD showErrorWithStatus:LocalString(@"network_error") ?: @"网络错误"];
     }];
 }

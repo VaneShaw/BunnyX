@@ -130,7 +130,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     NSDictionary *params = @{
         @"index": @(0),
         @"count": @(20),
-        @"materialType": @(1) // 对齐安卓：materialType=1
+        @"materialType": @(1) // materialType=1
     };
     
     [[NetworkManager sharedManager] GET:BUNNYX_API_MATERIAL_LIST
@@ -145,7 +145,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                 [self.materialList removeAllObjects];
                 [self.materialList addObjectsFromArray:models];
                 
-                // 对齐安卓：设置默认选中中间位置
+                // 设置默认选中中间位置
                 if (self.materialList.count > 0) {
                     // 预加载所有图片到缓存
                     [self preloadImages];
@@ -165,7 +165,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                         
                         // 等待布局完成后再刷新布局，确保选中item正确显示放大效果
                         dispatch_async(dispatch_get_main_queue(), ^{
-                            // 对齐安卓：滚动到中间位置（先滚动，再刷新布局）
+                            // 滚动到中间位置（先滚动，再刷新布局）
                             NSIndexPath *middlePath = [NSIndexPath indexPathForItem:middleIndex inSection:0];
                             [self.materialCollectionView scrollToItemAtIndexPath:middlePath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
                             
@@ -192,7 +192,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 /**
- * 更新背景图片（对齐安卓）
+ * 更新背景图片
  * @param material 素材对象
  * @param forceUpdate 是否强制更新（即使URL相同也更新）
  */
@@ -210,7 +210,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         return;
     }
     
-    // 对齐安卓：避免重复加载同一张图片（除非强制更新）
+    // 避免重复加载同一张图片（除非强制更新）
     if (!forceUpdate) {
         NSString *currentUrl = self.currentBackgroundMaterial ? self.currentBackgroundMaterial.materialUrl : nil;
         if (currentUrl && [currentUrl isEqualToString:material.materialUrl]) {
@@ -230,7 +230,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     // 先更新currentBackgroundMaterial，然后加载图片
     self.currentBackgroundMaterial = material;
     
-    // 对齐安卓：使用ALL缓存策略，同时缓存原始数据和解码后的图片
+    // 使用ALL缓存策略，同时缓存原始数据和解码后的图片
     // 对于动态图（GIF/WebP），会优先使用SOURCE缓存，保持动态效果
     [self.backgroundImageView sd_setImageWithURL:url 
                                  placeholderImage:[VectorImageHelper defaultLoadingImage]
@@ -240,7 +240,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                                         completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
         if (error) {
             BUNNYX_ERROR(@"updateBackgroundImage: 图片加载失败，URL: %@, Error: %@", imageURL, error.localizedDescription);
-            // 对齐安卓：加载失败时显示错误图片
+            // 加载失败时显示错误图片
             self.backgroundImageView.image = [UIImage imageNamed:@"image_error_ic"];
         } else {
             BUNNYX_LOG(@"updateBackgroundImage: 图片加载成功，URL: %@", imageURL);
@@ -249,7 +249,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 /**
- * 预加载图片到缓存（对齐安卓）
+ * 预加载图片到缓存
  */
 - (void)preloadImages {
     if (self.materialList.count == 0) {
@@ -270,7 +270,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 #pragma mark - Actions
 
 - (void)moreButtonTapped:(UIButton *)sender {
-    // 对齐安卓：显示底部弹窗（ActionSheet），包含举报和屏蔽选项
+    // 显示底部弹窗（ActionSheet），包含举报和屏蔽选项
     if (!self.currentBackgroundMaterial) {
         // 如果当前背景未设置，尝试从列表中取一个可用的
         if (self.materialList.count > 0 && self.selectedIndex >= 0 && self.selectedIndex < self.materialList.count) {
@@ -282,7 +282,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         return;
     }
     
-    // 使用ActionSheet样式，对齐安卓的BottomSheetDialog
+    // 使用ActionSheet样式，BottomSheetDialog
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
                                                                    message:nil
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
@@ -320,14 +320,14 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)reportMaterialWithType:(NSInteger)type {
-    // 对齐安卓：type 0=举报, 1=屏蔽
+    // type 0=举报, 1=屏蔽
     if (!self.currentBackgroundMaterial || self.currentBackgroundMaterial.materialId <= 0) {
         return;
     }
     
     NSInteger materialId = self.currentBackgroundMaterial.materialId;
     
-    // 找到当前素材在列表中的位置（对齐安卓逻辑）
+    // 找到当前素材在列表中的位置
     NSInteger position = -1;
     for (NSInteger i = 0; i < self.materialList.count; i++) {
         if (self.materialList[i].materialId == materialId) {
@@ -375,7 +375,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 }
 
 - (void)removeMaterialFromList:(NSInteger)position {
-    // 对齐安卓：完善的删除逻辑，包括滚动监听器的临时移除和恢复
+    // 完善的删除逻辑，包括滚动监听器的临时移除和恢复
     if (position < 0 || position >= self.materialList.count) {
         return;
     }
@@ -386,7 +386,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     // 从列表中删除
     [self.materialList removeObjectAtIndex:position];
     
-    // 调整选中位置（对齐安卓逻辑）
+    // 调整选中位置
     NSInteger newSelectedIndex = -1;
     if (position < oldSelectedIndex) {
         // 删除的位置在选中位置之前，选中位置减1
@@ -409,12 +409,12 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     if (newSelectedIndex >= 0 && newSelectedIndex < self.materialList.count) {
         self.selectedIndex = newSelectedIndex;
         MaterialItemModel *newMaterial = self.materialList[newSelectedIndex];
-        // 对齐安卓：强制更新背景（因为列表已经变化）
+        // 强制更新背景（因为列表已经变化）
         [self updateBackgroundImage:newMaterial forceUpdate:YES];
         
         // 如果删除的是选中项或删除位置在选中位置之前，需要滚动到新位置
         if (isRemovingSelected || (position < oldSelectedIndex)) {
-            // 对齐安卓：暂时移除滚动监听器，避免滚动过程中触发更新
+            // 暂时移除滚动监听器，避免滚动过程中触发更新
             // 注意：iOS的UICollectionView没有直接的方法移除delegate，我们需要用标志位来控制
             self.isProgrammaticScroll = YES;
             
@@ -424,7 +424,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                 NSIndexPath *newPath = [NSIndexPath indexPathForItem:newSelectedIndex inSection:0];
                 [self.materialCollectionView scrollToItemAtIndexPath:newPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
                 
-                // 对齐安卓：等待滚动动画完成后再恢复监听器，并再次确认背景是正确的
+                // 等待滚动动画完成后再恢复监听器，并再次确认背景是正确的
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     // 再次检查并更新背景，确保滚动后背景正确
                     if (self.selectedIndex >= 0 && self.selectedIndex < self.materialList.count) {
@@ -510,7 +510,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
         }
         
         if (isSufficient) {
-            // 金币足够，检查VIP权限（对齐安卓：checkVipAndStartUpload）
+            // 金币足够，检查VIP权限（checkVipAndStartUpload）
             [self checkVipAndStartUpload:materialId];
         } else {
             // 金币不足，显示充值提示
@@ -537,14 +537,14 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     }];
 }
 
-// 对齐安卓：检查VIP权限并继续上传流程
+// 检查VIP权限并继续上传流程
 - (void)checkVipAndStartUpload:(NSInteger)materialId {
-    // 对齐安卓：如果当前背景素材不存在，需要先获取
+    // 如果当前背景素材不存在，需要先获取
     // 注意：MaterialItemModel可能没有onlyVip字段，需要重新获取详情来检查
     [self loadMaterialForVipCheck:materialId];
 }
 
-// 对齐安卓：加载素材信息用于VIP检查
+// 加载素材信息用于VIP检查
 - (void)loadMaterialForVipCheck:(NSInteger)materialId {
     [SVProgressHUD show];
     NSDictionary *params = @{ @"materialId": @(materialId) };
@@ -579,7 +579,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     }];
 }
 
-// 对齐安卓：显示VIP要求弹窗
+// 显示VIP要求弹窗
 - (void)showVipRequiredDialog {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"仅VIP可用")
                                                                      message:LocalString(@"此素材仅VIP用户可用，是否前往订阅？")
@@ -587,7 +587,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     UIAlertAction *subscribeAction = [UIAlertAction actionWithTitle:LocalString(@"去订阅")
                                                             style:UIAlertActionStyleDefault
                                                           handler:^(UIAlertAction * _Nonnull action) {
-        // 对齐安卓：关闭当前页面并跳转到首页第三个tab（订阅页面，索引2）
+        // 关闭当前页面并跳转到首页第三个tab（订阅页面，索引2）
         UITabBarController *tabBarController = self.tabBarController;
         if (tabBarController && tabBarController.viewControllers.count > 2) {
             tabBarController.selectedIndex = 2; // 第三个tab索引为2
@@ -601,7 +601,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     [self presentViewController:alert animated:YES completion:nil];
 }
 
-// 对齐安卓：继续上传流程
+// 继续上传流程
 - (void)proceedToUpload:(NSInteger)materialId {
     UploadMaterialViewController *vc = [[UploadMaterialViewController alloc] initWithMaterialId:materialId];
     vc.hidesBottomBarWhenPushed = YES;

@@ -30,7 +30,7 @@
 @property (nonatomic, strong) UIButton *accountLoginButton;
 @property (nonatomic, strong) UIButton *agreementCheckbox;
 @property (nonatomic, strong) UILabel *agreementLabel;
-@property (nonatomic, assign) BOOL isAgreedToTerms; // 对齐安卓：是否同意用户协议和隐私政策
+@property (nonatomic, assign) BOOL isAgreedToTerms; // 是否同意用户协议和隐私政策
 
 @end
 
@@ -68,7 +68,7 @@
 }
 
 - (void)setupLogo {
-    // 对齐安卓：200dp x 160dp
+    // 200dp x 160dp
     self.logoImageView = [[UIImageView alloc] init];
     self.logoImageView.image = [UIImage imageNamed:@"icon_login_logo"];
     self.logoImageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -76,7 +76,7 @@
 }
 
 - (void)setupLoginButtons {
-    // 快速登录按钮（对齐安卓：渐变背景 #0AEA6F -> #1CB3C1，圆角12dp，高度48dp）
+    // 快速登录按钮（渐变背景 #0AEA6F -> #1CB3C1，圆角12dp，高度48dp）
     self.quickLoginButton = [GradientButton buttonWithTitle:LocalString(@"快速登录")
                                                    startColor:[UIColor colorWithRed:0x0A/255.0 green:0xEA/255.0 blue:0x6F/255.0 alpha:1.0]  // #0AEA6F
                                                      endColor:[UIColor colorWithRed:0x1C/255.0 green:0xB3/255.0 blue:0xC1/255.0 alpha:1.0]]; // #1CB3C1
@@ -84,7 +84,7 @@
     self.quickLoginButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
     self.quickLoginButton.cornerRadius = 12.0; // 使用GradientButton的cornerRadius属性
     // buttonHeight已在约束中设置，不需要单独设置
-    // 图标尺寸22dp，图标和文字间距12dp（对齐安卓）
+    // 图标尺寸22dp，图标和文字间距12dp
     UIImageView *quickIcon = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon_login_quick"]];
     quickIcon.contentMode = UIViewContentModeScaleAspectFit;
     [self.quickLoginButton addSubview:quickIcon];
@@ -93,12 +93,12 @@
         make.centerY.equalTo(self.quickLoginButton);
         make.width.height.mas_equalTo(22);
     }];
-    // 文字居中（对齐安卓：gravity="center"）
+    // 文字居中（gravity="center"）
     self.quickLoginButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.quickLoginButton addTarget:self action:@selector(quickLoginButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.quickLoginButton];
     
-    // Google登录按钮（对齐安卓：背景色#1B2A3C，圆角12dp，高度48dp）
+    // Google登录按钮（背景色#1B2A3C，圆角12dp，高度48dp）
     self.appleLoginButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.appleLoginButton setTitle:LocalString(@"使用 Apple 登录") forState:UIControlStateNormal];
     [self.appleLoginButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -106,7 +106,7 @@
     self.appleLoginButton.backgroundColor = [UIColor colorWithRed:0x1B/255.0 green:0x2A/255.0 blue:0x3C/255.0 alpha:1.0]; // #1B2A3C
     self.appleLoginButton.layer.cornerRadius = 12.0;
     self.appleLoginButton.layer.masksToBounds = YES;
-    // 图标尺寸22dp，图标和文字间距12dp（对齐安卓）
+    // 图标尺寸22dp，图标和文字间距12dp
     UIImageView *googleIcon = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon_login_apple"]];
     googleIcon.contentMode = UIViewContentModeScaleAspectFit;
     [self.appleLoginButton addSubview:googleIcon];
@@ -115,12 +115,12 @@
         make.centerY.equalTo(self.appleLoginButton);
         make.width.height.mas_equalTo(22);
     }];
-    // 文字居中（对齐安卓：gravity="center"）
+    // 文字居中（gravity="center"）
     self.appleLoginButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.appleLoginButton addTarget:self action:@selector(appleLoginButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.appleLoginButton];
     
-    // 账号登录按钮（对齐安卓：背景色white，圆角12dp，高度48dp）
+    // 账号登录按钮（背景色white，圆角12dp，高度48dp）
     self.accountLoginButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.accountLoginButton setTitle:LocalString(@"账号密码登录") forState:UIControlStateNormal];
     [self.accountLoginButton setTitleColor:[UIColor colorWithRed:0x33/255.0 green:0x33/255.0 blue:0x33/255.0 alpha:1.0] forState:UIControlStateNormal]; // #333333
@@ -128,7 +128,7 @@
     self.accountLoginButton.backgroundColor = [UIColor whiteColor];
     self.accountLoginButton.layer.cornerRadius = 12.0;
     self.accountLoginButton.layer.masksToBounds = YES;
-    // 图标尺寸20dp，图标和文字间距12dp（对齐安卓）
+    // 图标尺寸20dp，图标和文字间距12dp
     UIImageView *accountIcon = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon_login_account"]];
     accountIcon.contentMode = UIViewContentModeScaleAspectFit;
     [self.accountLoginButton addSubview:accountIcon];
@@ -137,21 +137,21 @@
         make.centerY.equalTo(self.accountLoginButton);
         make.width.height.mas_equalTo(20);
     }];
-    // 文字居中（对齐安卓：gravity="center"）
+    // 文字居中（gravity="center"）
     self.accountLoginButton.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.accountLoginButton addTarget:self action:@selector(accountLoginButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.accountLoginButton];
 }
 
 - (void)setupAgreement {
-    // 对齐安卓：复选框18dp x 18dp，文字12sp，复选框和文字间距8dp
+    // 复选框18dp x 18dp，文字12sp，复选框和文字间距8dp
     self.agreementCheckbox = [UIButton buttonWithType:UIButtonTypeCustom];
     [self.agreementCheckbox setImage:[UIImage imageNamed:@"icon_login_bottom_box_default"] forState:UIControlStateNormal];
     [self.agreementCheckbox setImage:[UIImage imageNamed:@"icon_login_bottom_box_selected"] forState:UIControlStateSelected];
     [self.agreementCheckbox addTarget:self action:@selector(agreementCheckboxTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:self.agreementCheckbox];
     
-    // 对齐安卓：协议文字分为多个部分，支持点击
+    // 协议文字分为多个部分，支持点击
     self.agreementLabel = [[UILabel alloc] init];
     self.agreementLabel.textColor = [UIColor colorWithRed:0x99/255.0 green:0xFF/255.0 blue:0xFF/255.0 alpha:1.0]; // #99FFFFFF
     self.agreementLabel.font = [UIFont systemFontOfSize:12];
@@ -164,7 +164,7 @@
 }
 
 - (void)setupAgreementText {
-    // 对齐安卓：协议文字分为前缀、用户协议、和、隐私政策
+    // 协议文字分为前缀、用户协议、和、隐私政策
     NSString *prefix = LocalString(@"如果你登录，即表示你同意用");
     NSString *userAgreement = LocalString(@"用户协议");
     NSString *and = LocalString(@"和");
@@ -173,19 +173,19 @@
     
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:fullText];
     
-    // 设置整体样式（对齐安卓：#99FFFFFF）
+    // 设置整体样式（#99FFFFFF）
     UIColor *tipsColor = HEX_COLOR(0x999999);
     [attributedString addAttribute:NSForegroundColorAttributeName value:tipsColor range:NSMakeRange(0, fullText.length)];
     [attributedString addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:12] range:NSMakeRange(0, fullText.length)];
     
-    // 设置"用户协议"为链接颜色（对齐安卓：#2BD7B4）
+    // 设置"用户协议"为链接颜色（#2BD7B4）
     NSRange userAgreementRange = [fullText rangeOfString:userAgreement];
     if (userAgreementRange.location != NSNotFound) {
         UIColor *linkColor = [UIColor colorWithRed:0x2B/255.0 green:0xD7/255.0 blue:0xB4/255.0 alpha:1.0]; // #2BD7B4
         [attributedString addAttribute:NSForegroundColorAttributeName value:linkColor range:userAgreementRange];
     }
     
-    // 设置"隐私政策"为链接颜色（对齐安卓：#2BD7B4）
+    // 设置"隐私政策"为链接颜色（#2BD7B4）
     NSRange privacyPolicyRange = [fullText rangeOfString:privacyPolicy];
     if (privacyPolicyRange.location != NSNotFound) {
         UIColor *linkColor = [UIColor colorWithRed:0x2B/255.0 green:0xD7/255.0 blue:0xB4/255.0 alpha:1.0]; // #2BD7B4
@@ -208,7 +208,7 @@
         make.edges.equalTo(self.view);
     }];
     
-    // Logo（对齐安卓：200dp x 160dp，顶部间距80dp，水平居中）
+    // Logo（200dp x 160dp，顶部间距80dp，水平居中）
     [self.logoImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self.view);
         make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(80+STATUS_BAR_HEIGHT+NAVIGATION_BAR_HEIGHT);
@@ -224,7 +224,7 @@
         make.left.right.equalTo(self.view);
     }];
     
-    // 快速登录按钮（对齐安卓：水平padding 20dp，高度48dp，圆角12dp，按钮间距12dp）
+    // 快速登录按钮（水平padding 20dp，高度48dp，圆角12dp，按钮间距12dp）
     [self.quickLoginButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.view).offset(20);
         make.right.equalTo(self.view).offset(-20);
@@ -237,21 +237,21 @@
         make.bottom.equalTo(self.quickLoginButton.mas_top);
     }];
     
-    // Google登录按钮（对齐安卓：间距12dp）
+    // Google登录按钮（间距12dp）
     [self.appleLoginButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(self.quickLoginButton);
         make.top.equalTo(self.quickLoginButton.mas_bottom).offset(12);
         make.height.mas_equalTo(48);
     }];
     
-    // 账号登录按钮（对齐安卓：间距12dp）
+    // 账号登录按钮（间距12dp）
     [self.accountLoginButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(self.quickLoginButton);
         make.top.equalTo(self.appleLoginButton.mas_bottom).offset(12);
         make.height.mas_equalTo(48);
     }];
     
-    // 协议复选框（对齐安卓：18dp x 18dp，底部间距20dp，左侧padding 20dp，顶部间距14dp）
+    // 协议复选框（18dp x 18dp，底部间距20dp，左侧padding 20dp，顶部间距14dp）
     [self.agreementCheckbox mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.view).offset(20);
         make.top.equalTo(self.accountLoginButton.mas_bottom).offset(14);
@@ -259,7 +259,7 @@
         make.width.height.mas_equalTo(18);
     }];
     
-    // 协议文字（对齐安卓：复选框和文字间距8dp，文字12sp）
+    // 协议文字（复选框和文字间距8dp，文字12sp）
     [self.agreementLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.agreementCheckbox.mas_right).offset(8);
         make.right.equalTo(self.view).offset(-20);
@@ -270,7 +270,7 @@
 #pragma mark - Button Actions
 
 - (void)quickLoginButtonTapped:(UIButton *)sender {
-    // 对齐安卓：检查是否同意协议
+    // 检查是否同意协议
     if (!self.isAgreedToTerms) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"请先同意用户协议和隐私政策")];
         return;
@@ -279,17 +279,17 @@
 }
 
 - (void)appleLoginButtonTapped:(UIButton *)sender {
-    // 对齐安卓：检查是否同意协议
+    // 检查是否同意协议
     if (!self.isAgreedToTerms) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"请先同意用户协议和隐私政策")];
         return;
     }
-    // 执行Apple登录（对齐安卓：performGoogleLogin）
+    // 执行Apple登录（performGoogleLogin）
     [self performAppleLogin];
 }
 
 - (void)accountLoginButtonTapped:(UIButton *)sender {
-    // 对齐安卓：检查是否同意协议
+    // 检查是否同意协议
     if (!self.isAgreedToTerms) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"请先同意用户协议和隐私政策")];
         return;
@@ -306,7 +306,7 @@
 }
 
 - (void)agreementCheckboxTapped:(UIButton *)sender {
-    // 对齐安卓：切换复选框状态
+    // 切换复选框状态
     self.isAgreedToTerms = !self.isAgreedToTerms;
     sender.selected = self.isAgreedToTerms;
     NSLog(@"协议复选框被点击，选中状态: %@", self.isAgreedToTerms ? @"是" : @"否");
@@ -315,7 +315,7 @@
 - (void)agreementLabelTapped:(UITapGestureRecognizer *)gesture {
     CGPoint location = [gesture locationInView:self.agreementLabel];
     
-    // 获取文本内容（对齐安卓：使用国际化字符串）
+    // 获取文本内容（使用国际化字符串）
     NSString *userAgreement = LocalString(@"用户协议");
     NSString *privacyPolicy = LocalString(@"隐私政策");
     NSString *fullText = self.agreementLabel.attributedText.string;
@@ -323,7 +323,7 @@
     NSRange userAgreementRange = [fullText rangeOfString:userAgreement];
     NSRange privacyPolicyRange = [fullText rangeOfString:privacyPolicy];
     
-    // 使用更精确的方法计算点击位置（对齐安卓：点击协议文字打开浏览器）
+    // 使用更精确的方法计算点击位置（点击协议文字打开浏览器）
     // 计算每个字符的宽度
     UIFont *font = self.agreementLabel.font;
     NSDictionary *attributes = @{NSFontAttributeName: font};
@@ -342,7 +342,7 @@
 }
 
 - (void)showUserAgreement {
-    // 对齐安卓：从配置中获取用户协议URL并打开浏览器
+    // 从配置中获取用户协议URL并打开浏览器
     AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
     if (config && config.userAgreementUrl && config.userAgreementUrl.length > 0) {
         BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.userAgreementUrl];
@@ -357,7 +357,7 @@
 }
 
 - (void)showPrivacyPolicy {
-    // 对齐安卓：从配置中获取隐私政策URL并打开浏览器
+    // 从配置中获取隐私政策URL并打开浏览器
     AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
     if (config && config.privacyPolicyUrl && config.privacyPolicyUrl.length > 0) {
         BrowserViewController *browserVC = [[BrowserViewController alloc] initWithURL:config.privacyPolicyUrl];
@@ -473,12 +473,12 @@
 }
 
 - (void)fetchUserInfoAfterQuickLogin {
-    // 对齐安卓：请求用户信息
+    // 请求用户信息
     [self requestUserInfo];
 }
 
 /**
- * 请求用户信息（对齐安卓：requestUserInfo方法）
+ * 请求用户信息（requestUserInfo方法）
  */
 - (void)requestUserInfo {
     [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
@@ -487,20 +487,20 @@
         // 隐藏加载状态
         [SVProgressHUD dismiss];
         
-        // 对齐安卓：跳转到首页并关闭所有登录相关页面
+        // 跳转到首页并关闭所有登录相关页面
         [self transitionToMainInterface];
         
     } failure:^(NSError *error) {
         NSLog(@"[LoginViewController] 获取用户详细信息失败: %@", error);
         
-        // 对齐安卓：即使获取用户信息失败，也跳转到首页
+        // 即使获取用户信息失败，也跳转到首页
         [SVProgressHUD dismiss];
         [self transitionToMainInterface];
     }];
 }
 
 - (void)transitionToMainInterface {
-    // 对齐安卓：跳转到首页并关闭所有登录相关页面
+    // 跳转到首页并关闭所有登录相关页面
     MainTabBarController *mainTabBarController = [[MainTabBarController alloc] init];
     
     // 设置根视图控制器
@@ -528,10 +528,10 @@
     }
 }
 
-#pragma mark - Apple Sign In（对齐安卓：performGoogleLogin）
+#pragma mark - Apple Sign In（performGoogleLogin）
 
 /**
- * 执行Apple登录（对齐安卓：performGoogleLogin方法）
+ * 执行Apple登录（performGoogleLogin方法）
  */
 - (void)performAppleLogin {
     if (@available(iOS 13.0, *)) {
@@ -579,7 +579,7 @@
         
         NSLog(@"[LoginViewController] Apple登录成功 - userID: %@, email: %@, name: %@", userID, email, fullName);
         
-        // 对齐安卓：处理Apple登录结果（handleGoogleLoginResult）
+        // 处理Apple登录结果（handleGoogleLoginResult）
         [self handleAppleLoginResult:identityToken ?: authorizationCode email:email name:fullName];
     }
 }
@@ -601,7 +601,7 @@
 }
 
 /**
- * 处理Apple登录结果（对齐安卓：handleGoogleLoginResult方法）
+ * 处理Apple登录结果（handleGoogleLoginResult方法）
  */
 - (void)handleAppleLoginResult:(NSString *)appleToken email:(NSString *)email name:(NSString *)name {
     if (!appleToken || appleToken.length == 0) {
@@ -612,7 +612,7 @@
     // 显示加载提示
     [SVProgressHUD showWithStatus:LocalString(@"登录中")];
     
-    // 对齐安卓：调用Apple登录接口
+    // 调用Apple登录接口
     NSDictionary *params = @{
         @"apple_token": appleToken ?: @""
     };
@@ -622,7 +622,7 @@
                                  success:^(id responseObject) {
         NSInteger code = [responseObject[@"code"] integerValue];
         if (code == 0) {
-            // 对齐安卓：保存登录信息
+            // 保存登录信息
             NSDictionary *data = responseObject[@"data"];
             if (data && [data isKindOfClass:[NSDictionary class]]) {
                 NSString *accessToken = data[@"access_token"];
@@ -641,7 +641,7 @@
                 }
             }
             
-            // 对齐安卓：无论是否有token数据，只要code=0就继续请求用户信息
+            // 无论是否有token数据，只要code=0就继续请求用户信息
             [self requestUserInfo];
         } else {
             [SVProgressHUD dismiss];

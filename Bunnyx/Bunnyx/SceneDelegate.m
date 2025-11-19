@@ -38,7 +38,7 @@
         // 显示窗口
         [self.window makeKeyAndVisible];
         
-        // 对齐安卓：启动页请求应用配置，控制跳转时机
+        // 启动页请求应用配置，控制跳转时机
         [self loadAppConfigAndNavigate];
     }
 }

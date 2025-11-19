@@ -172,7 +172,7 @@
 }
 
 - (void)updateSelectedState:(BOOL)selected {
-    // 无论选中还是未选中，都使用深绿色渐变背景（对齐安卓）
+    // 无论选中还是未选中，都使用深绿色渐变背景
     // 先移除旧的渐变层
     NSArray *sublayers = [self.cardView.layer.sublayers copy];
     for (CALayer *layer in sublayers) {

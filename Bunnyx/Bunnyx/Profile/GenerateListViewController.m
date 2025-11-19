@@ -58,7 +58,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 }
 
 - (void)setupNotifications {
-    // 监听生成详情页删除成功的通知（对应安卓的ActivityResultLauncher）
+    // 监听生成详情页删除成功的通知（ActivityResultLauncher）
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleGenerateDetailDeleted:)
                                                  name:kGenerateDetailDeletedNotification
@@ -66,7 +66,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 }
 
 - (void)handleGenerateDetailDeleted:(NSNotification *)notification {
-    // 对应安卓的detailLauncher回调
+    // detailLauncher回调
     NSDictionary *userInfo = notification.userInfo;
     if (!userInfo) {
         return;
@@ -86,7 +86,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 }
 
 - (void)setupUI {
-    // 设置背景色（对应安卓的 #0A1C1B）
+    // 设置背景色（#0A1C1B）
     self.view.backgroundColor = HEX_COLOR(0x0A1C1B);
     
     // 表格视图
@@ -103,7 +103,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     if (@available(iOS 11.0, *)) {
         self.tableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     }
-    // 设置paddingTop和paddingBottom为8dp（对应安卓的paddingTop="8dp" paddingBottom="8dp"）
+    // 设置paddingTop和paddingBottom为8dp（paddingTop="8dp" paddingBottom="8dp"）
     self.tableView.contentInset = UIEdgeInsetsMake(8, 0, 8, 0);
     [self.tableView registerClass:[GenerateListCell class] forCellReuseIdentifier:kGenerateCellId];
     [self.view addSubview:self.tableView];
@@ -112,7 +112,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
         make.edges.equalTo(self.view);
     }];
     
-    // 空状态视图（对应安卓的layout_empty）
+    // 空状态视图（layout_empty）
     self.emptyView = [[UIView alloc] init];
     self.emptyView.hidden = YES;
     self.emptyView.backgroundColor = [UIColor clearColor];
@@ -123,7 +123,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
         make.height.offset(350);
     }];
     
-    // 空状态图标（对应安卓的icon_mine_default_image，80dp x 80dp）
+    // 空状态图标（icon_mine_default_image，80dp x 80dp）
     UIImageView *emptyIcon = [[UIImageView alloc] init];
     emptyIcon.image = [UIImage imageNamed:@"icon_mine_default_image"];
     emptyIcon.contentMode = UIViewContentModeScaleAspectFit;
@@ -268,7 +268,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
         return;
     }
     
-    // 防重复点击（600ms间隔，对应安卓的SystemClock.elapsedRealtime()）
+    // 防重复点击（600ms间隔，SystemClock.elapsedRealtime()）
     NSTimeInterval now = CACurrentMediaTime() * 1000; // 转换为毫秒
     if (now - self.lastClickTime < 600) {
         return;
@@ -299,13 +299,13 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 }
 
 - (void)navigateToDetailWithCreateTask:(CreateTaskModel *)createTask {
-    // 对应安卓的VideoDetailActivity.startForGenerate(context, createTask)
+    // VideoDetailActivity.startForGenerate(context, createTask)
     // 需要传递：
     // 1. createTask (CreateTaskModel)
     // 2. pageType (PAGE_TYPE_GENERATE = 1)
     // 3. materialId (createTask.materialId)
     
-    // 使用MaterialDetailViewController，传递pageType参数和createTask（对齐安卓）
+    // 使用MaterialDetailViewController，传递pageType参数和createTask
     if (createTask.materialId > 0) {
         MaterialDetailViewController *vc = [[MaterialDetailViewController alloc] initWithMaterialId:createTask.materialId 
                                                                                             pageType:MaterialDetailPageTypeGenerate
@@ -319,7 +319,7 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     }
 }
 
-/// 根据createId删除item（对应安卓的adapter.removeByCreateId）
+/// 根据createId删除item（adapter.removeByCreateId）
 - (NSInteger)removeByCreateId:(NSString *)createId {
     if (!createId || createId.length == 0) {
         return -1;

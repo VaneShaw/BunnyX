@@ -33,24 +33,24 @@
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) UIView *contentView;
 
-// 顶部图标（对齐安卓：icon_photo_right，202x173dp）
+// 顶部图标（icon_photo_right，202x173dp）
 @property (nonatomic, strong) UIImageView *topIconView;
 
-// 描述文字（对齐安卓：photo_upload_description）
+// 描述文字（photo_upload_description）
 @property (nonatomic, strong) UILabel *descriptionLabel;
 
-// 中间图片（对齐安卓：icon_photo_error）
+// 中间图片（icon_photo_error）
 @property (nonatomic, strong) UIImageView *centerImageView;
 
-// 占位View（用于撑开空间，对齐安卓：layout_weight=1）
+// 占位View（用于撑开空间，layout_weight=1）
 @property (nonatomic, strong) UIView *spacerView;
 
-// 免责声明卡片（对齐安卓：ShapeLinearLayout，背景色#0DFFFFFF）
+// 免责声明卡片（ShapeLinearLayout，背景色#0DFFFFFF）
 @property (nonatomic, strong) UIView *disclaimerCardView;
 @property (nonatomic, strong) UILabel *disclaimerTitleLabel;
 @property (nonatomic, strong) UILabel *disclaimerContentLabel;
 
-// 上传按钮（对齐安卓：渐变背景#0AEA6F到#1CB3C1，包含图标icon_photo_upload）
+// 上传按钮（渐变背景#0AEA6F到#1CB3C1，包含图标icon_photo_upload）
 @property (nonatomic, strong) GradientButton *uploadButton;
 @property (nonatomic, strong) UIImageView *uploadIconView;
 
@@ -87,7 +87,7 @@
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     
-    // 调整上传按钮图标和文字的位置（对齐安卓：图标在文字左侧，间距8dp）
+    // 调整上传按钮图标和文字的位置（图标在文字左侧，间距8dp）
     if (self.uploadButton && self.uploadIconView && self.uploadButton.titleLabel) {
         CGSize textSize = [self.uploadButton.titleLabel.text sizeWithAttributes:@{NSFontAttributeName: self.uploadButton.titleLabel.font}];
         CGFloat iconWidth = 20.0;
@@ -109,7 +109,7 @@
 #pragma mark - UI
 
 - (void)setupUI {
-    // ScrollView容器（对齐安卓：ScrollView包裹所有内容）
+    // ScrollView容器（ScrollView包裹所有内容）
     self.scrollView = [[UIScrollView alloc] init];
     self.scrollView.showsVerticalScrollIndicator = NO;
     [self.view addSubview:self.scrollView];
@@ -126,7 +126,7 @@
         make.width.equalTo(self.scrollView);
     }];
     
-    // 顶部图标（对齐安卓：icon_photo_right，202x173dp，marginTop 20dp，marginBottom 16dp）
+    // 顶部图标（icon_photo_right，202x173dp，marginTop 20dp，marginBottom 16dp）
     self.topIconView = [[UIImageView alloc] init];
     self.topIconView.image = [UIImage imageNamed:@"icon_photo_right"];
     self.topIconView.contentMode = UIViewContentModeScaleAspectFit;
@@ -139,7 +139,7 @@
         make.height.mas_equalTo(173);
     }];
     
-    // 描述文字（对齐安卓：photo_upload_description，居中，marginBottom 32dp，17sp，白色）
+    // 描述文字（photo_upload_description，居中，marginBottom 32dp，17sp，白色）
     self.descriptionLabel = [[UILabel alloc] init];
     self.descriptionLabel.text = LocalString(@"使用一张单人照片\n使用一张正面且清晰的照片");
     self.descriptionLabel.textColor = [UIColor whiteColor];
@@ -154,7 +154,7 @@
         make.centerX.equalTo(self.contentView);
     }];
     
-    // 中间图片（对齐安卓：icon_photo_error，居中，marginBottom 32dp）
+    // 中间图片（icon_photo_error，居中，marginBottom 32dp）
     self.centerImageView = [[UIImageView alloc] init];
     self.centerImageView.image = [UIImage imageNamed:@"icon_photo_error"];
     self.centerImageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -167,7 +167,7 @@
         make.height.offset(66);
     }];
     
-    // 占位View（对齐安卓：layout_weight=1，用于撑开空间，让底部内容靠下）
+    // 占位View（layout_weight=1，用于撑开空间，让底部内容靠下）
     self.spacerView = [[UIView alloc] init];
     [self.contentView addSubview:self.spacerView];
     
@@ -177,7 +177,7 @@
         make.height.greaterThanOrEqualTo(@1); // 最小高度1，用于撑开空间
     }];
     
-    // 免责声明卡片（对齐安卓：ShapeLinearLayout，padding 16dp，圆角12dp，背景色#0DFFFFFF，marginBottom 32dp）
+    // 免责声明卡片（ShapeLinearLayout，padding 16dp，圆角12dp，背景色#0DFFFFFF，marginBottom 32dp）
     self.disclaimerCardView = [[UIView alloc] init];
     // 背景色#0DFFFFFF = RGB(13, 255, 255) = 13/255的白色，即alpha约0.05
     self.disclaimerCardView.backgroundColor = RGBA(255, 255, 255, 13.0/255.0);
@@ -185,7 +185,7 @@
     self.disclaimerCardView.layer.masksToBounds = YES;
     [self.contentView addSubview:self.disclaimerCardView];
     
-    // 免责声明标题（对齐安卓：居中，marginBottom 8dp，17sp，白色）
+    // 免责声明标题（居中，marginBottom 8dp，17sp，白色）
     self.disclaimerTitleLabel = [[UILabel alloc] init];
     self.disclaimerTitleLabel.text = LocalString(@"免责声明");
     self.disclaimerTitleLabel.textColor = [UIColor whiteColor];
@@ -193,12 +193,12 @@
     self.disclaimerTitleLabel.textAlignment = NSTextAlignmentCenter;
     [self.disclaimerCardView addSubview:self.disclaimerTitleLabel];
     
-    // 免责声明内容（对齐安卓：14sp，白色，行间距4dp）
+    // 免责声明内容（14sp，白色，行间距4dp）
     self.disclaimerContentLabel = [[UILabel alloc] init];
     self.disclaimerContentLabel.textColor = [UIColor whiteColor];
     self.disclaimerContentLabel.font = FONT(FONT_SIZE_14);
     self.disclaimerContentLabel.numberOfLines = 0;
-    // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+    // 设置行间距（lineSpacingExtra 4dp）
     NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
     paragraphStyle.lineSpacing = 4.0;
     [self.disclaimerCardView addSubview:self.disclaimerContentLabel];
@@ -220,7 +220,7 @@
         make.bottom.equalTo(self.disclaimerCardView).offset(-16);
     }];
     
-    // 上传按钮（对齐安卓：高度48dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，marginBottom 15dp，包含图标icon_photo_upload）
+    // 上传按钮（高度48dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，marginBottom 15dp，包含图标icon_photo_upload）
     // 渐变起始颜色：#0AEA6F (RGB: 10, 234, 111)
     // 渐变结束颜色：#1CB3C1 (RGB: 28, 179, 193)
     self.uploadButton = [GradientButton buttonWithTitle:LocalString(@"上传")
@@ -233,7 +233,7 @@
     [self.uploadButton addTarget:self action:@selector(uploadButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.contentView addSubview:self.uploadButton];
     
-    // 上传按钮图标（对齐安卓：icon_photo_upload，20x20dp，在文字左侧，marginEnd 8dp）
+    // 上传按钮图标（icon_photo_upload，20x20dp，在文字左侧，marginEnd 8dp）
     self.uploadIconView = [[UIImageView alloc] init];
     self.uploadIconView.image = [UIImage imageNamed:@"icon_photo_upload"];
     self.uploadIconView.contentMode = UIViewContentModeScaleAspectFit;
@@ -246,7 +246,7 @@
         make.bottom.equalTo(self.contentView).offset(-24);
     }];
     
-    // 图标在文字左侧（对齐安卓布局：图标在文字左侧，间距8dp）
+    // 图标在文字左侧（布局：图标在文字左侧，间距8dp）
     // 先设置图标约束，让它在按钮中心左侧
     [self.uploadIconView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.uploadButton);
@@ -258,62 +258,62 @@
 
 #pragma mark - Data
 
-/// 加载订阅VIP提示文字（对齐安卓：loadSubscribeVipTips方法）
+/// 加载订阅VIP提示文字（loadSubscribeVipTips方法）
 - (void)loadDisclaimerFromConfig {
-    // 对齐安卓：先尝试从缓存获取配置
+    // 先尝试从缓存获取配置
     AppConfigModel *cachedConfig = [[AppConfigManager sharedManager] currentConfig];
     if (cachedConfig) {
-        // 缓存中有配置，直接使用（对齐安卓逻辑）
+        // 缓存中有配置，直接使用（）
         NSString *subscribeVipTips = [self getSubscribeVipTips:cachedConfig];
         if (subscribeVipTips && subscribeVipTips.length > 0) {
-            // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+            // 设置行间距（lineSpacingExtra 4dp）
             NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
             paragraphStyle.lineSpacing = 4.0;
             NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
             [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
             self.disclaimerContentLabel.attributedText = attributedText;
         } else {
-            // 缓存中没有订阅提示文字，使用默认文字（对齐安卓逻辑）
+            // 缓存中没有订阅提示文字，使用默认文字（）
             [self setDefaultDisclaimerContent];
         }
     } else {
-        // 缓存中没有配置，请求接口获取（对齐安卓逻辑）
+        // 缓存中没有配置，请求接口获取（）
         [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *config) {
-            // 获取subscribe_vip_tips字段（对齐安卓逻辑）
+            // 获取subscribe_vip_tips字段（）
             NSString *subscribeVipTips = [self getSubscribeVipTips:config];
             if (subscribeVipTips && subscribeVipTips.length > 0) {
-                // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+                // 设置行间距（lineSpacingExtra 4dp）
                 NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
                 paragraphStyle.lineSpacing = 4.0;
                 NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
                 [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
                 self.disclaimerContentLabel.attributedText = attributedText;
             } else {
-                // 接口返回中没有订阅提示文字，使用默认文字（对齐安卓逻辑）
+                // 接口返回中没有订阅提示文字，使用默认文字（）
                 [self setDefaultDisclaimerContent];
             }
         } failure:^(NSError *error) {
-            // 接口请求失败，使用默认文字（对齐安卓逻辑）
+            // 接口请求失败，使用默认文字（）
             [self setDefaultDisclaimerContent];
         }];
     }
 }
 
-/// 获取订阅VIP提示文字（对齐安卓：getSubscribeVipTips方法）
+/// 获取订阅VIP提示文字（getSubscribeVipTips方法）
 - (NSString *)getSubscribeVipTips:(AppConfigModel *)config {
-    // 对齐安卓：直接返回subscribe_vip_tips字段（安卓中返回tipsJson）
+    // 直接返回subscribe_vip_tips字段（安卓中返回tipsJson）
     if (config && config.subscribeVipTips && config.subscribeVipTips.length > 0) {
         return config.subscribeVipTips;
     }
     return nil;
 }
 
-/// 设置默认免责声明内容（对齐安卓：setDefaultDisclaimerContent方法）
+/// 设置默认免责声明内容（setDefaultDisclaimerContent方法）
 - (void)setDefaultDisclaimerContent {
-    // 对齐安卓：使用默认文案（disclaimer_content_default）
+    // 使用默认文案（disclaimer_content_default）
     NSString *defaultTips = LocalString(@"请上传您自己的照片。如果您使用他人的照片，请先获得他们的明确许可。上传失败可能违反他们的隐私，并可能导致法律责任。感谢您的合作！");
     
-    // 设置行间距（对齐安卓：lineSpacingExtra 4dp）
+    // 设置行间距（lineSpacingExtra 4dp）
     NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
     paragraphStyle.lineSpacing = 4.0;
     NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:defaultTips];
@@ -324,9 +324,9 @@
 #pragma mark - Actions
 
 - (void)uploadButtonTapped:(UIButton *)sender {
-    // 对齐安卓逻辑：如果有历史记录，显示选择弹窗；否则直接打开相册
+    // ：如果有历史记录，显示选择弹窗；否则直接打开相册
     if ([self.historyManager hasHistory]) {
-        // 有历史记录，显示历史记录选择弹窗（对齐安卓UploadHistoryDialog）
+        // 有历史记录，显示历史记录选择弹窗（UploadHistoryDialog）
         [UploadHistoryDialog showWithDelegate:self];
     } else {
         // 没有历史记录，直接打开相册
@@ -349,10 +349,10 @@
         return;
     }
     
-    // 对齐安卓：选择图片后，保存图片路径用于历史记录
+    // 选择图片后，保存图片路径用于历史记录
     UIImage *image = photos.firstObject;
     
-    // 保存图片到临时目录，获取路径（对齐安卓：mSelectedImageUri）
+    // 保存图片到临时目录，获取路径（mSelectedImageUri）
     NSString *tempDir = NSTemporaryDirectory();
     NSString *fileName = [NSString stringWithFormat:@"selected_image_%ld.jpg", (long)[[NSDate date] timeIntervalSince1970]];
     NSString *filePath = [tempDir stringByAppendingPathComponent:fileName];
@@ -365,20 +365,20 @@
         self.selectedImagePath = [NSString stringWithFormat:@"upload_%ld", (long)[[NSDate date] timeIntervalSince1970]];
     }
     
-    // 开始上传流程（对齐安卓：compressImage -> uploadToAws -> callGenerateCreate）
+    // 开始上传流程（compressImage -> uploadToAws -> callGenerateCreate）
     [self startUploadWithImage:image];
 }
 
-/// 开始上传流程（对齐安卓：compressImage方法）
+/// 开始上传流程（compressImage方法）
 - (void)startUploadWithImage:(UIImage *)image {
     if (!image) {
         return;
     }
     
-    // 显示加载提示（对齐安卓：showDialog）
+    // 显示加载提示（showDialog）
     [SVProgressHUD showWithStatus:LocalString(@"正在处理图片...")];
     
-    // 对齐安卓：使用ImageUploadManager处理完整流程（压缩 -> 上传 -> 返回路径）
+    // 使用ImageUploadManager处理完整流程（压缩 -> 上传 -> 返回路径）
     [[ImageUploadManager sharedManager] uploadImage:self.materialId
                                               image:image
                                             progress:^(CGFloat progress, NSString *status) {
@@ -388,10 +388,10 @@
         });
     } success:^(NSString *initImage, NSString *fullUrl) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            // 上传成功，保存历史记录（对齐安卓：uploadToS3的onSuccess回调）
+            // 上传成功，保存历史记录（uploadToS3的onSuccess回调）
             if (self.selectedImagePath) {
                 UploadHistoryManager *historyManager = [UploadHistoryManager sharedManager];
-                // 对齐安卓：使用selectedImagePath作为imageUri，initImage作为awsRelativePath
+                // 使用selectedImagePath作为imageUri，initImage作为awsRelativePath
                 // 使用fullUrl作为awsFullPath（完整URL，用于app重启后显示图片）
                 NSString *awsFullPath = fullUrl ?: initImage; // 优先使用完整URL，如果没有则使用相对路径
                 [historyManager addUploadHistory:self.selectedImagePath 
@@ -400,12 +400,12 @@
                 BUNNYX_LOG(@"保存历史记录 - 图片路径: %@, AWS相对路径: %@, AWS完整URL: %@", self.selectedImagePath, initImage, fullUrl);
             }
             
-            // 调用生成接口（对齐安卓：callGenerateCreate方法）
+            // 调用生成接口（callGenerateCreate方法）
             [self callGenerateCreate:initImage];
         });
     } failure:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            // 上传失败（对齐安卓：uploadToS3的onError回调）
+            // 上传失败（uploadToS3的onError回调）
             [SVProgressHUD dismiss];
             [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: LocalString(@"图片上传失败")];
             BUNNYX_ERROR(@"图片上传失败: %@", error.localizedDescription);
@@ -413,7 +413,7 @@
     }];
 }
 
-/// 调用生成接口（对齐安卓：callGenerateCreate方法）
+/// 调用生成接口（callGenerateCreate方法）
 - (void)callGenerateCreate:(NSString *)relativePath {
     NSDictionary *parameters = @{
         @"materialId": @(self.materialId),
@@ -434,7 +434,7 @@
                 if (createIds && createIds.length > 0) {
                     BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
                     
-                    // 对齐安卓：跳转到上传中页面，传递createIds、压缩图片路径、模板图片URL、materialId
+                    // 跳转到上传中页面，传递createIds、压缩图片路径、模板图片URL、materialId
                     // 注意：iOS中compressedImagePath用于显示，实际使用selectedImagePath
                     UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
                                                                                                          image:nil 
@@ -446,7 +446,7 @@
                     [SVProgressHUD showErrorWithStatus:LocalString(@"提交生成任务失败")];
                 }
             } else {
-                // 对齐安卓：显示promptType
+                // 显示promptType
                 NSString *promptType = dict[@"promptType"];
                 NSString *errorMessage = promptType ?: dict[@"message"] ?: LocalString(@"提交生成任务失败");
                 [SVProgressHUD showErrorWithStatus:errorMessage];
@@ -489,19 +489,19 @@
 #pragma mark - UploadHistoryDialogDelegate
 
 - (void)uploadHistoryDialog:(UploadHistoryDialog *)dialog didSelectImage:(NSString *)imagePath {
-    // 对齐安卓：选择了新图片，直接开始上传流程
+    // 选择了新图片，直接开始上传流程
     // 注意：iOS中通过TZImagePickerController选择，这里不需要处理
     // 图片选择会通过TZImagePickerControllerDelegate回调处理
 }
 
 - (void)uploadHistoryDialog:(UploadHistoryDialog *)dialog didGenerateFromHistory:(UploadHistoryItem *)historyItem {
-    // 对齐安卓：从历史记录生成，使用历史记录的AWS路径
+    // 从历史记录生成，使用历史记录的AWS路径
     if (!historyItem || !historyItem.awsRelativePath || historyItem.awsRelativePath.length == 0) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"历史记录无效")];
         return;
     }
     
-    // 调用生成接口（对齐安卓逻辑）
+    // 调用生成接口（）
     NSDictionary *parameters = @{
         @"materialId": @(self.materialId),
         @"initImage": historyItem.awsRelativePath
@@ -518,7 +518,7 @@
             if (createIds && createIds.length > 0) {
                 BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
                 
-                // 跳转到上传中页面（使用历史记录的图片路径，对齐安卓逻辑）
+                // 跳转到上传中页面（使用历史记录的图片路径，）
                 UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
                                                                                                      image:nil 
                                                                                             createIds:createIds 
@@ -540,7 +540,7 @@
 }
 
 - (void)uploadHistoryDialogDidRequestImageSelection:(UploadHistoryDialog *)dialog {
-    // 对齐安卓：请求图片选择，打开相册
+    // 请求图片选择，打开相册
     [self selectPhoto];
 }
 
