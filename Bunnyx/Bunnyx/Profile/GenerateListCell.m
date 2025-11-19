@@ -102,7 +102,6 @@
         make.width.mas_equalTo(175);
         make.height.mas_equalTo(220);
         make.top.equalTo(self.titleTimeContainerView.mas_bottom).offset(15);
-        make.bottom.equalTo(self.innerContainerView).offset(-12);
     }];
     
     // 封面图（对应ImageView）
@@ -138,7 +137,8 @@
     
     [self.statusRowView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(self.innerContainerView);
-        make.top.equalTo(self.imageCardView.mas_bottom);
+        make.top.equalTo(self.imageCardView.mas_bottom).offset(10);
+        make.height.offset(0);
         make.bottom.equalTo(self.innerContainerView);
     }];
     
@@ -457,7 +457,12 @@
     
     // 显示状态标签行（除了成功状态，其他状态都要显示）
     self.statusRowView.hidden = NO;
-    
+    [self.statusRowView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.equalTo(self.innerContainerView);
+        make.top.equalTo(self.imageCardView.mas_bottom).offset(10);
+        make.height.offset(20);
+        make.bottom.equalTo(self.innerContainerView);
+    }];
     // 非排队状态，隐藏进度点
     self.progressDotsContainer.hidden = YES;
 }
