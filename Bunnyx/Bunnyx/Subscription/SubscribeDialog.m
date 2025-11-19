@@ -14,8 +14,10 @@
 #import "LanguageManager.h"
 #import "UserInfoManager.h"
 #import "UserInfoModel.h"
+#import "PaymentOrderCacheManager.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <StoreKit/StoreKit.h>
+#import "GradientButton.h"
 
 @interface SubscribeDialog () <ApplePayManagerDelegate>
 
@@ -37,8 +39,9 @@
 @property (nonatomic, strong) UILabel *typeTitleLabel;
 @property (nonatomic, strong) UILabel *typeSubLabel;
 @property (nonatomic, strong) UILabel *bottomDescLabel;
-@property (nonatomic, strong) UIButton *subscribeButton;
+@property (nonatomic, strong) GradientButton *subscribeButton;
 @property (nonatomic, strong) UIButton *thinkAboutItButton;
+@property (nonatomic, strong) CAGradientLayer *priceCardGradientLayer;
 
 @property (nonatomic, assign) NSInteger remainingSeconds;
 @property (nonatomic, strong) NSTimer *countdownTimer;
@@ -137,7 +140,7 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     self.titleLabel.textAlignment = NSTextAlignmentCenter;
     [self.dialogView addSubview:self.titleLabel];
     [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.dialogView).offset(20);
+        make.top.equalTo(self.dialogView).offset(24);
         make.centerX.equalTo(self.dialogView);
     }];
     
@@ -150,27 +153,16 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     // 底部描述
     [self setupBottomDesc];
     
-    // 订阅按钮
-    self.subscribeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.subscribeButton setTitle:LocalString(@"订阅按钮") forState:UIControlStateNormal];
+    // 订阅按钮 - 使用GradientButton，默认渐变色
+    self.subscribeButton = [GradientButton buttonWithTitle:LocalString(@"订阅按钮")];
     [self.subscribeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     self.subscribeButton.titleLabel.font = BOLD_FONT(16);
-    self.subscribeButton.layer.cornerRadius = 12;
-    self.subscribeButton.layer.masksToBounds = YES;
-    // 渐变背景
-    CAGradientLayer *gradient = [CAGradientLayer layer];
-    gradient.colors = @[
-        (id)[UIColor colorWithRed:0.04 green:0.92 blue:0.44 alpha:1.0].CGColor,
-        (id)[UIColor colorWithRed:0.11 green:0.70 blue:0.76 alpha:1.0].CGColor
-    ];
-    gradient.startPoint = CGPointMake(0, 0);
-    gradient.endPoint = CGPointMake(1, 0);
-    gradient.cornerRadius = 12;
-    [self.subscribeButton.layer insertSublayer:gradient atIndex:0];
+    self.subscribeButton.cornerRadius = 12;
+    self.subscribeButton.buttonHeight = 48;
     [self.subscribeButton addTarget:self action:@selector(subscribeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self.dialogView addSubview:self.subscribeButton];
     [self.subscribeButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.bottomDescLabel.mas_bottom).offset(20);
+        make.bottom.equalTo(self.dialogView.mas_bottom).offset(-63);
         make.left.right.equalTo(self.dialogView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
         make.height.mas_equalTo(48);
     }];
@@ -191,13 +183,17 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     // 更新价格和类型
     [self updatePriceAndType];
     [self updateFirstBuyDisplay];
+    
+    // 强制布局一次，确保渐变层frame正确
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 - (void)setupCountdown {
     self.countdownContainer = [[UIView alloc] init];
     [self.dialogView addSubview:self.countdownContainer];
     [self.countdownContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.titleLabel.mas_bottom).offset(20);
+        make.top.equalTo(self.titleLabel.mas_bottom).offset(40);
         make.centerX.equalTo(self.dialogView);
         make.height.mas_equalTo(45);
     }];
@@ -308,65 +304,75 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
 
 - (void)setupPriceCard {
     self.priceCardView = [[UIView alloc] init];
-    // 渐变背景
-    CAGradientLayer *gradient = [CAGradientLayer layer];
-    gradient.colors = @[
-        (id)[UIColor colorWithRed:0.96 green:1.0 blue:0.80 alpha:1.0].CGColor, // #F4FFCB
-        (id)[UIColor colorWithRed:0.74 green:1.0 blue:0.89 alpha:1.0].CGColor  // #BDFFE2
-    ];
-    gradient.startPoint = CGPointMake(0, 0);
-    gradient.endPoint = CGPointMake(1, 0);
-    gradient.cornerRadius = 12;
-    [self.priceCardView.layer insertSublayer:gradient atIndex:0];
-    self.priceCardView.layer.cornerRadius = 12;
+    self.priceCardView.backgroundColor = [UIColor clearColor];
+    self.priceCardView.layer.cornerRadius = 10;
     self.priceCardView.layer.masksToBounds = YES;
     [self.dialogView addSubview:self.priceCardView];
     [self.priceCardView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.countdownContainer.mas_bottom).offset(24);
+        make.top.equalTo(self.countdownContainer.mas_bottom).offset(35);
         make.left.right.equalTo(self.dialogView).insets(UIEdgeInsetsMake(0, 24, 0, 24));
-        make.height.mas_equalTo(80);
     }];
     
-    // 价格主标签
+    // 渐变背景 - 从左往右渐变
+    // 起始颜色：#F4FFCB，终止颜色：#BDFFE2
+    self.priceCardGradientLayer = [CAGradientLayer layer];
+    self.priceCardGradientLayer.colors = @[
+        (__bridge id)HEX_COLOR(0xF4FFCB).CGColor, // 起始颜色：#F4FFCB
+        (__bridge id)HEX_COLOR(0xBDFFE2).CGColor  // 终止颜色：#BDFFE2
+    ];
+    self.priceCardGradientLayer.startPoint = CGPointMake(0, 0.5); // 左边中间（从左往右）
+    self.priceCardGradientLayer.endPoint = CGPointMake(1, 0.5); // 右边中间（从左往右）
+    self.priceCardGradientLayer.cornerRadius = 10;
+    // 设置初始frame（即使可能不准确，会在layoutSubviews中更新）
+    self.priceCardGradientLayer.frame = CGRectMake(0, 0, 300, 80);
+    [self.priceCardView.layer insertSublayer:self.priceCardGradientLayer atIndex:0];
+    
+    // 价格主标签容器（左侧）
     UIView *priceContainer = [[UIView alloc] init];
     [self.priceCardView addSubview:priceContainer];
+    
+    // 价格符号和主价格在同一行
+    UIView *priceMainContainer = [[UIView alloc] init];
+    [priceContainer addSubview:priceMainContainer];
     
     UILabel *priceSymbol = [[UILabel alloc] init];
     priceSymbol.text = @"$";
     priceSymbol.textColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
     priceSymbol.font = BOLD_FONT(20);
-    [priceContainer addSubview:priceSymbol];
+    [priceMainContainer addSubview:priceSymbol];
     
     self.priceMainLabel = [[UILabel alloc] init];
     self.priceMainLabel.textColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1.0];
     self.priceMainLabel.font = BOLD_FONT(26);
-    [priceContainer addSubview:self.priceMainLabel];
+    [priceMainContainer addSubview:self.priceMainLabel];
     
     self.priceSubLabel = [[UILabel alloc] init];
-    self.priceSubLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+    self.priceSubLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
     self.priceSubLabel.font = FONT(14);
     [priceContainer addSubview:self.priceSubLabel];
     
+    // 价格主容器布局（符号+价格）
     [priceSymbol mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.top.equalTo(priceContainer);
+        make.left.top.bottom.equalTo(priceMainContainer);
     }];
     
     [self.priceMainLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(priceSymbol.mas_right).offset(2);
-        make.top.equalTo(priceContainer);
+        make.top.bottom.equalTo(priceMainContainer);
+        make.right.equalTo(priceMainContainer);
+    }];
+    
+    [priceMainContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.equalTo(priceContainer);
     }];
     
     [self.priceSubLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(priceContainer);
-        make.top.equalTo(self.priceMainLabel.mas_bottom).offset(4);
+        make.top.equalTo(priceMainContainer.mas_bottom).offset(4);
+        make.bottom.equalTo(priceContainer);
     }];
     
-    [priceContainer mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.priceCardView).offset(16);
-        make.centerY.equalTo(self.priceCardView);
-    }];
-    
-    // 类型标签
+    // 类型标签容器（右侧）
     UIView *typeContainer = [[UIView alloc] init];
     [self.priceCardView addSubview:typeContainer];
     
@@ -376,7 +382,7 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     [typeContainer addSubview:self.typeTitleLabel];
     
     self.typeSubLabel = [[UILabel alloc] init];
-    self.typeSubLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+    self.typeSubLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
     self.typeSubLabel.font = FONT(14);
     [typeContainer addSubview:self.typeSubLabel];
     
@@ -387,17 +393,29 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     [self.typeSubLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.typeTitleLabel.mas_bottom).offset(4);
         make.right.equalTo(typeContainer);
+        make.bottom.equalTo(typeContainer);
     }];
     
+    // 类型容器布局（右侧，占一半空间）
     [typeContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.right.equalTo(self.priceCardView).offset(-16);
-        make.centerY.equalTo(self.priceCardView);
+        make.top.equalTo(self.priceCardView).offset(16);
+        make.bottom.equalTo(self.priceCardView).offset(-16);
+    }];
+    
+    // 价格容器布局（左侧，占一半空间）
+    [priceContainer mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.priceCardView).offset(16);
+        make.top.equalTo(self.priceCardView).offset(16);
+        make.bottom.equalTo(self.priceCardView).offset(-16);
+        make.right.equalTo(typeContainer.mas_left);
+        make.width.equalTo(typeContainer);
     }];
 }
 
 - (void)setupBottomDesc {
     self.bottomDescLabel = [[UILabel alloc] init];
-    self.bottomDescLabel.textColor = [UIColor colorWithWhite:0.6 alpha:1.0];
+    self.bottomDescLabel.textColor = [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0]; // #999999
     self.bottomDescLabel.font = FONT(11);
     self.bottomDescLabel.numberOfLines = 0;
     self.bottomDescLabel.textAlignment = NSTextAlignmentCenter;
@@ -451,7 +469,7 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     style.lineSpacing = 4.0;
     NSDictionary *attributes = @{
         NSFontAttributeName: self.bottomDescLabel.font ?: FONT(11),
-        NSForegroundColorAttributeName: self.bottomDescLabel.textColor ?: [UIColor colorWithWhite:0.6 alpha:1.0],
+        NSForegroundColorAttributeName: self.bottomDescLabel.textColor ?: [UIColor colorWithRed:0.6 green:0.6 blue:0.6 alpha:1.0],
         NSParagraphStyleAttributeName: style
     };
     self.bottomDescLabel.attributedText = [[NSAttributedString alloc] initWithString:displayText attributes:attributes];
@@ -486,6 +504,12 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
         self.alpha = 1;
     }];
     [self startCountdown];
+    
+    // 确保渐变层frame正确更新
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self setNeedsLayout];
+        [self layoutIfNeeded];
+    });
 }
 
 - (void)dismiss {
@@ -589,6 +613,12 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
 
 - (void)applePayManager:(ApplePayManager *)manager didPurchaseSuccessWithTransaction:(SKPaymentTransaction *)transaction productId:(NSString *)productId {
     self.currentTransaction = transaction;
+    
+    // 保存订单缓存（用于异常处理）
+    if (transaction.transactionIdentifier && self.currentServerOrderSn) {
+        [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transaction.transactionIdentifier orderSn:self.currentServerOrderSn];
+    }
+    
     [self verifyPayment:transaction];
 }
 
@@ -610,12 +640,10 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
     
     NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
     
+    // 构建验证参数（根据接口文档）
     NSDictionary *params = @{
-        @"token": transaction.transactionIdentifier ?: @"",
-        @"signture_data": @"",
-        @"order_sn": self.currentServerOrderSn ?: @"",
-        @"billingResponseCode": @(0),
-        @"other_data": receiptString
+        @"appleReceipt": receiptString, // 苹果支付凭据（base64编码的收据）
+        @"orderSn": self.currentServerOrderSn ?: @"" // 订单号（必选）
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY
@@ -625,6 +653,12 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
         if (code == 0) {
             // 验证通过，完成交易
             [self.applePayManager finishTransaction:transaction];
+            
+            // 清除缓存的订单信息
+            if (transaction.transactionIdentifier) {
+                [[PaymentOrderCacheManager sharedManager] clearPendingOrderForTransactionId:transaction.transactionIdentifier];
+            }
+            
             [SVProgressHUD showSuccessWithStatus:LocalString(@"订阅成功")];
             [self dismiss];
             // 刷新用户信息
@@ -641,15 +675,12 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    // 更新渐变层frame
-    for (CALayer *layer in self.subscribeButton.layer.sublayers) {
-        if ([layer isKindOfClass:[CAGradientLayer class]]) {
-            layer.frame = self.subscribeButton.bounds;
-        }
-    }
-    for (CALayer *layer in self.priceCardView.layer.sublayers) {
-        if ([layer isKindOfClass:[CAGradientLayer class]]) {
-            layer.frame = self.priceCardView.bounds;
+    // 更新价格卡片渐变层frame，确保完全对齐
+    if (self.priceCardGradientLayer && self.priceCardView) {
+        CGRect bounds = self.priceCardView.bounds;
+        if (!CGRectIsEmpty(bounds)) {
+            // 确保渐变层的frame完全等于bounds，origin也要是(0,0)
+            self.priceCardGradientLayer.frame = CGRectMake(0, 0, bounds.size.width, bounds.size.height);
         }
     }
 }
