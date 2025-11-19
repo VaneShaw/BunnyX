@@ -26,21 +26,47 @@
 }
 
 - (void)setupUI {
-    // 使用系统的LaunchImage作为背景
-    UIImage *launchImage = [UIImage imageNamed:@"LaunchImage"];
-    if (launchImage) {
-        // 如果找到LaunchImage，直接设置为背景
-        self.view.backgroundColor = [UIColor colorWithPatternImage:launchImage];
-        self.logoImageView = [[UIImageView alloc]init];
+    // 设置背景图片，与LaunchScreen.storyboard保持一致
+    if (!self.backgroundImageView) {
+        self.backgroundImageView = [[UIImageView alloc] init];
+        self.backgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
+        self.backgroundImageView.clipsToBounds = YES;
+        [self.view addSubview:self.backgroundImageView];
+        [self.backgroundImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.edges.equalTo(self.view);
+        }];
+    }
+    
+    // 优先使用传入的背景图片，否则使用默认的launch_background
+    UIImage *backgroundImage = self.backgroundImageView.image;
+    if (!backgroundImage) {
+        backgroundImage = [UIImage imageNamed:@"launch_background"];
+    }
+    if (backgroundImage) {
+        self.backgroundImageView.image = backgroundImage;
+    } else {
+        // 如果都没有，使用默认背景色
+        self.view.backgroundColor = [UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0];
+    }
+    
+    // 设置Logo，与LaunchScreen.storyboard保持一致
+    if (!self.logoImageView) {
+        self.logoImageView = [[UIImageView alloc] init];
+        self.logoImageView.contentMode = UIViewContentModeScaleAspectFit;
         [self.view addSubview:self.logoImageView];
         [self.logoImageView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.center.equalTo(self.view);
             make.width.height.offset(175);
         }];
-        self.logoImageView.image = [UIImage imageNamed:@"launch_logo"];
-    } else {
-        // 如果没有LaunchImage，使用默认背景色
-        self.view.backgroundColor = [UIColor colorWithRed:0.2 green:0.4 blue:0.8 alpha:1.0];
+    }
+    
+    // 优先使用传入的Logo图片，否则使用默认的launch_logo
+    UIImage *logoImage = self.logoImageView.image;
+    if (!logoImage) {
+        logoImage = [UIImage imageNamed:@"launch_logo"];
+    }
+    if (logoImage) {
+        self.logoImageView.image = logoImage;
     }
     
     [self setupConstraints];

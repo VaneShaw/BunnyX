@@ -49,7 +49,7 @@
 - (void)setupUI {
     [self.view addSubview:self.currentEnvLabel];
     [self.currentEnvLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.view.mas_safeAreaLayoutGuideTop).offset(24);
+        make.top.equalTo(self.customBackButton.mas_bottom).offset(24);
         make.left.equalTo(self.view).offset(20);
         make.right.equalTo(self.view).offset(-20);
     }];
