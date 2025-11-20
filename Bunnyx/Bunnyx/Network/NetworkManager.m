@@ -275,7 +275,7 @@
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];
     
     // 检查是否为登录或刷新token接口，设置Basic认证
-    if ([url containsString:@"/login/account"] || [url containsString:@"/refresh/token"]) {
+    if ([url containsString:@"/login"] || [url containsString:@"/refresh/token"]) {
         [self setBasicAuth];
     }
     // 打印请求头

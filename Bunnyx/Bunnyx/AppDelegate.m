@@ -9,6 +9,7 @@
 #import "MainTabBarController.h"
 #import "LaunchViewController.h"
 #import "Manager/Config/SVProgressHUDConfig.h"
+#import "PaymentExceptionHandler.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 #import <SDWebImage/SDWebImage.h>
@@ -29,6 +30,10 @@
     
     // 配置SVProgressHUD
     [SVProgressHUDConfig configureSVProgressHUD];
+    
+    // 初始化支付异常处理（处理未完成的交易）
+    // 注意：iOS 13+ 在 SceneDelegate 中也会初始化，但这里初始化不会重复（单例模式）
+    [[PaymentExceptionHandler sharedHandler] initialize];
     
     // 只在iOS 12及以下版本中设置启动页
     if (@available(iOS 13.0, *)) {

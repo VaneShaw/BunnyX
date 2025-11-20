@@ -535,6 +535,14 @@
  */
 - (void)performAppleLogin {
     if (@available(iOS 13.0, *)) {
+        // 检查presentationAnchor是否可用
+        ASPresentationAnchor anchor = [self presentationAnchorForAuthorizationController:nil];
+        if (!anchor) {
+            NSLog(@"[LoginViewController] 无法获取presentationAnchor，Apple登录失败");
+            [SVProgressHUD showErrorWithStatus:LocalString(@"无法显示Apple登录界面，请稍后重试")];
+            return;
+        }
+        
         ASAuthorizationAppleIDProvider *provider = [[ASAuthorizationAppleIDProvider alloc] init];
         ASAuthorizationAppleIDRequest *request = [provider createRequest];
         request.requestedScopes = @[ASAuthorizationScopeFullName, ASAuthorizationScopeEmail];
@@ -542,6 +550,8 @@
         ASAuthorizationController *controller = [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
         controller.delegate = self;
         controller.presentationContextProvider = self;
+        
+        NSLog(@"[LoginViewController] 开始执行Apple登录请求");
         [controller performRequests];
     } else {
         // iOS 13以下不支持Apple登录
@@ -557,9 +567,12 @@
         
         // 获取用户信息
         NSString *userID = credential.user;
-        // identityToken和authorizationCode是base64编码的字符串
-        NSString *identityToken = [credential.identityToken base64EncodedStringWithOptions:0];
-        NSString *authorizationCode = [credential.authorizationCode base64EncodedStringWithOptions:0];
+        
+        // identityToken和authorizationCode是NSData类型，需要转换为base64编码的字符串
+        NSString *identityToken = nil;
+        if (credential.identityToken) {
+            identityToken = [[NSString alloc] initWithData:credential.identityToken encoding:NSUTF8StringEncoding];
+        }
         
         NSString *email = credential.email;
         NSString *fullName = nil;
@@ -578,17 +591,50 @@
         }
         
         NSLog(@"[LoginViewController] Apple登录成功 - userID: %@, email: %@, name: %@", userID, email, fullName);
+        NSLog(@"[LoginViewController] identityToken存在: %@, authorizationCode存在: %@", 
+              identityToken ? @"是" : @"否");
+        
+        // 优先使用identityToken，如果没有则使用authorizationCode
+        NSString *appleToken = identityToken ;
+        if (!appleToken || appleToken.length == 0) {
+            NSLog(@"[LoginViewController] 警告：identityToken和authorizationCode都为空");
+            [SVProgressHUD showErrorWithStatus:LocalString(@"无法获取Apple登录信息")];
+            return;
+        }
         
         // 处理Apple登录结果（handleGoogleLoginResult）
-        [self handleAppleLoginResult:identityToken ?: authorizationCode email:email name:fullName];
+        [self handleAppleLoginResult:appleToken email:email name:fullName];
+    } else {
+        NSLog(@"[LoginViewController] 警告：授权凭证类型不正确");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录凭证类型错误")];
     }
 }
 
 - (void)authorizationController:(ASAuthorizationController *)controller didCompleteWithError:(NSError *)error API_AVAILABLE(ios(13.0)) {
     NSLog(@"[LoginViewController] Apple登录失败: %@", error);
+    NSLog(@"[LoginViewController] 错误域: %@, 错误代码: %ld, 错误描述: %@", error.domain, (long)error.code, error.localizedDescription);
     
     if (error.code == ASAuthorizationErrorCanceled) {
         NSLog(@"[LoginViewController] 用户取消Apple登录");
+        // 用户取消不需要显示错误提示
+    } else if (error.code == ASAuthorizationErrorUnknown) {
+        // 错误代码 1000 - 未知错误
+        NSLog(@"[LoginViewController] Apple登录未知错误，可能原因：");
+        NSLog(@"  1. 设备不支持Apple登录");
+        NSLog(@"  2. 未在Xcode中启用Sign in with Apple能力");
+        NSLog(@"  3. 未在Apple Developer中配置App ID");
+        NSLog(@"  4. 网络连接问题");
+        NSLog(@"  5. presentationAnchor返回nil");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败，请检查设备设置或稍后重试")];
+    } else if (error.code == ASAuthorizationErrorInvalidResponse) {
+        NSLog(@"[LoginViewController] Apple登录响应无效");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录响应无效，请重试")];
+    } else if (error.code == ASAuthorizationErrorNotHandled) {
+        NSLog(@"[LoginViewController] Apple登录请求未处理");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录请求未处理，请重试")];
+    } else if (error.code == ASAuthorizationErrorFailed) {
+        NSLog(@"[LoginViewController] Apple登录请求失败");
+        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录请求失败，请重试")];
     } else {
         [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
     }
@@ -597,7 +643,32 @@
 #pragma mark - ASAuthorizationControllerPresentationContextProviding
 
 - (ASPresentationAnchor)presentationAnchorForAuthorizationController:(ASAuthorizationController *)controller API_AVAILABLE(ios(13.0)) {
-    return self.view.window;
+    // 优先使用当前视图的window
+    UIWindow *window = self.view.window;
+    if (window) {
+        return window;
+    }
+    
+    // 如果当前视图的window为nil，尝试从SceneDelegate获取
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene *windowScene in [UIApplication sharedApplication].connectedScenes) {
+            if ([windowScene isKindOfClass:[UIWindowScene class]]) {
+                for (UIWindow *sceneWindow in windowScene.windows) {
+                    if (sceneWindow.isKeyWindow) {
+                        return sceneWindow;
+                    }
+                }
+            }
+        }
+    }
+    
+    // 最后尝试从AppDelegate获取
+    if ([UIApplication sharedApplication].delegate.window) {
+        return [UIApplication sharedApplication].delegate.window;
+    }
+    
+    // 如果都获取不到，返回应用的主窗口
+    return [UIApplication sharedApplication].windows.firstObject;
 }
 
 /**
@@ -614,7 +685,7 @@
     
     // 调用Apple登录接口
     NSDictionary *params = @{
-        @"apple_token": appleToken ?: @""
+        @"code": appleToken ?: @""
     };
     
     [[NetworkManager sharedManager] POST:BUNNYX_API_USER_LOGIN_APPLE

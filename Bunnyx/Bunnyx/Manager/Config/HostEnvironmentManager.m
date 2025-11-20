@@ -11,7 +11,7 @@ NSString * const BXHostEnvironmentDidChangeNotification = @"BXHostEnvironmentDid
 
 static NSString * const kBXHostEnvironmentKey = @"BXHostEnvironmentKey";
 static NSString * const kBXHostCustomURLKey = @"BXHostEnvironmentCustomURLKey";
-static NSString * const kBXHostProductionURL = @"https://appapi.bunnyx.ai";
+static NSString * const kBXHostProductionURL = @"https://testappapi.bunnyx.ai";
 static NSString * const kBXHostTestURL = @"https://testappapi.bunnyx.ai";
 
 @interface HostEnvironmentManager ()
