@@ -178,4 +178,17 @@
     return NO;
 }
 
+#pragma mark - Memory Warning
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    
+    // 当收到内存警告时，清理SDWebImage的内存缓存，防止闪退
+    // 这是处理大量WebP图片导致内存过载的关键措施
+    [[SDImageCache sharedImageCache] clearMemory];
+    
+    // 清理预加载器
+    [[SDWebImagePrefetcher sharedImagePrefetcher] cancelPrefetching];
+}
+
 @end

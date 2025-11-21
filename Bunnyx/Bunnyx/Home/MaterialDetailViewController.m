@@ -22,6 +22,7 @@
 #import "UploadMaterialViewController.h"
 #import "RechargeViewController.h"
 #import "MainTabBarController.h"
+#import "UploadingViewController.h"
 
 // 通知名称：刷新首页列表
 NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotification";
@@ -238,7 +239,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     self.saveToAlbumButton.hidden = YES;
 }
 
-- (void)backButtonTapped:(UIButton *)sender {
+-(void)performBackAction {
     // 如果有收藏操作，返回首页并刷新列表
     if (self.hasFavoriteAction) {
         // 发送通知刷新首页列表
@@ -249,6 +250,25 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             tabBarController.selectedIndex = 0;
         }
     }
+    
+    // 如果是从生成中页面跳转过来的，返回时跳过生成中页面
+    if (self.pageType == MaterialDetailPageTypeGenerateFromUploading) {
+//        NSArray *viewControllers = self.navigationController.viewControllers;
+//        if (viewControllers.count >= 2) {
+//            // 检查前一个视图控制器是否是UploadingViewController
+//            UIViewController *previousVC = viewControllers[viewControllers.count - 2];
+//            if ([previousVC isKindOfClass:[UploadingViewController class]]) {
+//                // 跳过生成中页面，直接返回到更早的页面
+//                NSMutableArray *newViewControllers = [NSMutableArray arrayWithArray:viewControllers];
+//                [newViewControllers removeObject:previousVC]; // 移除生成中页面
+//                [newViewControllers removeLastObject]; // 移除当前页面（生成结果页）
+//                [self.navigationController setViewControllers:newViewControllers animated:YES];
+//                return;
+//            }
+//        }
+        [self.navigationController popToRootViewControllerAnimated:YES];
+    }
+    
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -309,34 +329,74 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     // 从其他列表进入（PAGE_TYPE_MATERIAL）时默认执行图片逻辑
     BOOL shouldCheckVideoMode = (self.pageType == MaterialDetailPageTypeGenerate || self.pageType == MaterialDetailPageTypeGenerateFromUploading);
     
-    if (shouldCheckVideoMode && self.detailModel.materialMode == 2 && self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
-        // 视频类型，materialUrl就是视频URL（materialMode == 2）
-        // 先显示封面图，等视频加载完成后再显示视频
+    // 生成详情模式：优先使用createTask的videoUrl或imageUrl（生成结果），而不是detailModel.materialUrl（原素材）
+    // 素材详情模式：使用detailModel.materialUrl
+    NSString *displayVideoUrl = nil;
+    NSString *displayImageUrl = nil;
+    BOOL isVideoType = NO;
+    
+    if (shouldCheckVideoMode && self.createTask) {
+        // 生成详情模式：优先使用createTask的URL
+        // 判断是否是视频类型：如果有videoUrl就是视频类型
+        if (self.createTask.videoUrl && self.createTask.videoUrl.length > 0) {
+            displayVideoUrl = self.createTask.videoUrl;
+            isVideoType = YES;
+        }
+        // 无论是否有videoUrl，都使用imageUrl作为封面
+        if (self.createTask.imageUrl && self.createTask.imageUrl.length > 0) {
+            displayImageUrl = self.createTask.imageUrl;
+        }
+    }
+    
+    // 如果createTask没有URL，或者不是生成详情模式，使用detailModel的URL
+    if (!displayVideoUrl && !displayImageUrl) {
+        if (shouldCheckVideoMode && self.detailModel.materialMode == 2 && self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
+            displayVideoUrl = self.detailModel.materialUrl;
+            isVideoType = YES;
+        } else if (self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
+            displayImageUrl = self.detailModel.materialUrl;
+        }
+    }
+    
+    // 显示逻辑：
+    // 1. 如果是视频类型：先显示封面imageUrl，如果videoUrl有值，接着加载播放videoUrl内容(.mp4)
+    // 2. 非视频类型：直接显示封面imageUrl
+    if (isVideoType && displayVideoUrl && displayVideoUrl.length > 0) {
+        // 视频类型，先显示封面图（imageUrl），等视频加载完成后再显示视频
         self.materialImageView.hidden = NO;
         self.videoContainer.hidden = YES;
-        [self.materialImageView setImage:[UIImage imageNamed:@"image_error_ic"]];
+        
+        // 先显示封面图（imageUrl）
+        if (displayImageUrl && displayImageUrl.length > 0) {
+            NSURL *coverUrl = [NSURL URLWithString:displayImageUrl];
+            // 优化选项：自动缩放大图，减少内存占用，防止WebP图片导致内存过载
+            [self.materialImageView sd_setImageWithURL:coverUrl 
+                                        placeholderImage:[UIImage imageNamed:@"image_error_ic"]
+                                                 options:SDWebImageRetryFailed | SDWebImageScaleDownLargeImages
+                                                 context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
+        } else {
+            // 如果没有封面图，显示占位图
+            [self.materialImageView setImage:[UIImage imageNamed:@"image_error_ic"]];
+        }
         
         // 如果视频URL和当前加载的相同，不重复设置
-        NSString *videoUrl = self.detailModel.materialUrl;
-        if (!self.currentVideoUrl || ![self.currentVideoUrl isEqualToString:videoUrl]) {
-            self.currentVideoUrl = videoUrl;
+        if (!self.currentVideoUrl || ![self.currentVideoUrl isEqualToString:displayVideoUrl]) {
+            self.currentVideoUrl = displayVideoUrl;
             self.hasSwitchedToVideo = NO;
-            // 准备视频播放
+            // 准备视频播放（加载完成后会自动切换到视频显示）
             [self prepareVideoDisplay];
         }
-    } else {
-        // 非视频类型，按图片处理（包括从其他列表进入的情况）
-        // 确保图片视图可见，视频容器隐藏
+    } else if (displayImageUrl && displayImageUrl.length > 0) {
+        // 非视频类型，直接显示封面imageUrl
         self.materialImageView.hidden = NO;
         self.videoContainer.hidden = YES;
         
-        if (self.detailModel.materialUrl && self.detailModel.materialUrl.length > 0) {
-            NSURL *url = [NSURL URLWithString:self.detailModel.materialUrl];
-            [self.materialImageView sd_setImageWithURL:url 
-                                        placeholderImage:[UIImage imageNamed:@"image_error_ic"]
-                                                 options:SDWebImageRetryFailed
-                                                 context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
-        }
+        NSURL *url = [NSURL URLWithString:displayImageUrl];
+        // 优化选项：自动缩放大图，减少内存占用，防止WebP图片导致内存过载
+        [self.materialImageView sd_setImageWithURL:url 
+                                    placeholderImage:[UIImage imageNamed:@"image_error_ic"]
+                                             options:SDWebImageRetryFailed | SDWebImageScaleDownLargeImages
+                                             context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}];
     }
     
     // 更新生成按钮（Generate(XXCoins)，17sp，bold）

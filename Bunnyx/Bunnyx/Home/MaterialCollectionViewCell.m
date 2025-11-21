@@ -122,17 +122,14 @@
 
 - (void)prepareForReuse {
     [super prepareForReuse];
-    // 对于动态图，需要确保ViewHolder复用时不会停止动画
-    // 不清除图片，让SDWebImage自己管理缓存和动画
-    // 只清除其他UI状态
-    self.likeCountLabel.text = @"";
-    self.vipIconView.hidden = YES;
-    // 重置点赞按钮显示状态为默认值
-    self.showLikeButton = YES;
-    // 取消可能存在的视图动画（onViewDetachedFromWindow中的处理）
-    [self.imageView.layer removeAllAnimations];
-    // 保持背景色#1D2B2C
-    self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+    
+    // 取消当前图片加载任务，防止cell复用时图片错乱和任务堆积
+    // 这对于大量WebP图片的列表非常重要，可以避免CPU和内存过载
+    [self.imageView sd_cancelCurrentImageLoad];
+    
+    // 清空当前显示的图片，避免显示错误的图片
+    self.imageView.image = nil;
+    self.currentModel = nil;
 }
 
 - (void)configureWithModel:(MaterialItemModel *)model {
@@ -148,23 +145,46 @@
     }
     
  
-    SDWebImageOptions options = SDWebImageRetryFailed | SDWebImageContinueInBackground | SDWebImageQueryMemoryData;
-    // 使用SDWebImage加载图片，它会自动处理：
-    // 1. 先检查内存缓存，如果有立即显示（通过上面的cachedImage）
-    // 2. 如果没有，SDWebImage会异步从磁盘缓存读取（不会阻塞主线程）
-    // 3. 如果磁盘也没有，从网络下载
+//    // 先检查内存缓存，如果有立即显示，避免图片闪烁
+//    UIImage *cachedImage = [[SDImageCache sharedImageCache] imageFromMemoryCacheForKey:url.absoluteString];
+//    if (cachedImage) {
+//        self.imageView.image = cachedImage;
+//        self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+//    }
+//    
+//    // 配置SDWebImage选项：查询内存缓存，SDWebImage默认会异步查询磁盘缓存
+//    SDWebImageOptions options = SDWebImageRetryFailed | SDWebImageContinueInBackground | SDWebImageQueryMemoryData;
+//    // 使用SDWebImage加载图片，它会自动处理：
+//    // 1. 先检查内存缓存，如果有立即显示（通过上面的cachedImage）
+//    // 2. 如果没有，SDWebImage会异步从磁盘缓存读取（不会阻塞主线程）
+//    // 3. 如果磁盘也没有，从网络下载
+//    [self.imageView sd_setImageWithURL:url 
+//                       placeholderImage:[VectorImageHelper defaultLoadingImage]
+//                                options:options 
+//                                context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}
+//                              progress:nil
+//                             completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+//        // 确保当前cell仍然显示的是这个model的图片（防止cell被重用时图片错乱）
+//        if (self.currentModel && imageURL && [self.currentModel.materialUrl isEqualToString:imageURL.absoluteString]) {
+//            if (error) {
+//                self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
+//            } else if (image) {
+//                // 只有在成功加载图片时才更新，避免覆盖已显示的缓存图片
+//                self.imageView.image = image;
+//            }
+//            // 保持背景色#1D2B2C，让背景色和图片同时可见
+//            self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
+//        }
+//    }];
+    
+    // 优化图片加载选项，防止大量WebP图片导致CPU和内存过载
+    // SDWebImageScaleDownLargeImages: 自动缩放大图，减少内存占用
+    // SDWebImageRetryFailed: 失败重试
+    // SDWebImageLowPriority: 低优先级，避免阻塞其他任务
+    SDWebImageOptions options = SDWebImageRetryFailed | SDWebImageScaleDownLargeImages | SDWebImageLowPriority;
     [self.imageView sd_setImageWithURL:url 
                        placeholderImage:[VectorImageHelper defaultLoadingImage]
-                                options:options 
-                                context:@{SDWebImageContextStoreCacheType: @(SDImageCacheTypeAll)}
-                              progress:nil
-                             completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
-        if (error) {
-            self.imageView.image = [UIImage imageNamed:@"image_error_ic"];
-        }
-        // 保持背景色#1D2B2C，让背景色和图片同时可见
-        self.imageView.backgroundColor = HEX_COLOR(0x1D2B2C);
-    }];
+                                options:options];
     
     // 根据showLikeButton属性控制点赞按钮的显示/隐藏
     self.likeContainerView.hidden = !self.showLikeButton;

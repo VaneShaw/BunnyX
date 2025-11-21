@@ -28,6 +28,20 @@
     SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
     [[SDImageCodersManager sharedManager] addCoder:webPCoder];
     
+    // 配置SDWebImage缓存策略，防止内存和CPU过载导致闪退
+    SDImageCache *imageCache = [SDImageCache sharedImageCache];
+    // 设置内存缓存限制：50MB（根据设备内存动态调整，避免内存溢出）
+    // 对于大量WebP图片，需要限制内存缓存，防止内存爆满
+    imageCache.config.maxMemoryCost = 50 * 1024 * 1024; // 50MB
+    // 设置内存缓存图片数量限制：100张（防止图片数量过多）
+    imageCache.config.maxMemoryCount = 100;
+    // 设置磁盘缓存限制：200MB
+    imageCache.config.maxDiskAge = 7 * 24 * 60 * 60; // 7天
+    imageCache.config.maxDiskSize = 200 * 1024 * 1024; // 200MB
+    // 设置下载器最大并发数，避免同时解码过多WebP导致CPU过载
+    SDWebImageDownloader *downloader = [SDWebImageDownloader sharedDownloader];
+    downloader.config.maxConcurrentDownloads = 5; // 限制并发下载数为3，减少CPU压力
+    
     // 配置SVProgressHUD
     [SVProgressHUDConfig configureSVProgressHUD];
     

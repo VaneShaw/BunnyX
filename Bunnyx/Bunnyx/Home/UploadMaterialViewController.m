@@ -518,11 +518,26 @@
             if (createIds && createIds.length > 0) {
                 BUNNYX_LOG(@"提交生成任务成功，createIds: %@", createIds);
                 
-                // 跳转到上传中页面（使用历史记录的图片路径，）
+                // 跳转到上传中页面（使用历史记录的图片路径）
+                // 优先使用awsFullPath（完整URL），如果没有或不是完整URL，再使用imageUri
+                NSString *imagePathForDisplay = nil;
+                if (historyItem.awsFullPath && historyItem.awsFullPath.length > 0) {
+                    // 如果awsFullPath是完整URL，优先使用
+                    if ([historyItem.awsFullPath hasPrefix:@"http://"] || [historyItem.awsFullPath hasPrefix:@"https://"]) {
+                        imagePathForDisplay = historyItem.awsFullPath;
+                    } else {
+                        // 如果不是完整URL，尝试使用imageUri（可能是本地路径）
+                        imagePathForDisplay = historyItem.imageUri;
+                    }
+                } else {
+                    // 如果没有awsFullPath，使用imageUri
+                    imagePathForDisplay = historyItem.imageUri;
+                }
+                
                 UploadingViewController *uploadingVC = [[UploadingViewController alloc] initWithMaterialId:self.materialId 
                                                                                                      image:nil 
                                                                                             createIds:createIds 
-                                                                                      uploadedImagePath:historyItem.imageUri 
+                                                                                      uploadedImagePath:imagePathForDisplay 
                                                                                        templateImageUrl:self.templateImageUrl];
                 [self.navigationController pushViewController:uploadingVC animated:YES];
             } else {

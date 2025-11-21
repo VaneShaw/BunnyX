@@ -45,6 +45,10 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 @property (nonatomic, assign) BOOL isPolling;
 @property (nonatomic, assign) NSInteger pollingFailCount;
 
+// 进度点动画相关
+@property (nonatomic, strong) NSTimer *progressStepsAnimationTimer;
+@property (nonatomic, assign) NSInteger currentAnimatedStepIndex;
+
 // 状态
 @property (nonatomic, assign) BOOL isCancelled;
 
@@ -132,6 +136,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 
 - (void)dealloc {
     [self stopPolling];
+    [self stopProgressStepsAnimation];
 }
 
 #pragma mark - UI Setup
@@ -461,6 +466,9 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         [self.progressStepsContainer addSubview:stepView];
         [self.progressStepViews addObject:stepView];
     }
+    
+    // 初始化动画索引
+    self.currentAnimatedStepIndex = 0;
 }
 
 /// 计算上传图片的动态尺寸（ScreenUtils.getUploadedImageSize）
@@ -521,19 +529,67 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 }
 
 - (void)updateProgressSteps:(NSInteger)completedSteps {
-    // 更新进度步骤指示器（0-5）
-    for (NSInteger i = 0; i < self.progressStepViews.count; i++) {
-        UIView *stepView = self.progressStepViews[i];
-        if (i < completedSteps) {
-            // 已完成，填充蓝色
-            stepView.backgroundColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0];
-            stepView.layer.borderColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0].CGColor;
-        } else {
-            // 未完成，灰色边框
-            stepView.backgroundColor = [UIColor colorWithWhite:0.3 alpha:1.0];
-            stepView.layer.borderColor = [UIColor colorWithWhite:0.5 alpha:1.0].CGColor;
-        }
+    // 不再根据进度更新，改为循环闪动动画
+    // 此方法保留以兼容旧代码，但不再使用
+}
+
+/// 启动进度点循环闪动动画
+- (void)startProgressStepsAnimation {
+    [self stopProgressStepsAnimation];
+    
+    // 重置所有点为默认状态
+    for (UIView *stepView in self.progressStepViews) {
+        stepView.backgroundColor = [UIColor colorWithWhite:0.3 alpha:1.0];
+        stepView.layer.borderColor = [UIColor colorWithWhite:0.5 alpha:1.0].CGColor;
+        stepView.alpha = 0.5; // 默认半透明
     }
+    
+    self.currentAnimatedStepIndex = 0;
+    
+    // 创建定时器，每0.3秒切换一次
+    self.progressStepsAnimationTimer = [NSTimer scheduledTimerWithTimeInterval:0.3
+                                                                         target:self
+                                                                       selector:@selector(animateProgressSteps)
+                                                                       userInfo:nil
+                                                                        repeats:YES];
+    // 立即执行一次
+    [self animateProgressSteps];
+}
+
+/// 停止进度点循环闪动动画
+- (void)stopProgressStepsAnimation {
+    if (self.progressStepsAnimationTimer) {
+        [self.progressStepsAnimationTimer invalidate];
+        self.progressStepsAnimationTimer = nil;
+    }
+    
+    // 重置所有点为默认状态
+    for (UIView *stepView in self.progressStepViews) {
+        stepView.backgroundColor = [UIColor colorWithWhite:0.3 alpha:1.0];
+        stepView.layer.borderColor = [UIColor colorWithWhite:0.5 alpha:1.0].CGColor;
+        stepView.alpha = 0.5;
+    }
+}
+
+/// 执行进度点闪动动画
+- (void)animateProgressSteps {
+    // 重置所有点
+    for (UIView *stepView in self.progressStepViews) {
+        stepView.backgroundColor = [UIColor colorWithWhite:0.3 alpha:1.0];
+        stepView.layer.borderColor = [UIColor colorWithWhite:0.5 alpha:1.0].CGColor;
+        stepView.alpha = 0.5;
+    }
+    
+    // 高亮当前点
+    if (self.currentAnimatedStepIndex < self.progressStepViews.count) {
+        UIView *currentStepView = self.progressStepViews[self.currentAnimatedStepIndex];
+        currentStepView.backgroundColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0];
+        currentStepView.layer.borderColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0].CGColor;
+        currentStepView.alpha = 1.0;
+    }
+    
+    // 移动到下一个点
+    self.currentAnimatedStepIndex = (self.currentAnimatedStepIndex + 1) % self.progressStepViews.count;
 }
 
 #pragma mark - Upload Flow
@@ -556,6 +612,9 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     self.pollingFailCount = 0;
     BUNNYX_LOG(@"开始轮询，createIds: %@", self.createIds);
     
+    // 启动进度点循环闪动动画
+    [self startProgressStepsAnimation];
+    
     // 立即执行一次
     [self requestCreateStatus];
     
@@ -573,6 +632,9 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         [self.pollingTimer invalidate];
         self.pollingTimer = nil;
     }
+    
+    // 停止进度点动画
+    [self stopProgressStepsAnimation];
 }
 
 - (void)requestCreateStatus {
@@ -664,9 +726,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     // 更新进度条
     self.progressView.progress = progress;
     
-    // 更新进度步骤指示器（根据进度计算）
-    NSInteger completedSteps = (NSInteger)(progress * 5);
-    [self updateProgressSteps:completedSteps];
+    // 进度点不再根据进度更新，而是循环闪动（动画在startPolling时已启动）
     
     // 根据状态更新UI
     if (status == 1) {
@@ -684,7 +744,13 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
         // 完成
         self.queueInfoLabel.hidden = YES;
         self.progressView.progress = 1.0;
-        [self updateProgressSteps:5];
+        // 停止动画，所有点显示为完成状态
+        [self stopProgressStepsAnimation];
+        for (UIView *stepView in self.progressStepViews) {
+            stepView.backgroundColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0];
+            stepView.layer.borderColor = [UIColor colorWithRed:0.0 green:0.5 blue:1.0 alpha:1.0].CGColor;
+            stepView.alpha = 1.0;
+        }
         [self stopPolling];
         
         // 处理完成后的逻辑
@@ -702,25 +768,52 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     // 延迟2秒后跳转到生成详情页，并携带必要ID参数
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (!self.isCancelled) {
-            // 从statusData中提取createId、resultImageUrl、materialId（安全提取，处理NSNull）
+            // 从statusData中提取createId、resultVideoUrl、resultImageUrl、videoUrl、imageUrl（安全提取，处理NSNull）
             NSString *createId = nil;
+            NSString *resultVideoUrl = nil;
             NSString *resultImageUrl = nil;
+            NSString *videoUrl = nil;
+            NSString *imageUrl = nil;
             
             id createIdValue = statusData[@"createId"];
             if (createIdValue && ![createIdValue isKindOfClass:[NSNull class]] && [createIdValue isKindOfClass:[NSString class]]) {
                 createId = (NSString *)createIdValue;
             }
             
+            // 优先检查resultVideoUrl，如果没有则检查videoUrl
+            id resultVideoUrlValue = statusData[@"resultVideoUrl"];
+            if (resultVideoUrlValue && ![resultVideoUrlValue isKindOfClass:[NSNull class]] && [resultVideoUrlValue isKindOfClass:[NSString class]]) {
+                resultVideoUrl = (NSString *)resultVideoUrlValue;
+            }
+            
+            // 如果没有resultVideoUrl，检查videoUrl字段
+            if (!resultVideoUrl || resultVideoUrl.length == 0) {
+                id videoUrlValue = statusData[@"videoUrl"];
+                if (videoUrlValue && ![videoUrlValue isKindOfClass:[NSNull class]] && [videoUrlValue isKindOfClass:[NSString class]]) {
+                    videoUrl = (NSString *)videoUrlValue;
+                }
+            }
+            
+            // 检查resultImageUrl
             id resultImageUrlValue = statusData[@"resultImageUrl"];
             if (resultImageUrlValue && ![resultImageUrlValue isKindOfClass:[NSNull class]] && [resultImageUrlValue isKindOfClass:[NSString class]]) {
                 resultImageUrl = (NSString *)resultImageUrlValue;
             }
             
-            // 注意：安卓中优先设置videoUrl，如果没有则设置imageUrl
-            // 但GetCreateByIdsApi只返回resultImageUrl，所以这里只设置imageUrl
+            // 如果没有resultImageUrl，检查imageUrl字段
+            if (!resultImageUrl || resultImageUrl.length == 0) {
+                id imageUrlValue = statusData[@"imageUrl"];
+                if (imageUrlValue && ![imageUrlValue isKindOfClass:[NSNull class]] && [imageUrlValue isKindOfClass:[NSString class]]) {
+                    imageUrl = (NSString *)imageUrlValue;
+                }
+            }
             
-            BUNNYX_LOG(@"生成完成，准备跳转到详情页 - createId: %@, imageUrl: %@, materialId: %ld", 
-                      createId, resultImageUrl, (long)self.materialId);
+            // 优先使用resultVideoUrl或videoUrl，其次使用resultImageUrl或imageUrl
+            NSString *finalVideoUrl = resultVideoUrl ?: videoUrl;
+            NSString *finalImageUrl = resultImageUrl ?: imageUrl;
+            
+            BUNNYX_LOG(@"生成完成，准备跳转到详情页 - createId: %@, videoUrl: %@, imageUrl: %@, materialId: %ld", 
+                      createId, finalVideoUrl, finalImageUrl, (long)self.materialId);
             
             // 跳转到生成详情页（VideoDetailActivity.startForGenerate）
             if (createId && createId.length > 0) {
@@ -728,9 +821,11 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
                 CreateTaskModel *createTask = [[CreateTaskModel alloc] init];
                 createTask.createId = createId;
                 // 优先设置videoUrl，如果没有则设置imageUrl
-                // 但GetCreateByIdsApi只返回resultImageUrl，所以这里只设置imageUrl
-                if (resultImageUrl && resultImageUrl.length > 0) {
-                    createTask.imageUrl = resultImageUrl;
+                if (finalVideoUrl && finalVideoUrl.length > 0) {
+                    createTask.videoUrl = finalVideoUrl;
+                }
+                if (finalImageUrl && finalImageUrl.length > 0) {
+                    createTask.imageUrl = finalImageUrl;
                 }
                 createTask.materialId = self.materialId;
                 
@@ -782,9 +877,7 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     self.queueInfoLabel.hidden = NO;
     self.titleLabel.text = status;
     
-    // 更新进度步骤
-    NSInteger completedSteps = (NSInteger)(progress * 5);
-    [self updateProgressSteps:completedSteps];
+    // 进度点不再根据进度更新，而是循环闪动
 }
 
 - (void)showError:(NSString *)errorMessage {
@@ -802,9 +895,11 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
 #pragma mark - Actions
 
 - (void)vipButtonTapped:(UIButton *)sender {
-    // 跳转到VIP订阅页面
-    // TODO: CoinsActivity.start(UploadingActivity.this);
-    BUNNYX_LOG(@"跳转到VIP订阅页面");
+    // 跳转到VIP订阅页面（第三个tab）
+    UITabBarController *tabBarController = self.tabBarController;
+    if (tabBarController && tabBarController.viewControllers.count > 2) {
+        tabBarController.selectedIndex = 2;
+    }
 }
 
 - (void)backgroundButtonTapped:(UIButton *)sender {
