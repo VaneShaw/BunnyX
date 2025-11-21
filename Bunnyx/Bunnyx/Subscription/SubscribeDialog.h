@@ -10,8 +10,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SubscribeDialog;
-
 typedef void(^OnSubscribeListener)(void);
 
 @interface SubscribeDialog : UIView

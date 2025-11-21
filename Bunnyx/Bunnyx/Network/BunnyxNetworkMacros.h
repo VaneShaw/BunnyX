@@ -25,30 +25,19 @@
 #define BUNNYX_API_USER_LOGIN_ACCOUNT [NSString stringWithFormat:@"%@/user/login/account", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGIN_QUICK [NSString stringWithFormat:@"%@/user/login/quick", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGIN_APPLE [NSString stringWithFormat:@"%@/user/login/apple", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_USER_REGISTER [NSString stringWithFormat:@"%@/user/register", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_LOGOUT [NSString stringWithFormat:@"%@/user/logout", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_REFRESH_TOKEN [NSString stringWithFormat:@"%@/user/refresh/token", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_INFO [NSString stringWithFormat:@"%@/user/info", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_USER_UPDATE [NSString stringWithFormat:@"%@/user/update", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_USER_AVATAR [NSString stringWithFormat:@"%@/user/avatar", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_USER_PASSWORD [NSString stringWithFormat:@"%@/user/password", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_USER_DELETE [NSString stringWithFormat:@"%@/user/del/user", BUNNYX_API_BASE_URL] // 删除账号接口
 
 // MARK: - 服务器相关接口
 #define BUNNYX_API_SERVER_GET_APP_CONFIG [NSString stringWithFormat:@"%@/server/getAppConfig", BUNNYX_API_BASE_URL]
-
-// MARK: - 首页相关接口
-#define BUNNYX_API_HOME_BANNER [NSString stringWithFormat:@"%@/home/banner", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_HOME_RECOMMEND [NSString stringWithFormat:@"%@/home/recommend", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_HOME_CATEGORY [NSString stringWithFormat:@"%@/home/category", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_HOME_HOT [NSString stringWithFormat:@"%@/home/hot", BUNNYX_API_BASE_URL]
 
 // MARK: - 素材广场相关接口
 #define BUNNYX_API_MATERIAL_TYPE_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialTypeList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_DETAIL [NSString stringWithFormat:@"%@/aitool/getMaterialById", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_MATERIAL_FAVORITE_ADD [NSString stringWithFormat:@"%@/aitool/favoriteMaterial", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_MATERIAL_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/aitool/unfavoriteMaterial", BUNNYX_API_BASE_URL]
 // 举报素材接口
 #define BUNNYX_API_MATERIAL_REPORT [NSString stringWithFormat:@"%@/aitool/reportMaterial", BUNNYX_API_BASE_URL]
 // 获取 AWS 上传配置（与安卓版一致）
@@ -68,83 +57,12 @@
 // 提交工单接口
 #define BUNNYX_API_WORK_ORDER_SUBMIT [NSString stringWithFormat:@"%@/workOrder/submit", BUNNYX_API_BASE_URL]
 
-// MARK: - 内容相关接口
-#define BUNNYX_API_CONTENT_LIST [NSString stringWithFormat:@"%@/content/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_DETAIL [NSString stringWithFormat:@"%@/content/detail", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_LIKE [NSString stringWithFormat:@"%@/content/like", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_COLLECT [NSString stringWithFormat:@"%@/content/collect", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_SHARE [NSString stringWithFormat:@"%@/content/share", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_COMMENT [NSString stringWithFormat:@"%@/content/comment", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CONTENT_SEARCH [NSString stringWithFormat:@"%@/content/search", BUNNYX_API_BASE_URL]
-
-// MARK: - 分类相关接口
-#define BUNNYX_API_CATEGORY_LIST [NSString stringWithFormat:@"%@/category/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_CATEGORY_CONTENT [NSString stringWithFormat:@"%@/category/content", BUNNYX_API_BASE_URL]
-
-// MARK: - 收藏相关接口
-#define BUNNYX_API_FAVORITE_LIST [NSString stringWithFormat:@"%@/favorite/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_FAVORITE_ADD [NSString stringWithFormat:@"%@/favorite/add", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_FAVORITE_REMOVE [NSString stringWithFormat:@"%@/favorite/remove", BUNNYX_API_BASE_URL]
-
-// MARK: - 历史记录相关接口
-#define BUNNYX_API_HISTORY_LIST [NSString stringWithFormat:@"%@/history/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_HISTORY_ADD [NSString stringWithFormat:@"%@/history/add", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_HISTORY_CLEAR [NSString stringWithFormat:@"%@/history/clear", BUNNYX_API_BASE_URL]
-
-// MARK: - 订阅相关接口
-#define BUNNYX_API_SUBSCRIPTION_LIST [NSString stringWithFormat:@"%@/subscription/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SUBSCRIPTION_PLANS [NSString stringWithFormat:@"%@/subscription/plans", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SUBSCRIPTION_PURCHASE [NSString stringWithFormat:@"%@/subscription/purchase", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SUBSCRIPTION_STATUS [NSString stringWithFormat:@"%@/subscription/status", BUNNYX_API_BASE_URL]
-
 // MARK: - 支付相关接口
-#define BUNNYX_API_PAYMENT_CREATE [NSString stringWithFormat:@"%@/payment/create", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PAYMENT_VERIFY [NSString stringWithFormat:@"%@/payment/verify", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PAYMENT_HISTORY [NSString stringWithFormat:@"%@/payment/history", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_RECHARGE_LIST [NSString stringWithFormat:@"%@/pay/rechargeList", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PAY_RECHARGE_HISTORY [NSString stringWithFormat:@"%@/pay/rechargeHistory", BUNNYX_API_BASE_URL] // 已废弃，使用 BUNNYX_API_USER_BUDGET_LIST
 #define BUNNYX_API_USER_BUDGET_LIST [NSString stringWithFormat:@"%@/user/getUserBudgetList", BUNNYX_API_BASE_URL] // 钱包明细列表接口
 #define BUNNYX_API_PAY_VIP_LIST [NSString stringWithFormat:@"%@/pay/vipList", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_BUY_VIP [NSString stringWithFormat:@"%@/pay/buy/vip", BUNNYX_API_BASE_URL]
 #define BUNNYX_API_PAY_APPLE_VERIFY [NSString stringWithFormat:@"%@/pay/applePay/verify", BUNNYX_API_BASE_URL]
-
-// MARK: - 设置相关接口
-#define BUNNYX_API_SETTINGS_GET [NSString stringWithFormat:@"%@/settings/get", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SETTINGS_UPDATE [NSString stringWithFormat:@"%@/settings/update", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SETTINGS_NOTIFICATION [NSString stringWithFormat:@"%@/settings/notification", BUNNYX_API_BASE_URL]
-
-// MARK: - 反馈相关接口
-#define BUNNYX_API_FEEDBACK_SUBMIT [NSString stringWithFormat:@"%@/feedback/submit", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_FEEDBACK_LIST [NSString stringWithFormat:@"%@/feedback/list", BUNNYX_API_BASE_URL]
-
-// MARK: - 统计相关接口
-#define BUNNYX_API_ANALYTICS_EVENT [NSString stringWithFormat:@"%@/analytics/event", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_ANALYTICS_PAGE [NSString stringWithFormat:@"%@/analytics/page", BUNNYX_API_BASE_URL]
-
-// MARK: - 文件上传相关接口
-#define BUNNYX_API_UPLOAD_IMAGE [NSString stringWithFormat:@"%@/upload/image", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_UPLOAD_VIDEO [NSString stringWithFormat:@"%@/upload/video", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_UPLOAD_FILE [NSString stringWithFormat:@"%@/upload/file", BUNNYX_API_BASE_URL]
-
-// MARK: - 第三方服务接口
-#define BUNNYX_API_THIRD_PARTY_WEIXIN [NSString stringWithFormat:@"%@/third/weixin", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_THIRD_PARTY_QQ [NSString stringWithFormat:@"%@/third/qq", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_THIRD_PARTY_WEIBO [NSString stringWithFormat:@"%@/third/weibo", BUNNYX_API_BASE_URL]
-
-// MARK: - 系统相关接口
-#define BUNNYX_API_SYSTEM_VERSION [NSString stringWithFormat:@"%@/system/version", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SYSTEM_CONFIG [NSString stringWithFormat:@"%@/system/config", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_SYSTEM_UPDATE [NSString stringWithFormat:@"%@/system/update", BUNNYX_API_BASE_URL]
-
-// MARK: - 消息相关接口
-#define BUNNYX_API_MESSAGE_LIST [NSString stringWithFormat:@"%@/message/list", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_MESSAGE_READ [NSString stringWithFormat:@"%@/message/read", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_MESSAGE_DELETE [NSString stringWithFormat:@"%@/message/delete", BUNNYX_API_BASE_URL]
-
-// MARK: - 推送相关接口
-#define BUNNYX_API_PUSH_REGISTER [NSString stringWithFormat:@"%@/push/register", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PUSH_UNREGISTER [NSString stringWithFormat:@"%@/push/unregister", BUNNYX_API_BASE_URL]
-#define BUNNYX_API_PUSH_SETTINGS [NSString stringWithFormat:@"%@/push/settings", BUNNYX_API_BASE_URL]
 
 // MARK: - 网络请求参数宏
 #define BUNNYX_REQUEST_TIMEOUT 30.0
