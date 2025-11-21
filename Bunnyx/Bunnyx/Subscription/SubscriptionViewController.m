@@ -506,52 +506,6 @@
     [self.applePayManager purchaseProductWithId:productId orderId:orderId timestamp:timestamp];
 }
 
-- (void)verifyPaymentWithTransaction:(SKPaymentTransaction *)transaction {
-    if (!transaction) return;
-    
-    // 获取收据
-    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
-    NSData *receiptData = [NSData dataWithContentsOfURL:receiptURL];
-    
-    if (!receiptData) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"订阅失败")];
-        return;
-    }
-    
-    NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
-    
-    // 构建验证参数（根据接口文档）
-    NSDictionary *params = @{
-        @"appleReceipt": receiptString, // 苹果支付凭据（base64编码的收据）
-        @"orderSn": self.currentServerOrderSn ?: @"" // 订单号（必选）
-    };
-    
-    [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY
-                              parameters:params
-                                 success:^(id responseObject) {
-        NSInteger code = [responseObject[@"code"] integerValue];
-        if (code == 0) {
-            // 验证通过，完成交易
-            [self.applePayManager finishTransaction:transaction];
-            
-            // 清除缓存的订单信息
-            if (transaction.transactionIdentifier) {
-                [[PaymentOrderCacheManager sharedManager] clearPendingOrderForTransactionId:transaction.transactionIdentifier];
-            }
-            
-            [SVProgressHUD showSuccessWithStatus:LocalString(@"订阅成功")];
-            // 刷新用户信息
-            [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
-                // 刷新完成
-            } failure:nil];
-        } else {
-            [SVProgressHUD showErrorWithStatus:LocalString(@"订阅失败")];
-        }
-    } failure:^(NSError *error) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"订阅失败")];
-    }];
-}
-
 - (void)privacyPolicyTapped:(UIButton *)sender {
     [self openBrowserWithConfigKey:@"privacy_policy_url"];
 }
@@ -622,12 +576,22 @@
 #pragma mark - ApplePayManagerDelegate
 
 - (void)applePayManager:(ApplePayManager *)manager didPurchaseSuccessWithTransaction:(SKPaymentTransaction *)transaction productId:(NSString *)productId {
-    // 保存订单缓存（用于异常处理）
-    if (transaction.transactionIdentifier && self.currentServerOrderSn) {
-        [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transaction.transactionIdentifier orderSn:self.currentServerOrderSn];
-    }
+    // ApplePayManager 已经在内部验证了收据，这里只需要完成交易和刷新用户信息
+    // 完成交易（消耗型商品需要调用此方法）
+    [self.applePayManager finishTransaction:transaction];
     
-    [self verifyPaymentWithTransaction:transaction];
+    // 显示成功提示
+    [SVProgressHUD showSuccessWithStatus:LocalString(@"订阅成功")];
+    
+    // 刷新用户信息
+    [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+        // 刷新完成
+    } failure:nil];
+    
+    // 清除缓存的订单信息（如果存在）
+    if (transaction.transactionIdentifier) {
+        [[PaymentOrderCacheManager sharedManager] clearPendingOrderForTransactionId:transaction.transactionIdentifier];
+    }
 }
 
 - (void)applePayManager:(ApplePayManager *)manager didPurchaseFailWithError:(NSError *)error {

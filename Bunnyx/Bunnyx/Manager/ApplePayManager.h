@@ -74,6 +74,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)verifyReceipt:(NSData *)receiptData
             completion:(void(^)(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error))completion;
 
+/// 验证收据（带订单号）
+/// @param receiptData 收据数据
+/// @param orderSn 订单号（可选，如果为nil则传空字符串）
+/// @param completion 完成回调
+- (void)verifyReceipt:(NSData *)receiptData
+               orderSn:(NSString * _Nullable)orderSn
+            completion:(void(^)(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error))completion;
+
 /// 完成交易（消耗型商品需要调用此方法）
 /// @param transaction 交易对象
 - (void)finishTransaction:(SKPaymentTransaction *)transaction;

@@ -9,6 +9,7 @@
 #import "BunnyxMacros.h"
 #import "NetworkManager.h"
 #import "BunnyxNetworkMacros.h"
+#import "PaymentOrderCacheManager.h"
 
 @interface ApplePayManager ()
 
@@ -17,6 +18,10 @@
 @property (nonatomic, strong) NSMutableSet<NSString *> *pendingProductIds;
 @property (nonatomic, strong) NSMapTable<SKProductsRequest *, NSSet<NSString *> *> *requestToProductIds;
 @property (nonatomic, strong) NSHashTable<id<ApplePayManagerDelegate>> *delegates;
+// 临时存储 productId -> orderId 的映射，用于在 applicationUsername 丢失时恢复订单号
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *productIdToOrderIdMap;
+// 正在处理的交易ID集合，用于去重（防止同一交易被重复处理）
+@property (nonatomic, strong) NSMutableSet<NSString *> *processingTransactionIds;
 
 @end
 
@@ -39,6 +44,8 @@
         _pendingProductIds = [NSMutableSet set];
         _requestToProductIds = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory valueOptions:NSPointerFunctionsStrongMemory];
         _delegates = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
+        _productIdToOrderIdMap = [NSMutableDictionary dictionary];
+        _processingTransactionIds = [NSMutableSet set];
     }
     return self;
 }
@@ -203,7 +210,15 @@
         }
         
         SKProduct *product = products.firstObject;
-        SKPayment *payment = [SKPayment paymentWithProduct:product];
+        // 使用 SKMutablePayment 以便设置 applicationUsername（订单号）
+        SKMutablePayment *payment = [SKMutablePayment paymentWithProduct:product];
+        // 将订单号设置到 applicationUsername 中，以便在交易回调中获取
+        if (orderId && orderId.length > 0) {
+            payment.applicationUsername = orderId;
+            // 同时保存到临时映射中，以防 applicationUsername 丢失（iOS StoreKit 的已知问题）
+            self.productIdToOrderIdMap[productId] = orderId;
+            BUNNYX_LOG(@"Set applicationUsername (orderId) to payment: %@, and saved to map", orderId);
+        }
         [[SKPaymentQueue defaultQueue] addPayment:payment];
         
         BUNNYX_LOG(@"Added payment to queue for product: %@", productId);
@@ -217,6 +232,12 @@
 
 - (void)verifyReceipt:(NSData *)receiptData
             completion:(void(^)(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error))completion {
+    [self verifyReceipt:receiptData orderSn:nil completion:completion];
+}
+
+- (void)verifyReceipt:(NSData *)receiptData
+               orderSn:(NSString * _Nullable)orderSn
+            completion:(void(^)(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error))completion {
     if (!receiptData || receiptData.length == 0) {
         if (completion) {
             NSError *error = [NSError errorWithDomain:@"ApplePayManager" 
@@ -227,15 +248,19 @@
         return;
     }
     
-    // Base64编码收据
+    // Base64编码收据（Apple收据是二进制数据，必须使用Base64编码）
     NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
+    
+    // 如果orderSn为空，尝试从缓存获取（需要transactionId，但这里没有，所以传空字符串）
+    NSString *finalOrderSn = orderSn ?: @"";
     
     // 发送到服务器验证
     NSDictionary *parameters = @{
-        @"receipt": receiptString
+        @"appleReceipt": receiptString, // 苹果支付凭据（Base64编码的收据）
+        @"orderSn": finalOrderSn // 订单号
     };
     
-    [[NetworkManager sharedManager] POST:BUNNYX_API_PAYMENT_VERIFY
+    [[NetworkManager sharedManager] POST:BUNNYX_API_PAY_APPLE_VERIFY
                               parameters:parameters
                                  success:^(id responseObject) {
         BUNNYX_LOG(@"Receipt verification success: %@", responseObject);
@@ -261,6 +286,8 @@
     [self.productRequestCallbacks removeAllObjects];
     [self.pendingProductIds removeAllObjects];
     [self.requestToProductIds removeAllObjects];
+    [self.processingTransactionIds removeAllObjects];
+    [self.productIdToOrderIdMap removeAllObjects];
     BUNNYX_LOG(@"ApplePayManager destroyed");
 }
 
@@ -330,18 +357,74 @@
 #pragma mark - SKPaymentTransactionObserver
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray<SKPaymentTransaction *> *)transactions {
+    BUNNYX_LOG(@"ApplePayManager: 收到 %lu 笔交易更新", (unsigned long)transactions.count);
+    
     for (SKPaymentTransaction *transaction in transactions) {
+        NSString *transactionId = transaction.transactionIdentifier ?: @"";
+        
         switch (transaction.transactionState) {
             case SKPaymentTransactionStatePurchased: {
-                BUNNYX_LOG(@"Transaction purchased: %@", transaction.transactionIdentifier);
+                BUNNYX_LOG(@"Transaction purchased: %@", transactionId);
+                
+                // 检查是否正在处理此交易（去重机制，防止重复处理）
+                if (transactionId.length > 0 && [self.processingTransactionIds containsObject:transactionId]) {
+                    BUNNYX_LOG(@"ApplePayManager: 交易 %@ 正在处理中，跳过重复处理", transactionId);
+                    break;
+                }
+                
+                // 标记为正在处理
+                if (transactionId.length > 0) {
+                    [self.processingTransactionIds addObject:transactionId];
+                }
                 
                 // 获取收据
                 NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
                 NSData *receiptData = [NSData dataWithContentsOfURL:receiptURL];
                 
                 if (receiptData) {
-                    // 验证收据
-                    [self verifyReceipt:receiptData completion:^(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error) {
+                    // 优先从 applicationUsername 获取订单号（购买时设置）
+                    NSString *orderSn = transaction.payment.applicationUsername;
+                    NSString *productId = transaction.payment.productIdentifier;
+                    BOOL needSaveToCache = NO; // 标记是否需要保存到缓存
+                    
+                    // 如果 applicationUsername 为空（iOS StoreKit 的已知问题，可能丢失），尝试从临时映射中获取
+                    if (!orderSn || orderSn.length == 0) {
+                        if (productId && productId.length > 0) {
+                            orderSn = self.productIdToOrderIdMap[productId];
+                            if (orderSn && orderSn.length > 0) {
+                                BUNNYX_LOG(@"ApplePayManager: applicationUsername 丢失，从临时映射获取订单号，productId: %@, orderSn: %@", productId, orderSn);
+                                needSaveToCache = YES; // 从临时映射获取的，需要保存到持久化缓存
+                            }
+                        }
+                    } else {
+                        BUNNYX_LOG(@"ApplePayManager: 从 applicationUsername 获取订单号: %@", orderSn);
+                        needSaveToCache = YES; // 从 applicationUsername 获取的，需要保存到持久化缓存
+                    }
+                    
+                    // 如果仍然为空，尝试从缓存中获取（兼容旧逻辑和异常恢复场景）
+                    if (!orderSn || orderSn.length == 0) {
+                        if (transactionId.length > 0) {
+                            orderSn = [[PaymentOrderCacheManager sharedManager] getOrderSnForTransactionId:transactionId];
+                            if (orderSn && orderSn.length > 0) {
+                                BUNNYX_LOG(@"ApplePayManager: 从缓存获取订单号，transactionId: %@, orderSn: %@", transactionId, orderSn);
+                                // 从缓存获取的，不需要再次保存（已经存在，业务层验证成功后会清除）
+                                needSaveToCache = NO;
+                            } else {
+                                BUNNYX_LOG(@"ApplePayManager: 未找到订单号，transactionId: %@，将使用空字符串", transactionId);
+                            }
+                        }
+                    }
+                    
+                    // 如果获取到订单号且有 transactionId，且不是从缓存获取的，保存到持久化缓存（用于异常恢复场景）
+                    // 注意：必须在 paymentQueue:updatedTransactions: 中保存，因为购买时还没有 transactionId
+                    // 注意：如果是从缓存获取的，不需要再次保存，业务层验证成功后会清除缓存
+                    if (needSaveToCache && orderSn && orderSn.length > 0 && transactionId.length > 0) {
+                        [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transactionId orderSn:orderSn];
+                        BUNNYX_LOG(@"ApplePayManager: 保存订单号到持久化缓存，transactionId: %@, orderSn: %@", transactionId, orderSn);
+                    }
+                    
+                    // 验证收据（传递订单号）
+                    [self verifyReceipt:receiptData orderSn:orderSn completion:^(BOOL success, NSDictionary * _Nullable response, NSError * _Nullable error) {
                         if (success) {
                             // 通知代理购买成功
                             [self notifyDelegatesPurchaseSuccess:transaction productId:transaction.payment.productIdentifier];
@@ -350,10 +433,30 @@
                             NSError *verifyError = error ?: [NSError errorWithDomain:@"ApplePayManager" code:-1007 userInfo:@{NSLocalizedDescriptionKey: @"收据验证失败"}];
                             [self notifyDelegatesPurchaseFail:verifyError];
                         }
+                        
+                        // 验证完成后，移除处理标记（无论成功或失败）
+                        if (transactionId.length > 0) {
+                            [self.processingTransactionIds removeObject:transactionId];
+                        }
+                        
+                        // 验证完成后，清理临时映射（延迟清理，确保所有交易都能获取到订单号）
+                        // 注意：如果多笔交易有相同的 productId，只有在所有交易都处理完后才清理
+                        // 这里使用延迟清理，给其他交易留出时间从临时映射获取订单号
+                        if (productId && productId.length > 0) {
+                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                [self.productIdToOrderIdMap removeObjectForKey:productId];
+                                BUNNYX_LOG(@"ApplePayManager: 延迟清理临时映射，productId: %@", productId);
+                            });
+                        }
                     }];
                 } else {
                     // 没有收据，直接通知成功（可能是测试环境）
                     [self notifyDelegatesPurchaseSuccess:transaction productId:transaction.payment.productIdentifier];
+                    
+                    // 移除处理标记
+                    if (transactionId.length > 0) {
+                        [self.processingTransactionIds removeObject:transactionId];
+                    }
                 }
                 
                 // 注意：不要在这里finishTransaction，应该在业务层验证成功后调用

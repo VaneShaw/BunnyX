@@ -95,6 +95,7 @@
         return;
     }
     
+    // Base64编码收据（Apple收据是二进制数据，必须使用Base64编码）
     NSString *receiptString = [receiptData base64EncodedStringWithOptions:0];
     
     // 先尝试通过transactionIdentifier查询服务器订单信息
@@ -116,8 +117,8 @@
     
     // 构建验证参数（根据接口文档）
     NSDictionary *params = @{
-        @"appleReceipt": receiptString, // 苹果支付凭据（base64编码的收据）
-        @"orderSn": orderSn // 订单号（必选）
+        @"appleReceipt": receiptString, // 苹果支付凭据
+        @"orderSn": orderSn // 订单号
     };
     
     BUNNYX_LOG(@"PaymentExceptionHandler: Verifying payment for transaction %@", transactionId);
