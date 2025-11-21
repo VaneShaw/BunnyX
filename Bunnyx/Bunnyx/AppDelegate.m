@@ -13,7 +13,7 @@
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 #import <SDWebImage/SDWebImage.h>
-
+#import "FirebaseCore.h"
 @interface AppDelegate ()
 
 @end
@@ -74,6 +74,8 @@
         [self.window makeKeyAndVisible];
     
     }
+    
+    [FIRApp configure];
     
     return YES;
 }

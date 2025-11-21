@@ -28,6 +28,10 @@ target 'Bunnyx' do
   pod 'Toast'
   pod 'YYCategories'
   pod 'YYText'
+  # Firebase 基础能力
+  pod 'Firebase/Analytics'
+  pod 'Firebase/Crashlytics'
+
   # AWS SDK for iOS - 用于S3上传（与安卓版Cognito认证方式一致）
   # AWSCore 包含了 AWSCognitoCredentialsProvider（用于 Cognito Identity Pool）
   pod 'AWSCore'
