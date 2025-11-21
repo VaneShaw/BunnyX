@@ -9,6 +9,7 @@
 #import "LocalizationFileManager.h"
 #import <UIKit/UIKit.h>
 #import "MainTabBarController.h"
+#import "NetworkManager.h"
 
 // 通知名称
 NSString * const LanguageDidChangeNotification = @"LanguageDidChangeNotification";
@@ -93,6 +94,18 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
     
     // 发送语言切换通知
     [[NSNotificationCenter defaultCenter] postNotificationName:LanguageDidChangeNotification object:nil];
+    
+    // 延迟更新网络请求头中的 Accept-Language，避免初始化顺序问题
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            NetworkManager *networkManager = [NetworkManager sharedManager];
+            if (networkManager && [networkManager respondsToSelector:@selector(updateCommonHeaders)]) {
+                [networkManager updateCommonHeaders];
+            }
+        } @catch (NSException *exception) {
+            BUNNYX_ERROR(@"更新请求头失败: %@", exception);
+        }
+    });
     
     BUNNYX_LOG(@"语言已切换到: %@", _currentLanguageName);
     

@@ -15,6 +15,7 @@
 #import "AppConfigManager.h"
 #import "AppConfigModel.h"
 #import "NewAppInfo.h"
+#import "BunnyxMacros.h"
 
 @interface MainTabBarController ()
 
@@ -70,7 +71,7 @@
     // 设置图片为原始渲染模式，保留原始颜色和图案，并调整大小
     UIImage *homeDefaultImage = [[UIImage imageNamed:@"tabbar_home_default"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
     UIImage *homeSelectedImage = [[UIImage imageNamed:@"tabbar_home_selected"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-    homeNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"首页" image:[self resizeTabBarImage:homeDefaultImage] selectedImage:[self resizeTabBarImage:homeSelectedImage]];
+    homeNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:LocalString(@"首页") image:[self resizeTabBarImage:homeDefaultImage] selectedImage:[self resizeTabBarImage:homeSelectedImage]];
     
     // 创建热门控制器并包裹导航
     HotViewController *hotVC = [[HotViewController alloc] init];
@@ -78,7 +79,7 @@
     [hotNav setNavigationBarHidden:YES animated:NO];
     UIImage *hotDefaultImage = [[UIImage imageNamed:@"tabbar_hot_default"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
     UIImage *hotSelectedImage = [[UIImage imageNamed:@"tabbar_hot_selected"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"热门" image:[self resizeTabBarImage:hotDefaultImage] selectedImage:[self resizeTabBarImage:hotSelectedImage]];
+    hotNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:LocalString(@"热门") image:[self resizeTabBarImage:hotDefaultImage] selectedImage:[self resizeTabBarImage:hotSelectedImage]];
     
     // 创建订阅控制器并包裹导航
     SubscriptionViewController *subscriptionVC = [[SubscriptionViewController alloc] init];
@@ -86,7 +87,7 @@
     [subNav setNavigationBarHidden:YES animated:NO];
     UIImage *subDefaultImage = [[UIImage imageNamed:@"tabbar_Subscribe_default"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
     UIImage *subSelectedImage = [[UIImage imageNamed:@"tabbar_Subscribe_selected"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-    subNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"订阅" image:[self resizeTabBarImage:subDefaultImage] selectedImage:[self resizeTabBarImage:subSelectedImage]];
+    subNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:LocalString(@"订阅") image:[self resizeTabBarImage:subDefaultImage] selectedImage:[self resizeTabBarImage:subSelectedImage]];
     
     // 创建我的控制器并包裹导航
     ProfileViewController *profileVC = [[ProfileViewController alloc] init];
@@ -94,7 +95,7 @@
     [profileNav setNavigationBarHidden:YES animated:NO];
     UIImage *mineDefaultImage = [[UIImage imageNamed:@"tabbar_mine_default"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
     UIImage *mineSelectedImage = [[UIImage imageNamed:@"tabbar_mine_selected"] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-    profileNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:@"我的" image:[self resizeTabBarImage:mineDefaultImage] selectedImage:[self resizeTabBarImage:mineSelectedImage]];
+    profileNav.tabBarItem = [[UITabBarItem alloc] initWithTitle:LocalString(@"我的") image:[self resizeTabBarImage:mineDefaultImage] selectedImage:[self resizeTabBarImage:mineSelectedImage]];
     
     // 设置视图控制器数组
     self.viewControllers = @[homeNav, hotNav, subNav, profileNav];

@@ -57,6 +57,11 @@ typedef void(^NetworkFailureBlock)(NSError *error);
  */
 - (void)clearAuth;
 
+/**
+ * 更新公共请求头（用于语言切换等场景）
+ */
+- (void)updateCommonHeaders;
+
 @end
 
 NS_ASSUME_NONNULL_END

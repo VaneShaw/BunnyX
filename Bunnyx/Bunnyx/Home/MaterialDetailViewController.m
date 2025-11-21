@@ -177,7 +177,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     
     // 生成按钮在底部（第一个子视图在LinearLayout中在上方，但marginBottom使其在底部）
     // 生成按钮（高度48dp，marginHorizontal 30dp，marginBottom 20dp，圆角12dp，渐变背景#0AEA6F到#1CB3C1，文字17sp，bold）
-    self.generateButton = [GradientButton buttonWithTitle:[NSString stringWithFormat:@"Generate(0Coins)"]];
+    self.generateButton = [GradientButton buttonWithTitle:[NSString stringWithFormat:LocalString(@"生成(%ld金币)"), 0]];
     // 渐变颜色：#0AEA6F到#1CB3C1
     self.generateButton.gradientStartColor = HEX_COLOR(0x0AEA6F);
     self.generateButton.gradientEndColor = HEX_COLOR(0x1CB3C1);
@@ -400,7 +400,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     }
     
     // 更新生成按钮（Generate(XXCoins)，17sp，bold）
-    NSString *generateTitle = [NSString stringWithFormat:@"Generate(%ldCoins)", (long)self.detailModel.generatePrice];
+    NSString *generateTitle = [NSString stringWithFormat:LocalString(@"生成(%ld金币)"), (long)self.detailModel.generatePrice];
     [self.generateButton setTitle:generateTitle forState:UIControlStateNormal];
 }
 

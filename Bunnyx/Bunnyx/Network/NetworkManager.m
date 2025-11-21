@@ -83,7 +83,7 @@
     [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_EFFECTIVE_IMEI];
     [serializer setValue:@"Apple" forHTTPHeaderField:BUNNYX_HEADER_EQUIPMENT_BRAND];
     
-    NSLog(@"[NetworkManager] 更新通用请求头完成");
+    NSLog(@"[NetworkManager] 通用请求头:%@",[self getCurrentLanguageCode]);
     NSLog(@"[NetworkManager] 设备信息: %@", deviceInfo);
 }
 

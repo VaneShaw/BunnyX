@@ -435,12 +435,7 @@
     }
     NSInteger give = item.giveMxdNum;
     NSString *typeRemark = item.typeRemark ?: @"";
-    NSString *currentLanguage = [LanguageManager sharedManager].currentLanguageCode;
-    if ([currentLanguage hasPrefix:@"zh"]) {
-        self.privilege1Label.text = [NSString stringWithFormat:@"每%@免费%ld金币", typeRemark, (long)give];
-    } else {
-        self.privilege1Label.text = [NSString stringWithFormat:@"Free %ld gold coins Per %@", (long)give, typeRemark];
-    }
+    self.privilege1Label.text = [NSString stringWithFormat:LocalString(@"每%@免费%ld金币"), typeRemark, (long)give];
 }
 
 #pragma mark - Actions
@@ -464,7 +459,7 @@
 
 - (void)startDirectPayment:(VipItemModel *)selectedItem {
     if (!self.applePayManager) {
-        [SVProgressHUD showErrorWithStatus:@"支付服务未初始化"];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"支付服务未初始化")];
         return;
     }
     
@@ -536,7 +531,7 @@
         browser.hidesBottomBarWhenPushed = YES;
         [self.navigationController pushViewController:browser animated:YES];
     } else {
-        [SVProgressHUD showErrorWithStatus:@"链接获取失败"];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"链接获取失败")];
     }
 }
 
