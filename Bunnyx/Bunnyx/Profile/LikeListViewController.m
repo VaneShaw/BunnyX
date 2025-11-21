@@ -24,7 +24,8 @@ static NSString *const kLikeCellId = @"LikeListCell";
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UIView *emptyView;
 @property (nonatomic, strong) NSMutableArray<MaterialItemModel *> *dataList;
-@property (nonatomic, assign) NSInteger currentPage;
+@property (nonatomic, assign) NSInteger index; // 分页起始位置
+@property (nonatomic, assign) NSInteger count; // 每页条数
 @property (nonatomic, assign) BOOL isLoading;
 @property (nonatomic, assign) BOOL hasMoreData;
 @property (nonatomic, copy) void(^listViewDidScrollCallback)(UIScrollView *scrollView);
@@ -40,7 +41,8 @@ static NSString *const kLikeCellId = @"LikeListCell";
     
     self.view.backgroundColor = [UIColor clearColor];
     self.dataList = [NSMutableArray array];
-    self.currentPage = 1;
+    self.index = 0; // 分页起始位置从0开始
+    self.count = 10; // 每页条数
     self.isLoading = NO;
     self.hasMoreData = YES;
     self.lastItemClickTime = 0;
@@ -131,13 +133,14 @@ static NSString *const kLikeCellId = @"LikeListCell";
     
     self.isLoading = YES;
     if (isRefresh) {
-        self.currentPage = 1;
+        self.index = 0; // 刷新时重置index为0
         self.hasMoreData = YES;
     }
     
+    // 使用index和count作为分页参数
     NSDictionary *params = @{
-        @"page": @(self.currentPage),
-        @"pageSize": @(20)
+        @"index": @(self.index),
+        @"count": @(self.count)
     };
     
     [[NetworkManager sharedManager] GET:BUNNYX_API_GET_FAVORITE_MATERIAL_LIST
@@ -155,9 +158,12 @@ static NSString *const kLikeCellId = @"LikeListCell";
             }
             if (models.count > 0) {
                 [self.dataList addObjectsFromArray:models];
-                self.currentPage++;
-                self.hasMoreData = models.count >= 20;
+                // 更新index：已加载的数据数量
+                self.index += models.count;
+                // 判断是否还有更多数据：如果返回的数据少于请求的数量，说明没有更多数据了
+                self.hasMoreData = models.count >= self.count;
             } else {
+                // 返回空数组，说明没有更多数据了
                 self.hasMoreData = NO;
             }
         } else {
