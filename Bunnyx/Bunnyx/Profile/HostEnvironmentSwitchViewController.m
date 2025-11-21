@@ -174,7 +174,15 @@
     self.customTextField.textColor = [UIColor whiteColor];
     
     if (isCustom) {
-        [self.customTextField becomeFirstResponder];
+        // 确保 textField 已经添加到视图层次结构中，并且视图已经布局完成后再调用 becomeFirstResponder
+        if (self.customTextField.superview && self.customTextField.window) {
+            // 使用 dispatch_async 确保在主线程的下一个 runloop 中执行，此时视图已经完全布局
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (self.customTextField && self.customTextField.superview && self.customTextField.window) {
+                    [self.customTextField becomeFirstResponder];
+                }
+            });
+        }
     }
 }
 
