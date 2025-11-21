@@ -127,9 +127,7 @@
     // 这对于大量WebP图片的列表非常重要，可以避免CPU和内存过载
     [self.imageView sd_cancelCurrentImageLoad];
     
-    // 清空当前显示的图片，避免显示错误的图片
-    self.imageView.image = nil;
-    self.currentModel = nil;
+
 }
 
 - (void)configureWithModel:(MaterialItemModel *)model {

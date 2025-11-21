@@ -245,3 +245,26 @@
 "sign_success_title" = "Sign in successful";
 "sign_ok" = "OK";
 "network_error" = "Network error";
+
+// MARK: - Login Page
+"Account" = "Account";
+"Login" = "Login";
+"Password" = "Password";
+"Please enter your account" = "Please enter your account";
+"Please enter your password" = "Please enter your password";
+"请输入账号" = "Please enter your account";
+"请输入密码" = "Please enter your password";
+"登录中..." = "Logging in...";
+"登录响应格式错误" = "Login response format error";
+"提示" = "Tip";
+"如果你登录，即表示你同意用" = "By logging in, you agree to the";
+"和" = "and";
+"用户协议链接暂不可用" = "User agreement link is temporarily unavailable";
+"隐私政策链接暂不可用" = "Privacy policy link is temporarily unavailable";
+
+// MARK: - Settings Page
+"语言" = "Language";
+"版本号" = "Version";
+"注销账号" = "Delete Account";
+"确认注销" = "Confirm Deletion";
+"此操作不可撤销，是否继续？" = "This operation cannot be undone. Do you want to continue?";

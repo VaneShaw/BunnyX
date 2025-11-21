@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import "MainTabBarController.h"
 #import "NetworkManager.h"
+#import "AppConfigManager.h"
 
 // 通知名称
 NSString * const LanguageDidChangeNotification = @"LanguageDidChangeNotification";
@@ -108,6 +109,22 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
     });
     
     BUNNYX_LOG(@"语言已切换到: %@", _currentLanguageName);
+    
+    // 切换语言后重新获取配置，强制刷新以获取对应语言的配置
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            AppConfigManager *configManager = [AppConfigManager sharedManager];
+            if (configManager) {
+                [configManager getAppConfigWithForceRefresh:YES success:^(AppConfigModel *configModel) {
+                    BUNNYX_LOG(@"语言切换后配置获取成功");
+                } failure:^(NSError *error) {
+                    BUNNYX_ERROR(@"语言切换后配置获取失败: %@", error.localizedDescription);
+                }];
+            }
+        } @catch (NSException *exception) {
+            BUNNYX_ERROR(@"调用配置获取失败: %@", exception);
+        }
+    });
     
     // 立即重建根界面，使文案生效（无需逐控件 setTitle）
     [self rebuildRootInterface];

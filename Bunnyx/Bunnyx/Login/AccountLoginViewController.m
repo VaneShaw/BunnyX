@@ -87,7 +87,7 @@
     
     // 账号标签
     self.accountLabel = [[UILabel alloc] init];
-    self.accountLabel.text = @"Account";
+    self.accountLabel.text = LocalString(@"Account");
     self.accountLabel.textColor = [UIColor whiteColor];
     self.accountLabel.font = [UIFont systemFontOfSize:14];
     [self.accountContainer addSubview:self.accountLabel];
@@ -207,7 +207,7 @@
 
 - (void)setupLoginButton {
     self.loginButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [self.loginButton setTitle:@"Login" forState:UIControlStateNormal];
+    [self.loginButton setTitle:LocalString(@"Login") forState:UIControlStateNormal];
     // 按钮标题颜色使用#333333
     [self.loginButton setTitleColor:[UIColor colorWithRed:0x33/255.0 green:0x33/255.0 blue:0x33/255.0 alpha:1.0] forState:UIControlStateNormal];
     self.loginButton.titleLabel.font = [UIFont systemFontOfSize:18 weight:UIFontWeightMedium];
@@ -360,12 +360,12 @@
     
     // 简单的验证
     if (self.accountTextField.text.length == 0) {
-        [self showAlert:@"请输入账号"];
+        [self showAlert:LocalString(@"请输入账号")];
         return;
     }
     
     if (self.passwordTextField.text.length == 0) {
-        [self showAlert:@"请输入密码"];
+        [self showAlert:LocalString(@"请输入密码")];
         return;
     }
     
@@ -447,7 +447,7 @@
     // 显示加载状态 - 暂时使用简单的日志
     NSLog(@"显示登录加载状态");
     // dispatch_async(dispatch_get_main_queue(), ^{
-         [SVProgressHUD showWithStatus:@"登录中..."];
+         [SVProgressHUD showWithStatus:LocalString(@"登录中...")];
     // });
     
     NSMutableDictionary * param = [NSMutableDictionary dictionary];
@@ -507,11 +507,11 @@
             [self fetchUserInfoAfterLogin];
         } else {
             NSLog(@"登录响应中未找到完整的token信息");
-            [SVProgressHUD showErrorWithStatus:@"登录响应格式错误"];
+            [SVProgressHUD showErrorWithStatus:LocalString(@"登录响应格式错误")];
         }
     } else {
         NSLog(@"登录响应数据格式错误");
-        [SVProgressHUD showErrorWithStatus:@"登录响应格式错误"];
+        [SVProgressHUD showErrorWithStatus:LocalString(@"登录响应格式错误")];
     }
 }
 
@@ -566,10 +566,10 @@
 }
 
 - (void)showAlert:(NSString *)message {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" 
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"提示") 
                                                                    message:message 
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:LocalString(@"确定") style:UIAlertActionStyleDefault handler:nil];
     [alert addAction:okAction];
     [self presentViewController:alert animated:YES completion:nil];
 }
