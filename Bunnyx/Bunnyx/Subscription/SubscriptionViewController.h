@@ -11,6 +11,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface SubscriptionViewController : BaseViewController
 
+/// 重置订阅弹窗会话标记（在App启动时调用）
++ (void)resetSessionDialogFlag;
+
 @end
 
 NS_ASSUME_NONNULL_END

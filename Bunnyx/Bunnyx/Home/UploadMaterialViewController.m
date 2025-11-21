@@ -258,52 +258,52 @@
 
 #pragma mark - Data
 
-/// 加载订阅VIP提示文字（loadSubscribeVipTips方法）
+/// 加载免责声明提示文字（loadDisclaimerFromConfig方法）
 - (void)loadDisclaimerFromConfig {
     // 先尝试从缓存获取配置
     AppConfigModel *cachedConfig = [[AppConfigManager sharedManager] currentConfig];
     if (cachedConfig) {
-        // 缓存中有配置，直接使用（）
-        NSString *subscribeVipTips = [self getSubscribeVipTips:cachedConfig];
-        if (subscribeVipTips && subscribeVipTips.length > 0) {
+        // 缓存中有配置，直接使用
+        NSString *disclaimerTips = [self getDisclaimerTips:cachedConfig];
+        if (disclaimerTips && disclaimerTips.length > 0) {
             // 设置行间距（lineSpacingExtra 4dp）
             NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
             paragraphStyle.lineSpacing = 4.0;
-            NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
-            [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
+            NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:disclaimerTips];
+            [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, disclaimerTips.length)];
             self.disclaimerContentLabel.attributedText = attributedText;
         } else {
-            // 缓存中没有订阅提示文字，使用默认文字（）
+            // 缓存中没有免责声明提示文字，使用默认文字
             [self setDefaultDisclaimerContent];
         }
     } else {
-        // 缓存中没有配置，请求接口获取（）
+        // 缓存中没有配置，请求接口获取
         [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *config) {
-            // 获取subscribe_vip_tips字段（）
-            NSString *subscribeVipTips = [self getSubscribeVipTips:config];
-            if (subscribeVipTips && subscribeVipTips.length > 0) {
+            // 获取disclaimer_tips字段
+            NSString *disclaimerTips = [self getDisclaimerTips:config];
+            if (disclaimerTips && disclaimerTips.length > 0) {
                 // 设置行间距（lineSpacingExtra 4dp）
                 NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
                 paragraphStyle.lineSpacing = 4.0;
-                NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:subscribeVipTips];
-                [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, subscribeVipTips.length)];
+                NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:disclaimerTips];
+                [attributedText addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, disclaimerTips.length)];
                 self.disclaimerContentLabel.attributedText = attributedText;
             } else {
-                // 接口返回中没有订阅提示文字，使用默认文字（）
+                // 接口返回中没有免责声明提示文字，使用默认文字
                 [self setDefaultDisclaimerContent];
             }
         } failure:^(NSError *error) {
-            // 接口请求失败，使用默认文字（）
+            // 接口请求失败，使用默认文字
             [self setDefaultDisclaimerContent];
         }];
     }
 }
 
-/// 获取订阅VIP提示文字（getSubscribeVipTips方法）
-- (NSString *)getSubscribeVipTips:(AppConfigModel *)config {
-    // 直接返回subscribe_vip_tips字段（安卓中返回tipsJson）
-    if (config && config.subscribeVipTips && config.subscribeVipTips.length > 0) {
-        return config.subscribeVipTips;
+/// 获取免责声明提示文字（getDisclaimerTips方法）
+- (NSString *)getDisclaimerTips:(AppConfigModel *)config {
+    // 直接返回disclaimer_tips字段
+    if (config && config.disclaimerTips && config.disclaimerTips.length > 0) {
+        return config.disclaimerTips;
     }
     return nil;
 }

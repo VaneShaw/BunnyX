@@ -13,6 +13,7 @@
 #import "UserInfoManager.h"
 #import "AppConfigManager.h"
 #import "PaymentExceptionHandler.h"
+#import "SubscriptionViewController.h"
 
 @interface SceneDelegate ()
 
@@ -27,6 +28,9 @@
     // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
     // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
     // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
+    
+    // 重置订阅弹窗会话标记（每次app启动时重置）
+    [SubscriptionViewController resetSessionDialogFlag];
     
     // 初始化支付异常处理（处理未完成的交易）
     [[PaymentExceptionHandler sharedHandler] initialize];

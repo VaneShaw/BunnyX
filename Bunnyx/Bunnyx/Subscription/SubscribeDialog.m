@@ -432,31 +432,53 @@ static const NSInteger COUNTDOWN_DURATION = 5400; // 1小时30分钟 = 5400秒
 
 - (void)loadVipDiscountTips {
     AppConfigModel *config = [[AppConfigManager sharedManager] currentConfig];
-    if (config && config.vipDiscountTips && config.vipDiscountTips.length > 0) {
-        // 解析JSON
-        NSData *jsonData = [config.vipDiscountTips dataUsingEncoding:NSUTF8StringEncoding];
-        if (jsonData) {
-            NSError *error = nil;
-            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
-            if (!error && [dict isKindOfClass:[NSDictionary class]]) {
-                NSString *langCode = [[LanguageManager sharedManager] currentLanguageCode];
-                NSString *text = nil;
-                if (dict[langCode]) {
-                    text = dict[langCode];
-                } else if ([langCode hasPrefix:@"zh"] && dict[@"zh_CN"]) {
-                    text = dict[@"zh_CN"];
-                } else if (dict[@"en_US"]) {
-                    text = dict[@"en_US"];
-                }
-                if (text) {
-                    [self applyBottomDescText:text];
-                    return;
-                }
+    if ([self updateVipDiscountTipsWithConfig:config]) {
+        return;
+    }
+    
+    // 如果本地配置不存在或解析失败，尝试从服务器获取最新配置
+    __weak typeof(self) weakSelf = self;
+    [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *configModel) {
+        if (![weakSelf updateVipDiscountTipsWithConfig:configModel]) {
+            [weakSelf applyBottomDescText:LocalString(@"订阅提示默认")];
+        }
+    } failure:^(NSError *error) {
+        [weakSelf applyBottomDescText:LocalString(@"订阅提示默认")];
+    }];
+}
+
+- (BOOL)updateVipDiscountTipsWithConfig:(AppConfigModel *)config {
+    if (!config || !config.vipDiscountTips || config.vipDiscountTips.length == 0) {
+        return NO;
+    }
+    
+    // 尝试解析JSON（支持多语言）
+    NSData *jsonData = [config.vipDiscountTips dataUsingEncoding:NSUTF8StringEncoding];
+    if (jsonData) {
+        NSError *error = nil;
+        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+        if (!error && [dict isKindOfClass:[NSDictionary class]]) {
+            // 是JSON格式，根据语言选择对应文本
+            NSString *langCode = [[LanguageManager sharedManager] currentLanguageCode];
+            NSString *text = nil;
+            if (dict[langCode]) {
+                text = dict[langCode];
+            } else if ([langCode hasPrefix:@"zh"] && dict[@"zh_CN"]) {
+                text = dict[@"zh_CN"];
+            } else if (dict[@"en_US"]) {
+                text = dict[@"en_US"];
+            }
+            if (text && text.length > 0) {
+                [self applyBottomDescText:text];
+                return YES;
             }
         }
     }
-    // 默认文案
-    [self applyBottomDescText:LocalString(@"订阅提示默认")];
+    
+    // 如果不是JSON格式或解析失败，直接使用原字符串
+    // 可能是普通字符串格式，直接使用
+    [self applyBottomDescText:config.vipDiscountTips];
+    return YES;
 }
 
 - (void)applyBottomDescText:(NSString *)text {

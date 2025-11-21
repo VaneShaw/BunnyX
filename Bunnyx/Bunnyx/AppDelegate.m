@@ -14,6 +14,7 @@
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 #import <SDWebImage/SDWebImage.h>
 #import "FirebaseCore.h"
+#import "SubscriptionViewController.h"
 @interface AppDelegate ()
 
 @end
@@ -23,6 +24,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    
+    // 重置订阅弹窗会话标记（每次app启动时重置）
+    [SubscriptionViewController resetSessionDialogFlag];
     
     // 注册WebP解码器（支持webp格式图片）
     SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
