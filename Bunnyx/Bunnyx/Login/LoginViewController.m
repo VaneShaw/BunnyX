@@ -395,9 +395,7 @@
     [[AppConfigManager sharedManager] getAppConfigWithSuccess:^(AppConfigModel *configModel) {
         [weakSelf continueQuickLoginWithConfig:configModel imei:imei];
     } failure:^(NSError *error) {
-        NSLog(@"[LoginViewController] 获取应用配置失败: %@", error);
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:@"获取应用配置失败，请稍后重试"];
+    
     }];
 }
 
@@ -467,8 +465,6 @@
         }
     } failure:^(NSError *error) {
         NSLog(@"[LoginViewController] 快速登录失败: %@", error);
-        // 错误提示由 NetworkManager 自动显示
-        [SVProgressHUD dismiss];
     }];
 }
 
@@ -636,7 +632,13 @@
         NSLog(@"[LoginViewController] Apple登录请求失败");
         [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录请求失败，请重试")];
     } else {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
+        // 显示原始错误信息
+        NSString *errorMessage = error.localizedDescription ?: error.localizedFailureReason;
+        if (errorMessage && errorMessage.length > 0) {
+            [SVProgressHUD showErrorWithStatus:errorMessage];
+        } else {
+            [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
+        }
     }
 }
 
@@ -722,7 +724,13 @@
     } failure:^(NSError *error) {
         NSLog(@"[LoginViewController] Apple登录接口请求失败: %@", error);
         [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
+        // 显示原始错误信息
+        NSString *errorMessage = error.localizedDescription ?: error.localizedFailureReason;
+        if (errorMessage && errorMessage.length > 0) {
+            [SVProgressHUD showErrorWithStatus:errorMessage];
+        } else {
+            [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
+        }
     }];
 }
 
