@@ -198,6 +198,9 @@
     self.tableView.emptyDataSetSource = self;
     self.tableView.emptyDataSetDelegate = self;
     self.tableView.backgroundColor = [UIColor clearColor];
+    // 支持自动高度计算
+    self.tableView.estimatedRowHeight = 90;
+    self.tableView.rowHeight = UITableViewAutomaticDimension;
     [self.view addSubview:self.tableView];
     
     [self.tableView mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -361,114 +364,79 @@
     cell.backgroundColor = [UIColor clearColor];
     cell.contentView.backgroundColor = [UIColor clearColor];
     
-    // 创建cell内容视图
+    // 创建cell内容视图（按安卓布局：圆角15dp，paddingHorizontal 16dp，paddingVertical 16dp，marginBottom 16dp）
     UIView *containerView = [[UIView alloc] init];
-    containerView.layer.cornerRadius = 12; // 圆角12dp
+    containerView.layer.cornerRadius = 15; // 圆角15dp（与安卓一致）
     [cell.contentView addSubview:containerView];
     
     [containerView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.equalTo(cell.contentView).insets(UIEdgeInsetsMake(0, 20, 0, 20)); // paddingHorizontal 20dp
-        make.top.bottom.equalTo(cell.contentView).insets(UIEdgeInsetsMake(0, 0, 15, 0)); // marginBottom 15dp
-        make.height.mas_equalTo(80); // itemHeight 80dp
+        make.left.right.equalTo(cell.contentView).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // paddingHorizontal 16dp（与安卓一致）
+        make.top.equalTo(cell.contentView);
+        make.bottom.equalTo(cell.contentView).offset(-10); // marginBottom 16dp（与安卓一致）
     }];
-    containerView.backgroundColor = [UIColor colorWithWhite:1 alpha:0.03];
+    containerView.backgroundColor = [UIColor colorWithWhite:1 alpha:0.03]; // #0DFFFFFF 对应白色3%透明度
     
-    // 金币图标（icon_mine_coin_default）
-    UIImageView *coinIcon = [[UIImageView alloc] init];
-    coinIcon.image = [UIImage imageNamed:@"icon_mine_coin_default"];
-    coinIcon.contentMode = UIViewContentModeScaleAspectFit;
-    [containerView addSubview:coinIcon];
+    // 第一行：标题（左）+ 金额（右）
+    UIView *firstRowView = [[UIView alloc] init];
+    [containerView addSubview:firstRowView];
     
-    [coinIcon mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(containerView).offset(20); // marginLeft 20dp
-        make.centerY.equalTo(containerView);
-        make.width.height.mas_equalTo(40); // 40dp × 40dp
+    [firstRowView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.right.equalTo(containerView).insets(UIEdgeInsetsMake(0, 16, 0, 16)); // paddingHorizontal 16dp
+        make.top.equalTo(containerView).offset(20); // paddingTop 16dp
     }];
     
-    // 金币数量（绿色，20sp bold）
-    // 根据budgetType显示：1支出2收入，收入显示+，支出显示-
+    // 标题（左对齐，15sp bold，白色）
+    NSString *title = record.budgetCode.length > 0 ? record.budgetCode : (record.remarks.length > 0 ? record.remarks : @"");
+    UILabel *titleLabel = [[UILabel alloc] init];
+    titleLabel.text = title;
+    titleLabel.font = BOLD_FONT(15.0); // 15sp bold（与安卓一致）
+    titleLabel.textColor = [UIColor whiteColor];
+    [firstRowView addSubview:titleLabel];
+    
+    [titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(firstRowView);
+        make.centerY.equalTo(firstRowView);
+    }];
+    
+    // 金额（右对齐，15sp bold，根据budgetType显示颜色）
     NSInteger coins = record.coins > 0 ? record.coins : record.budgetNum;
     NSString *coinsText = @"";
-    if (record.budgetType == 2) {
-        // 收入
-        coinsText = [NSString stringWithFormat:@"+%ld", (long)coins];
-    } else if (record.budgetType == 1) {
+    UIColor *coinsColor = HEX_COLOR(0x0AE971); // 默认绿色（收入）
+    if (record.budgetType == 1) {
         // 支出
-        coinsText = [NSString stringWithFormat:@"-%ld", (long)coins];
+        coinsText = [NSString stringWithFormat:@"-%ld Coins", (long)coins];
+        coinsColor = HEX_COLOR(0xB93218); // 红色（与安卓一致）
     } else {
-        // 默认显示+
-        coinsText = [NSString stringWithFormat:@"+%ld", (long)coins];
+        // 收入
+        coinsText = [NSString stringWithFormat:@"+%ld Coins", (long)coins];
+        coinsColor = HEX_COLOR(0x0AE971); // 绿色（与安卓一致）
     }
     
     UILabel *coinsLabel = [[UILabel alloc] init];
     coinsLabel.text = coinsText;
-    coinsLabel.font = BOLD_FONT(FONT_SIZE_20);
-    coinsLabel.textColor = HEX_COLOR(0x0AE971); // #0AE971
-    [containerView addSubview:coinsLabel];
+    coinsLabel.font = BOLD_FONT(15.0); // 15sp bold（与安卓一致）
+    coinsLabel.textColor = coinsColor;
+    coinsLabel.textAlignment = NSTextAlignmentRight;
+    [firstRowView addSubview:coinsLabel];
     
     [coinsLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(coinIcon.mas_right).offset(15); // 间距15dp
-        make.top.equalTo(containerView).offset(15); // marginTop 15dp
+        make.right.equalTo(firstRowView);
+        make.centerY.equalTo(firstRowView);
+        make.left.greaterThanOrEqualTo(titleLabel.mas_right).offset(10); // 确保标题和金额不重叠
     }];
     
-    // 时间（白色，14sp）
+    // 第二行：时间（左对齐，12sp，black9 #999999）
     UILabel *timeLabel = [[UILabel alloc] init];
     timeLabel.text = record.createTime ?: @"";
-    timeLabel.font = FONT(FONT_SIZE_14);
-    timeLabel.textColor = [UIColor whiteColor];
+    timeLabel.font = FONT(FONT_SIZE_12); // 12sp（与安卓一致）
+    timeLabel.textColor = HEX_COLOR(0x999999); // black9（与安卓一致）
     [containerView addSubview:timeLabel];
     
     [timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(coinsLabel);
-        make.top.equalTo(coinsLabel.mas_bottom).offset(8); // 间距8dp
+        make.left.equalTo(containerView).offset(16); // paddingLeft 16dp
+        make.top.equalTo(titleLabel.mas_bottom).offset(12); // marginTop 6dp（与安卓一致）
+        make.bottom.equalTo(containerView).offset(-16); // paddingBottom 16dp
     }];
-    
-    // 金额（白色，16sp，右对齐）
-    UILabel *amountLabel = [[UILabel alloc] init];
-    amountLabel.text = [NSString stringWithFormat:@"$%.2f", record.amount];
-    amountLabel.font = FONT(FONT_SIZE_16);
-    amountLabel.textColor = [UIColor whiteColor];
-    amountLabel.textAlignment = NSTextAlignmentRight;
-    [containerView addSubview:amountLabel];
-    
-    [amountLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(containerView).offset(-20); // marginRight 20dp
-        make.centerY.equalTo(containerView);
-    }];
-    
-    // 状态标签（根据state显示不同文字和颜色）
-    UILabel *statusLabel = [[UILabel alloc] init];
-    statusLabel.font = FONT(FONT_SIZE_12);
-    
-    NSString *state = record.state.length > 0 ? record.state : record.status;
-    if (state && state.length > 0) {
-        NSString *statusText = @"";
-        UIColor *statusColor = [UIColor whiteColor];
-        
-        // 状态映射
-        if ([state isEqualToString:@"success"] || [state isEqualToString:@"completed"] || [state isEqualToString:@"成功"]) {
-            statusText = LocalString(@"成功") ?: @"Success";
-            statusColor = HEX_COLOR(0x0AE971); // 成功：绿色
-        } else if ([state isEqualToString:@"pending"] || [state isEqualToString:@"processing"] || [state isEqualToString:@"处理中"]) {
-            statusText = LocalString(@"处理中") ?: @"Processing";
-            statusColor = [UIColor yellowColor]; // 待处理：黄色
-        } else if ([state isEqualToString:@"failed"] || [state isEqualToString:@"failure"] || [state isEqualToString:@"失败"]) {
-            statusText = LocalString(@"失败") ?: @"Failed";
-            statusColor = [UIColor redColor]; // 失败：红色
-        } else {
-            statusText = state;
-            statusColor = [UIColor whiteColor];
-        }
-        
-        statusLabel.text = statusText;
-        statusLabel.textColor = statusColor;
-        [containerView addSubview:statusLabel];
-        
-        [statusLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.right.equalTo(containerView).offset(-20);
-            make.bottom.equalTo(containerView).offset(-15);
-        }];
-    }
     
     return cell;
 }
@@ -476,7 +444,13 @@
 #pragma mark - UITableViewDelegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 95; // 80dp + 15dp marginBottom
+    // 按安卓布局计算：paddingTop 16dp + 第一行高度（约20dp）+ marginTop 6dp + 时间行高度（约16dp）+ paddingBottom 16dp + marginBottom 16dp ≈ 90dp
+    // 实际使用自动计算，这里给一个估算值
+    return UITableViewAutomaticDimension;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 90; // 估算高度
 }
 
 #pragma mark - DZNEmptyDataSetSource
