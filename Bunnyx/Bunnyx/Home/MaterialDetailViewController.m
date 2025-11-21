@@ -46,6 +46,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 @property (nonatomic, strong) UIButton *saveToAlbumButton; // 保存到相册按钮（mBtnSaveToAlbum，使用黑色半透明背景）
 @property (nonatomic, strong) GradientButton *generateButton; // 生成按钮
 @property (nonatomic, assign) BOOL hasFavoriteAction; // 标记是否有收藏操作（mHasFavoriteAction）
+@property (nonatomic, assign) BOOL wasPlayingBeforeBackground; // 记录进入后台前是否正在播放
 
 @end
 
@@ -74,8 +75,19 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     self.backgroundImageView.hidden = YES;
     self.currentVideoUrl = nil;
     self.hasSwitchedToVideo = NO;
+    self.wasPlayingBeforeBackground = NO;
     [self setupUI];
     [self fetchMaterialDetail];
+    
+    // 监听应用进入后台和回到前台的通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationDidEnterBackground:)
+                                                 name:UIApplicationDidEnterBackgroundNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationWillEnterForeground:)
+                                                 name:UIApplicationWillEnterForegroundNotification
+                                               object:nil];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -87,6 +99,10 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
 }
 
 - (void)dealloc {
+    // 移除应用状态通知监听
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    
     // 清理视频播放器
     if (self.videoPlayer) {
         [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
@@ -121,8 +137,9 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         [self.view insertSubview:self.videoContainer aboveSubview:self.materialImageView];
     }
     
-    // 如果视频正在播放，恢复播放
-    if (self.videoPlayer && self.videoPlayer.rate == 0.0) {
+    // 如果视频容器可见且视频暂停，恢复播放（从其他页面返回时）
+    // 注意：应用从后台回到前台时的恢复由 applicationWillEnterForeground 处理
+    if (self.videoPlayer && !self.videoContainer.hidden && self.videoPlayer.rate == 0.0) {
         [self.videoPlayer play];
     }
 }
@@ -402,6 +419,35 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     // 更新生成按钮（Generate(XXCoins)，17sp，bold）
     NSString *generateTitle = [NSString stringWithFormat:LocalString(@"生成(%ld金币)"), (long)self.detailModel.generatePrice];
     [self.generateButton setTitle:generateTitle forState:UIControlStateNormal];
+}
+
+#pragma mark - Application State
+
+// 应用进入后台
+- (void)applicationDidEnterBackground:(NSNotification *)notification {
+    // 记录进入后台前的播放状态
+    if (self.videoPlayer) {
+        self.wasPlayingBeforeBackground = (self.videoPlayer.rate > 0.0);
+        if (self.wasPlayingBeforeBackground) {
+            [self.videoPlayer pause];
+            NSLog(@"[MaterialDetailViewController] 应用进入后台，暂停视频播放");
+        }
+    }
+}
+
+// 应用回到前台
+- (void)applicationWillEnterForeground:(NSNotification *)notification {
+    // 如果进入后台前正在播放，则恢复播放
+    if (self.videoPlayer && self.wasPlayingBeforeBackground && !self.videoContainer.hidden) {
+        // 延迟一点再恢复播放，确保应用完全激活
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (self.videoPlayer && !self.videoContainer.hidden) {
+                [self.videoPlayer play];
+                NSLog(@"[MaterialDetailViewController] 应用回到前台，恢复视频播放");
+            }
+        });
+    }
+    self.wasPlayingBeforeBackground = NO;
 }
 
 #pragma mark - Video Playback
@@ -850,31 +896,29 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             return;
         }
         
-        // 下载视频并保存到相册
-        NSURL *url = [NSURL URLWithString:videoUrl];
-        NSURLSessionDownloadTask *downloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:url completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD dismiss];
-                if (error || !location) {
-                    [SVProgressHUD showErrorWithStatus:LocalString(@"下载视频失败")];
-                    return;
-                }
-                
-                // 保存视频到相册
-                [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
-                    [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:location];
-                } completionHandler:^(BOOL success, NSError * _Nullable error) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        if (success) {
-                            [SVProgressHUD showSuccessWithStatus:LocalString(@"保存成功")];
-                        } else {
-                            [SVProgressHUD showErrorWithStatus:LocalString(@"保存失败")];
-                        }
-                    });
-                }];
-            });
-        }];
-        [downloadTask resume];
+        // 检查相册访问权限
+        PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatusForAccessLevel:PHAccessLevelAddOnly];
+        if (status == PHAuthorizationStatusNotDetermined) {
+            // 请求权限
+            [PHPhotoLibrary requestAuthorizationForAccessLevel:PHAccessLevelAddOnly handler:^(PHAuthorizationStatus status) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited) {
+                        // 权限已授予，继续下载和保存
+                        [self downloadAndSaveVideo:videoUrl];
+                    } else {
+                        [SVProgressHUD dismiss];
+                        [SVProgressHUD showErrorWithStatus:LocalString(@"需要相册访问权限才能保存视频")];
+                    }
+                });
+            }];
+        } else if (status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited) {
+            // 已有权限，直接下载和保存
+            [self downloadAndSaveVideo:videoUrl];
+        } else {
+            // 权限被拒绝
+            [SVProgressHUD dismiss];
+            [SVProgressHUD showErrorWithStatus:LocalString(@"需要相册访问权限才能保存视频")];
+        }
     } else {
         // 保存图片（使用mGenerateImageUrl）
         NSString *imageUrl = saveUrl;
@@ -899,6 +943,57 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
     } else {
         [SVProgressHUD showSuccessWithStatus:LocalString(@"保存成功")];
     }
+}
+
+// 下载并保存视频到相册
+- (void)downloadAndSaveVideo:(NSString *)videoUrl {
+    [SVProgressHUD showWithStatus:LocalString(@"保存中...")];
+    
+    NSURL *url = [NSURL URLWithString:videoUrl];
+    NSURLSessionDownloadTask *downloadTask = [[NSURLSession sharedSession] downloadTaskWithURL:url completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error || !location) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [SVProgressHUD dismiss];
+                [SVProgressHUD showErrorWithStatus:LocalString(@"下载视频失败")];
+            });
+            return;
+        }
+        
+        // 将临时文件复制到持久位置（Documents目录）
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSURL *documentsDirectory = [[fileManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
+        NSString *fileName = [NSString stringWithFormat:@"video_%ld_%d.mp4", (long)[[NSDate date] timeIntervalSince1970], arc4random() % 10000];
+        NSURL *destinationURL = [documentsDirectory URLByAppendingPathComponent:fileName];
+        
+        NSError *copyError = nil;
+        BOOL success = [fileManager copyItemAtURL:location toURL:destinationURL error:&copyError];
+        
+        if (!success || copyError) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [SVProgressHUD dismiss];
+                [SVProgressHUD showErrorWithStatus:LocalString(@"保存失败")];
+            });
+            return;
+        }
+        
+        // 保存视频到相册
+        [[PHPhotoLibrary sharedPhotoLibrary] performChanges:^{
+            [PHAssetChangeRequest creationRequestForAssetFromVideoAtFileURL:destinationURL];
+        } completionHandler:^(BOOL success, NSError * _Nullable error) {
+            // 清理临时文件
+            [fileManager removeItemAtURL:destinationURL error:nil];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (success) {
+                    [SVProgressHUD showSuccessWithStatus:LocalString(@"保存成功")];
+                } else {
+                    NSString *errorMsg = error.localizedDescription ?: LocalString(@"保存失败");
+                    [SVProgressHUD showErrorWithStatus:errorMsg];
+                }
+            });
+        }];
+    }];
+    [downloadTask resume];
 }
 
 #pragma mark - Delete Action

@@ -124,6 +124,7 @@
 "下载视频失败" = "Failed to download video";
 "保存成功" = "Save Successful";
 "保存失败" = "Save Failed";
+"需要相册访问权限才能保存视频" = "Photo library access is required to save video";
 "删除素材" = "Delete Material";
 "确定要删除这个素材吗？" = "Are you sure you want to delete this material?";
 "删除失败：素材信息无效" = "Delete Failed: Invalid Material Information";

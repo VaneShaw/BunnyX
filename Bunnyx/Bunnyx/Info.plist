@@ -26,7 +26,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>需要访问您的照片库以选择图片用于生成素材</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>需要保存生成的图片到您的照片库</string>
+	<string>需要保存生成的图片和视频到您的照片库</string>
 	<key>NSCameraUsageDescription</key>
 	<string>需要访问相机以拍摄照片用于生成素材</string>
 	<key>NSAppTransportSecurity</key>
