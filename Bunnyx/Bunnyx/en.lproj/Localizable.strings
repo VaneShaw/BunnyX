@@ -21,6 +21,15 @@
 "操作成功" = "Operation successful";
 "操作失败" = "Operation failed";
 
+// MARK: - MJRefresh Pull to Refresh
+"下拉可以刷新" = "Pull down to refresh";
+"释放立即刷新" = "Release to refresh";
+"正在刷新..." = "Refreshing...";
+"上拉可以加载" = "Pull up to load more";
+"释放立即加载" = "Release to load more";
+"正在加载..." = "Loading...";
+"没有更多数据了" = "No more data";
+
 // MARK: - Language Settings
 "语言设置" = "Language Settings";
 "选择语言" = "Select Language";
@@ -136,6 +145,8 @@
 "Details" = "Details";
 "Buy" = "Buy";
 "请选择充值套餐" = "Please select a recharge package";
+"Recharge Details" = "Details";
+"暂无充值记录" = "No Recharge Records";
 
 // MARK: - Upload Page
 "上传" = "Upload";
@@ -234,7 +245,7 @@
 // MARK: - Sign In Dialog
 "sign_title" = "Daily Sign In";
 "sign_subtitle" = "VIP members can get double rewards";
-"sign_days_desc" = "Signed in for %d consecutive days\nContinue signing in to get more coins";
+"sign_days_desc" = "Signed in for %d consecutive days\nContinuous sign-in rewards more coins";
 "sign_button" = "Sign In";
 "sign_7_days" = "7 Days";
 "sign_30_days" = "30 Days";
@@ -262,6 +273,10 @@
 "和" = "and";
 "用户协议链接暂不可用" = "User agreement link is temporarily unavailable";
 "隐私政策链接暂不可用" = "Privacy policy link is temporarily unavailable";
+"快速登录" = "Quick Login";
+"使用 Apple 登录" = "Sign in with Apple";
+"账号密码登录" = "Account Login";
+"请先同意用户协议和隐私政策" = "Please agree to the User Agreement and Privacy Policy first";
 
 // MARK: - Settings Page
 "语言" = "Language";

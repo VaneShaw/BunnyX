@@ -15,6 +15,7 @@
 #import "UserInfoManager.h"
 #import "BrowserViewController.h"
 #import "AppConfigManager.h"
+#import "LanguageManager.h"
 
 @interface AccountLoginViewController ()
 
@@ -29,6 +30,7 @@
 @property (nonatomic, strong) UIButton *loginButton;
 @property (nonatomic, strong) UIButton *agreementCheckbox;
 @property (nonatomic, strong) UILabel *agreementLabel;
+@property (nonatomic, strong) UITapGestureRecognizer *agreementTapGesture; // 协议文字点击手势
 
 @end
 
@@ -42,6 +44,13 @@
     
     // 加载上次登录的账号
     [self loadLastLoginAccount];
+    
+    // 添加语言切换通知监听
+    [self addObservers];
+}
+
+- (void)dealloc {
+    [self removeObservers];
 }
 
 - (void)loadLastLoginAccount {
@@ -253,7 +262,7 @@
     self.agreementLabel = [[UILabel alloc] init];
     self.agreementLabel.textColor = HEX_COLOR(0x999999); // #999999
     self.agreementLabel.font = [UIFont systemFontOfSize:12];
-    self.agreementLabel.numberOfLines = 0;
+    self.agreementLabel.numberOfLines = 0; // 允许多行显示
     self.agreementLabel.textAlignment = NSTextAlignmentLeft;
     [self.view addSubview:self.agreementLabel];
     
@@ -267,6 +276,15 @@
     NSString *userAgreement = LocalString(@"用户协议");
     NSString *and = LocalString(@"和");
     NSString *privacyPolicy = LocalString(@"隐私政策");
+    
+    // 在英文环境下，将 "User Agreement" 和 "Privacy Policy" 中的空格替换为 non-breaking space，防止单词被拆分
+    LanguageManager *langManager = [LanguageManager sharedManager];
+    if (langManager.currentLanguage == LanguageTypeEnglish) {
+        // 使用 non-breaking space (U+00A0) 替换普通空格
+        userAgreement = [userAgreement stringByReplacingOccurrencesOfString:@" " withString:@"\u00A0"];
+        privacyPolicy = [privacyPolicy stringByReplacingOccurrencesOfString:@" " withString:@"\u00A0"];
+    }
+    
     NSString *fullText = [NSString stringWithFormat:@"%@%@%@%@", prefix, userAgreement, and, privacyPolicy];
     
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:fullText];
@@ -295,9 +313,11 @@
     // 启用用户交互
     self.agreementLabel.userInteractionEnabled = YES;
     
-    // 添加点击手势
-    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(agreementLabelTapped:)];
-    [self.agreementLabel addGestureRecognizer:tapGesture];
+    // 添加点击手势（只添加一次）
+    if (!self.agreementTapGesture) {
+        self.agreementTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(agreementLabelTapped:)];
+        [self.agreementLabel addGestureRecognizer:self.agreementTapGesture];
+    }
 }
 
 - (void)setupConstraints {
@@ -390,18 +410,26 @@
     NSString *privacyPolicy = LocalString(@"隐私政策");
     NSString *fullText = self.agreementLabel.attributedText.string;
     
+    if (!fullText || fullText.length == 0) {
+        return;
+    }
+    
+    // 在英文环境下，需要将原始字符串中的空格替换为 non-breaking space 来匹配显示文本
+    LanguageManager *langManager = [LanguageManager sharedManager];
+    if (langManager.currentLanguage == LanguageTypeEnglish) {
+        userAgreement = [userAgreement stringByReplacingOccurrencesOfString:@" " withString:@"\u00A0"];
+        privacyPolicy = [privacyPolicy stringByReplacingOccurrencesOfString:@" " withString:@"\u00A0"];
+    }
+    
     NSRange userAgreementRange = [fullText rangeOfString:userAgreement];
     NSRange privacyPolicyRange = [fullText rangeOfString:privacyPolicy];
     
-    // 使用更精确的方法计算点击位置（点击协议文字打开浏览器）
-    // 计算每个字符的宽度
-    UIFont *font = self.agreementLabel.font;
-    NSDictionary *attributes = @{NSFontAttributeName: font};
-    CGSize textSize = [fullText sizeWithAttributes:attributes];
-    CGFloat charWidth = textSize.width / fullText.length;
+    // 使用NSLayoutManager精确计算点击位置对应的字符索引（支持中英文混合）
+    NSUInteger characterIndex = [self characterIndexAtPoint:location inLabel:self.agreementLabel];
     
-    // 计算点击位置对应的字符索引
-    NSUInteger characterIndex = (NSUInteger)(location.x / charWidth);
+    if (characterIndex == NSNotFound) {
+        return;
+    }
     
     // 检查点击位置是否在链接范围内
     if (userAgreementRange.location != NSNotFound && NSLocationInRange(characterIndex, userAgreementRange)) {
@@ -409,6 +437,99 @@
     } else if (privacyPolicyRange.location != NSNotFound && NSLocationInRange(characterIndex, privacyPolicyRange)) {
         [self showPrivacyPolicy];
     }
+}
+
+/// 精确计算点击位置对应的字符索引（支持中英文混合）
+- (NSUInteger)characterIndexAtPoint:(CGPoint)point inLabel:(UILabel *)label {
+    if (!label.attributedText || label.attributedText.length == 0) {
+        return NSNotFound;
+    }
+    
+    // 确保label已经完成布局
+    if (CGRectIsEmpty(label.bounds)) {
+        return NSNotFound;
+    }
+    
+    // 创建NSTextStorage、NSLayoutManager和NSTextContainer
+    NSTextStorage *textStorage = [[NSTextStorage alloc] initWithAttributedString:label.attributedText];
+    NSLayoutManager *layoutManager = [[NSLayoutManager alloc] init];
+    [textStorage addLayoutManager:layoutManager];
+    
+    // 配置textContainer，确保与label的布局完全匹配
+    NSTextContainer *textContainer = [[NSTextContainer alloc] initWithSize:label.bounds.size];
+    textContainer.lineFragmentPadding = 0;
+    textContainer.maximumNumberOfLines = label.numberOfLines;
+    textContainer.lineBreakMode = label.lineBreakMode;
+    
+    // 根据textAlignment调整textContainer的宽度
+    if (label.textAlignment == NSTextAlignmentCenter || label.textAlignment == NSTextAlignmentRight) {
+        // 对于居中和右对齐，需要计算实际文本宽度
+        CGSize textSize = [label.attributedText boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, label.bounds.size.height)
+                                                               options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                               context:nil].size;
+        if (textSize.width < label.bounds.size.width) {
+            textContainer.size = CGSizeMake(textSize.width, label.bounds.size.height);
+        }
+    }
+    
+    [layoutManager addTextContainer:textContainer];
+    
+    // 强制布局计算
+    [layoutManager ensureLayoutForTextContainer:textContainer];
+    
+    // 调整点击位置（考虑textAlignment）
+    CGPoint adjustedPoint = point;
+    if (label.textAlignment == NSTextAlignmentCenter) {
+        // 居中对齐：需要调整点击位置的x坐标
+        CGSize textSize = [label.attributedText boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, label.bounds.size.height)
+                                                               options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                               context:nil].size;
+        if (textSize.width < label.bounds.size.width) {
+            CGFloat offsetX = (label.bounds.size.width - textSize.width) / 2.0;
+            adjustedPoint = CGPointMake(point.x - offsetX, point.y);
+        }
+    } else if (label.textAlignment == NSTextAlignmentRight) {
+        // 右对齐：需要调整点击位置的x坐标
+        CGSize textSize = [label.attributedText boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, label.bounds.size.height)
+                                                               options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                               context:nil].size;
+        if (textSize.width < label.bounds.size.width) {
+            CGFloat offsetX = label.bounds.size.width - textSize.width;
+            adjustedPoint = CGPointMake(point.x - offsetX, point.y);
+        }
+    }
+    
+    // 计算字符索引
+    NSUInteger characterIndex = [layoutManager characterIndexForPoint:adjustedPoint
+                                                        inTextContainer:textContainer
+                               fractionOfDistanceBetweenInsertionPoints:NULL];
+    
+    // 边界检查
+    if (characterIndex >= label.attributedText.length) {
+        return NSNotFound;
+    }
+    
+    return characterIndex;
+}
+
+#pragma mark - 语言切换通知
+
+- (void)addObservers {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(languageDidChange:)
+                                                 name:[LanguageManager languageDidChangeNotification]
+                                               object:nil];
+}
+
+- (void)removeObservers {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)languageDidChange:(NSNotification *)notification {
+    // 语言切换后更新协议文字
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self setupAgreementText];
+    });
 }
 
 - (void)showUserAgreement {

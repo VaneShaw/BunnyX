@@ -13,7 +13,8 @@
 #import "BunnyxMacros.h"
 #import "MaterialCollectionViewCell.h"
 #import "MaterialDetailViewController.h"
-#import <MJRefresh/MJRefresh.h>
+#import "MJRefreshHelper.h"
+#import "LanguageManager.h"
 #import <JXPagingView/JXPagerView.h>
 #import <SDWebImage/SDWebImage.h>
 
@@ -50,6 +51,11 @@ static NSString *const kLikeCellId = @"LikeListCell";
     
     [self setupUI];
     [self setupRefresh];
+    [self addObservers];
+}
+
+- (void)dealloc {
+    [self removeObservers];
 }
 
 - (void)setupUI {
@@ -103,8 +109,8 @@ static NSString *const kLikeCellId = @"LikeListCell";
 - (void)setupRefresh {
     __weak typeof(self) weakSelf = self;
     
-    // 下拉刷新
-    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+    // 下拉刷新（使用国际化封装）
+    MJRefreshNormalHeader *header = [MJRefreshHelper headerWithRefreshingBlock:^{
         [weakSelf loadData:YES];
     }];
     // 设置刷新状态下的文字颜色
@@ -116,14 +122,12 @@ static NSString *const kLikeCellId = @"LikeListCell";
     header.ignoredScrollViewContentInsetTop = 0;
     self.collectionView.mj_header = header;
     
-    // 上拉加载
-    MJRefreshAutoNormalFooter *footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+    // 上拉加载（使用国际化封装）
+    MJRefreshAutoNormalFooter *footer = [MJRefreshHelper footerWithRefreshingBlock:^{
         [weakSelf loadData:NO];
     }];
     // 设置加载状态下的文字颜色
     footer.stateLabel.textColor = [UIColor whiteColor];
-    // 设置没有更多数据时的提示
-    [footer setTitle:LocalString(@"没有更多数据了") forState:MJRefreshStateNoMoreData];
     self.collectionView.mj_footer = footer;
     self.collectionView.mj_footer.hidden = YES;
 }
@@ -303,6 +307,26 @@ static NSString *const kLikeCellId = @"LikeListCell";
     if (self.dataList.count == 0 && !self.isLoading) {
         [self loadData:YES];
     }
+}
+
+#pragma mark - 语言切换通知
+
+- (void)addObservers {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(languageDidChange:)
+                                                 name:[LanguageManager languageDidChangeNotification]
+                                               object:nil];
+}
+
+- (void)removeObservers {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)languageDidChange:(NSNotification *)notification {
+    // 语言切换后更新 MJRefresh 文案
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [MJRefreshHelper updateLocalizationForScrollView:self.collectionView];
+    });
 }
 
 @end

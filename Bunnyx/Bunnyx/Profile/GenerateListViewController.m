@@ -11,7 +11,8 @@
 #import "NetworkManager.h"
 #import "BunnyxNetworkMacros.h"
 #import "BunnyxMacros.h"
-#import <MJRefresh/MJRefresh.h>
+#import "MJRefreshHelper.h"
+#import "LanguageManager.h"
 #import <JXPagingView/JXPagerView.h>
 #import "GenerateListCell.h" // 导入以使用 GenerateListCell
 #import <SDWebImage/SDWebImage.h>
@@ -65,6 +66,12 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
                                              selector:@selector(handleGenerateDetailDeleted:)
                                                  name:kGenerateDetailDeletedNotification
                                                object:nil];
+    
+    // 监听语言切换通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(languageDidChange:)
+                                                 name:[LanguageManager languageDidChangeNotification]
+                                               object:nil];
 }
 
 - (void)handleGenerateDetailDeleted:(NSNotification *)notification {
@@ -81,6 +88,13 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
             // 列表为空，显示空状态（已在removeByCreateId中调用updateUI）
         }
     }
+}
+
+- (void)languageDidChange:(NSNotification *)notification {
+    // 语言切换后更新 MJRefresh 文案
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [MJRefreshHelper updateLocalizationForScrollView:self.tableView];
+    });
 }
 
 - (void)dealloc {
@@ -140,8 +154,8 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
 - (void)setupRefresh {
     __weak typeof(self) weakSelf = self;
     
-    // 下拉刷新
-    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+    // 下拉刷新（使用国际化封装）
+    MJRefreshNormalHeader *header = [MJRefreshHelper headerWithRefreshingBlock:^{
         [weakSelf loadData:YES];
     }];
     // 设置刷新状态下的文字颜色
@@ -153,14 +167,12 @@ NSString *const kGenerateDetailDeletedCreateIdKey = @"createId";
     header.ignoredScrollViewContentInsetTop = 0;
     self.tableView.mj_header = header;
     
-    // 上拉加载
-    MJRefreshAutoNormalFooter *footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+    // 上拉加载（使用国际化封装）
+    MJRefreshAutoNormalFooter *footer = [MJRefreshHelper footerWithRefreshingBlock:^{
         [weakSelf loadData:NO];
     }];
     // 设置加载状态下的文字颜色
     footer.stateLabel.textColor = [UIColor whiteColor];
-    // 设置没有更多数据时的提示
-    [footer setTitle:LocalString(@"没有更多数据了") forState:MJRefreshStateNoMoreData];
     self.tableView.mj_footer = footer;
     self.tableView.mj_footer.hidden = YES;
 }

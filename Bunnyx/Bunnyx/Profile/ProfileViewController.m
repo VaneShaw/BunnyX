@@ -257,7 +257,7 @@
         make.centerX.equalTo(self.vipContainerView);
         make.bottom.equalTo(self.vipContainerView).offset(-13);
         make.height.offset(40);
-        make.width.offset(150);
+        make.width.offset(200);
     }];
     
     // 金币区域
@@ -731,7 +731,13 @@
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
         formatter.dateStyle = NSDateFormatterMediumStyle;
         formatter.timeStyle = NSDateFormatterNoStyle;
-        formatter.locale = [NSLocale currentLocale];
+        
+        // 使用应用当前语言设置，而不是系统语言（对齐安卓版本）
+        LanguageManager *langManager = [LanguageManager sharedManager];
+        NSString *languageCode = langManager.currentLanguageCode ?: @"zh-Hans";
+        NSLocale *appLocale = [[NSLocale alloc] initWithLocaleIdentifier:languageCode];
+        formatter.locale = appLocale;
+        
         return [formatter stringFromDate:date];
     } else {
         // 兜底处理

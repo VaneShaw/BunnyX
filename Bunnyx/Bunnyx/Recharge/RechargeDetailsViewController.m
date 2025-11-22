@@ -12,7 +12,8 @@
 #import "BunnyxNetworkMacros.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <DZNEmptyDataSet/DZNEmptyDataSet-umbrella.h>
-#import <MJRefresh/MJRefresh.h>
+#import "MJRefreshHelper.h"
+#import "LanguageManager.h"
 
 @interface RechargeRecordModel : NSObject
 
@@ -163,9 +164,14 @@
     
     [self setupUI];
     [self setupRefresh];
+    [self addObservers];
     
     // 初始加载数据
     [self loadRechargeHistory:YES];
+}
+
+- (void)dealloc {
+    [self removeObservers];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -180,7 +186,7 @@
 - (void)setupUI {
     // 设置标题
     self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.text = LocalString(@"Recharge Details") ?: @"Recharge Details";
+    self.titleLabel.text = LocalString(@"Details");
     self.titleLabel.font = BOLD_FONT(FONT_SIZE_20);
     self.titleLabel.textColor = [UIColor whiteColor];
     [self.view addSubview:self.titleLabel];
@@ -215,8 +221,8 @@
 - (void)setupRefresh {
     __weak typeof(self) weakSelf = self;
     
-    // 下拉刷新
-    MJRefreshNormalHeader *header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+    // 下拉刷新（使用国际化封装）
+    MJRefreshNormalHeader *header = [MJRefreshHelper headerWithRefreshingBlock:^{
         [weakSelf loadRechargeHistory:YES];
     }];
     // 设置刷新状态下的文字颜色
@@ -225,12 +231,11 @@
     header.automaticallyChangeAlpha = YES;
     self.tableView.mj_header = header;
     
-    // 上拉加载更多
-    MJRefreshAutoNormalFooter *footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+    // 上拉加载更多（使用国际化封装）
+    MJRefreshAutoNormalFooter *footer = [MJRefreshHelper footerWithRefreshingBlock:^{
         [weakSelf loadRechargeHistory:NO];
     }];
     footer.stateLabel.textColor = [UIColor whiteColor];
-    [footer setTitle:LocalString(@"没有更多数据了") forState:MJRefreshStateNoMoreData];
     self.tableView.mj_footer = footer;
     self.tableView.mj_footer.hidden = YES;
 }
@@ -341,6 +346,26 @@
     [self.tableView.mj_header beginRefreshing];
 }
 
+#pragma mark - 语言切换通知
+
+- (void)addObservers {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(languageDidChange:)
+                                                 name:[LanguageManager languageDidChangeNotification]
+                                               object:nil];
+}
+
+- (void)removeObservers {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)languageDidChange:(NSNotification *)notification {
+    // 语言切换后更新 MJRefresh 文案
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [MJRefreshHelper updateLocalizationForScrollView:self.tableView];
+    });
+}
+
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -402,13 +427,14 @@
     NSInteger coins = record.coins > 0 ? record.coins : record.budgetNum;
     NSString *coinsText = @"";
     UIColor *coinsColor = HEX_COLOR(0x0AE971); // 默认绿色（收入）
+    NSString *coinsUnit = LocalString(@"Coins");
     if (record.budgetType == 1) {
         // 支出
-        coinsText = [NSString stringWithFormat:@"-%ld Coins", (long)coins];
+        coinsText = [NSString stringWithFormat:@"-%ld %@", (long)coins, coinsUnit];
         coinsColor = HEX_COLOR(0xB93218); // 红色（与安卓一致）
     } else {
         // 收入
-        coinsText = [NSString stringWithFormat:@"+%ld Coins", (long)coins];
+        coinsText = [NSString stringWithFormat:@"+%ld %@", (long)coins, coinsUnit];
         coinsColor = HEX_COLOR(0x0AE971); // 绿色（与安卓一致）
     }
     
@@ -456,7 +482,7 @@
 #pragma mark - DZNEmptyDataSetSource
 
 - (NSAttributedString *)titleForEmptyDataSet:(UIScrollView *)scrollView {
-    NSString *text = LocalString(@"暂无充值记录") ?: @"No Recharge Records";
+    NSString *text = LocalString(@"暂无充值记录");
     NSDictionary *attributes = @{
         NSFontAttributeName: FONT(FONT_SIZE_16),
         NSForegroundColorAttributeName: [UIColor whiteColor]

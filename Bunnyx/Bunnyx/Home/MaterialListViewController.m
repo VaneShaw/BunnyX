@@ -10,7 +10,8 @@
 #import "NetworkManager.h"
 #import "BunnyxMacros.h"
 #import "BunnyxNetworkMacros.h"
-#import <MJRefresh/MJRefresh.h>
+#import "MJRefreshHelper.h"
+#import "LanguageManager.h"
 #import <SDWebImage/SDWebImage.h>
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <Masonry/Masonry.h>
@@ -106,6 +107,11 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
                                              selector:@selector(handleMaterialReported:)
                                                  name:@"MaterialReportedNotification"
                                                object:nil];
+    // 监听语言切换通知
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(languageDidChange:)
+                                                 name:[LanguageManager languageDidChangeNotification]
+                                               object:nil];
 }
 
 - (void)dealloc {
@@ -173,12 +179,14 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
 
 - (void)setupRefresh {
     __weak typeof(self) weakSelf = self;
-    self.collectionView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+    // 下拉刷新（使用国际化封装）
+    self.collectionView.mj_header = [MJRefreshHelper headerWithRefreshingBlock:^{
         __strong typeof(weakSelf) self = weakSelf; if (!self) return; 
         self.index = 0; 
         [self fetchListIsLoadMore:NO];
     }];
-    self.collectionView.mj_footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+    // 上拉加载（使用国际化封装）
+    self.collectionView.mj_footer = [MJRefreshHelper footerWithRefreshingBlock:^{
         __strong typeof(weakSelf) self = weakSelf; if (!self) return; 
         [self fetchListIsLoadMore:YES];
     }];
@@ -325,6 +333,13 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
     } failure:^(NSError * _Nonnull error) {
         [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
     }];
+}
+
+- (void)languageDidChange:(NSNotification *)notification {
+    // 语言切换后更新 MJRefresh 文案
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [MJRefreshHelper updateLocalizationForScrollView:self.collectionView];
+    });
 }
 
 #pragma mark - Public Methods

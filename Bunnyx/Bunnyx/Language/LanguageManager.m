@@ -51,14 +51,19 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
 - (void)setupManager {
     // 从用户偏好设置中读取语言设置
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSInteger savedLanguage = [defaults integerForKey:kLanguageKey];
     
-    if (savedLanguage == 0 && savedLanguage != LanguageTypeChinese && savedLanguage != LanguageTypeEnglish) {
-        // 如果没有保存的语言设置，使用系统语言
-        [self useSystemLanguage];
-    } else {
-        [self setLanguage:(LanguageType)savedLanguage];
+    // 检查用户是否在语言设置页面手动设置过语言
+    if ([defaults objectForKey:kLanguageKey] != nil) {
+        // 如果存在保存的语言设置，使用用户设置的语言
+        NSInteger savedLanguage = [defaults integerForKey:kLanguageKey];
+        if (savedLanguage == LanguageTypeChinese || savedLanguage == LanguageTypeEnglish) {
+            [self setLanguage:(LanguageType)savedLanguage];
+            return;
+        }
     }
+    
+    // 如果没有保存的语言设置，根据系统语言自动判断
+    [self useSystemLanguageWithoutSaving];
 }
 
 #pragma mark - 语言切换
@@ -206,19 +211,49 @@ static NSString * const kLanguageKey = @"BunnyxLanguage";
     NSArray *languages = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleLanguages"];
     NSString *preferredLanguage = languages.firstObject;
     
-    if ([preferredLanguage hasPrefix:@"en"]) {
-        return LanguageTypeEnglish;
-    } else if ([preferredLanguage hasPrefix:@"zh"]) {
+    if ([preferredLanguage hasPrefix:@"zh"]) {
+        // 系统语言为中文，返回中文
         return LanguageTypeChinese;
     }
     
-    // 默认返回中文
-    return LanguageTypeChinese;
+    // 系统语言不是中文的，都默认返回英文
+    return LanguageTypeEnglish;
 }
 
 - (void)useSystemLanguage {
     LanguageType systemLanguage = [self systemLanguage];
     [self setLanguage:systemLanguage];
+}
+
+/// 使用系统语言但不保存到用户偏好设置（用于首次启动时的自动判断）
+- (void)useSystemLanguageWithoutSaving {
+    LanguageType systemLanguage = [self systemLanguage];
+    
+    // 直接设置语言属性，不保存到 NSUserDefaults
+    _currentLanguage = systemLanguage;
+    
+    // 更新语言代码和名称
+    switch (systemLanguage) {
+        case LanguageTypeChinese:
+            _currentLanguageCode = @"zh-Hans";
+            _currentLanguageName = @"中文";
+            _isRTL = NO;
+            break;
+        case LanguageTypeEnglish:
+            _currentLanguageCode = @"en";
+            _currentLanguageName = @"English";
+            _isRTL = NO;
+            break;
+    }
+    
+    // 按系统做法，写入 AppleLanguages 以让 NSLocalizedString 读取对应 .lproj
+    if (_currentLanguageCode.length > 0) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setObject:@[_currentLanguageCode] forKey:@"AppleLanguages"];
+        [defaults synchronize];
+    }
+    
+    BUNNYX_LOG(@"根据系统语言自动设置为: %@", _currentLanguageName);
 }
 
 #pragma mark - 通知

@@ -158,11 +158,7 @@
     UIView *sideEndGuide = [[UIView alloc] init];
     sideEndGuide.backgroundColor = [UIColor clearColor];
     [self.containerView addSubview:sideEndGuide];
-    
-    UIView *titleTopGuide = [[UIView alloc] init];
-    titleTopGuide.backgroundColor = [UIColor clearColor];
-    [self.containerView addSubview:titleTopGuide];
-    
+
     [sideStartGuide mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.containerView);
         make.width.equalTo(self.containerView).multipliedBy(0.06); // 6%
@@ -174,13 +170,7 @@
         make.width.equalTo(self.containerView).multipliedBy(0.06); // 6%
         make.top.bottom.equalTo(self.containerView);
     }];
-    
-    [titleTopGuide mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.containerView);
-        make.height.equalTo(self.containerView).multipliedBy(0.24); // 24%
-        make.left.right.equalTo(self.containerView);
-    }];
-    
+
     // 标题（23sp bold，黑色#333333，24%位置）
     self.titleLabel = [[UILabel alloc] init];
     self.titleLabel.text = LocalString(@"sign_title") ?: @"每日签到";
@@ -192,7 +182,8 @@
     [self.titleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(sideStartGuide.mas_right);
         make.right.equalTo(sideEndGuide.mas_left);
-        make.top.equalTo(titleTopGuide.mas_bottom);
+        make.top.offset(100);
+        make.height.offset(22);
     }];
     
     // 副标题（14sp，黑色#333333，marginTop 6dp）
@@ -205,7 +196,8 @@
     
     [self.subtitleLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(self.titleLabel);
-        make.top.equalTo(self.titleLabel.mas_bottom).offset(6);
+        make.top.equalTo(self.titleLabel.mas_bottom).offset(11);
+        make.height.offset(15);
     }];
     
     // 天列表容器（13% 黑 + 圆角13dp，padding 5dp，38%位置）
@@ -219,7 +211,7 @@
         make.left.equalTo(sideStartGuide.mas_right);
         make.right.equalTo(sideEndGuide.mas_left);
         make.top.equalTo(self.subtitleLabel.mas_bottom).offset(8);
-        make.height.mas_equalTo(80); // 临时高度，后续根据内容调整
+        make.height.mas_equalTo(75); // 临时高度，后续根据内容调整
     }];
     
     // 天列表CollectionView（横向滚动，LinearLayoutManager.HORIZONTAL）
@@ -248,13 +240,14 @@
     self.daysDescLabel.textColor = HEX_COLOR(0x333333); // @color/black3
     self.daysDescLabel.font = FONT(14); // 14sp
     self.daysDescLabel.textAlignment = NSTextAlignmentCenter;
-    self.daysDescLabel.numberOfLines = 0;
+    self.daysDescLabel.numberOfLines = 2;
     [self.containerView addSubview:self.daysDescLabel];
     
     [self.daysDescLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(sideStartGuide.mas_right);
         make.right.equalTo(sideEndGuide.mas_left);
-        make.top.equalTo(self.daysContainerView.mas_bottom).offset(10);
+        make.top.equalTo(self.daysContainerView.mas_bottom).offset(10);\
+        make.height.offset(36);
     }];
     
     // 奖励列表容器（同样样式，62%位置）
@@ -370,11 +363,9 @@
 }
 
 - (void)updateUIWithData:(SignInData *)data {
-    // 顶部描述）
-    if (data.consecutiveDay > 0) {
-        NSString *desc = [NSString stringWithFormat:LocalString(@"sign_days_desc") ?: @"已连续签到 %d 天\n持续签到奖励更多金币", (int)data.consecutiveDay];
-        self.daysDescLabel.text = desc;
-    }
+    // 顶部描述（对齐安卓：无论consecutiveDay是否大于0都显示格式化文案）
+    NSString *desc = [NSString stringWithFormat:LocalString(@"sign_days_desc") ?: @"已连续签到 %d 天\n持续签到奖励更多金币", (int)data.consecutiveDay];
+    self.daysDescLabel.text = desc;
     
     // 上方天列表）
     NSMutableArray *days = [NSMutableArray array];
