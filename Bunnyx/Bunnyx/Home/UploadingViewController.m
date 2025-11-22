@@ -15,6 +15,7 @@
 #import "GradientButton.h"
 #import "MaterialDetailViewController.h"
 #import "CreateTaskModel.h"
+#import "UserInfoManager.h"
 
 static const NSTimeInterval kPollingInterval = 5.0; // 5秒轮询一次
 static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
@@ -361,8 +362,8 @@ static const NSInteger kMaxPollingFailCount = 3; // 最多连续失败3次
     self.dashedBorderLayer.cornerRadius = CORNER_RADIUS_12;
     [self.backgroundButton.layer addSublayer:self.dashedBorderLayer];
     
-    // TODO: 根据用户VIP状态显示/隐藏VIP按钮
-    BOOL isVip = NO; // 需要从用户信息获取
+    // 根据用户VIP状态显示/隐藏VIP按钮
+    BOOL isVip = [[UserInfoManager sharedManager] isVip];
     self.vipButton.hidden = isVip;
     
     [self.vipButton mas_makeConstraints:^(MASConstraintMaker *make) {
