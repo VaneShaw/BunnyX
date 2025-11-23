@@ -582,6 +582,22 @@
     [[NetworkManager sharedManager]POST:BUNNYX_API_USER_LOGIN_ACCOUNT parameters:param success:^(id  _Nonnull responseObject) {
         NSLog(@"登录成功: %@", responseObject);
         
+        // 打印登录接口返回的token信息
+        NSDictionary *data = responseObject[@"data"];
+        if (data && [data isKindOfClass:[NSDictionary class]]) {
+            NSString *accessToken = data[@"access_token"];
+            NSString *refreshToken = data[@"refresh_token"];
+            NSString *tokenType = data[@"token_type"];
+            NSNumber *expiresIn = data[@"expires_in"];
+            
+            NSLog(@"[AccountLogin] ========== 登录接口返回的Token信息 ==========");
+            NSLog(@"[AccountLogin] access_token: %@", accessToken ?: @"(空)");
+            NSLog(@"[AccountLogin] refresh_token: %@", refreshToken ?: @"(空)");
+            NSLog(@"[AccountLogin] token_type: %@", tokenType ?: @"(空)");
+            NSLog(@"[AccountLogin] expires_in: %@ 秒", expiresIn ?: @"(空)");
+            NSLog(@"[AccountLogin] ============================================");
+        }
+        
         // 处理登录成功后的逻辑
         [self handleLoginSuccess:responseObject];
         

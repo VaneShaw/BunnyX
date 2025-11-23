@@ -212,6 +212,18 @@
     // GET 请求使用默认格式，不需要设置 Content-Type
     // GET 请求的参数会作为 URL 查询参数发送
     
+    // 检查是否为登录或刷新token接口，如果不是则自动设置Bearer认证
+    if (![url containsString:@"/login"] && ![url containsString:@"/refresh/token"]) {
+        NSString *accessToken = [[UserManager sharedManager] getAccessToken];
+        if (accessToken && accessToken.length > 0) {
+            [self setBearerAuthWithToken:accessToken];
+        }
+    }
+    
+    // 打印请求头
+    NSDictionary *headersToLog = self.sessionManager.requestSerializer.HTTPRequestHeaders;
+    NSLog(@"[NetworkManager] GET %@\nHeaders: %@\nParams: %@", url, headersToLog, parameters ?: @{});
+    
     [self.sessionManager GET:url
                   parameters:parameters
                      headers:nil
@@ -232,11 +244,16 @@
         if (code == 0) {
             if (success) { success(responseObject); }
         } else if (code == 1) {
-            // Token 失效，统一处理并回调失败
+            // Token 失效，统一处理并回调失败（与安卓版本保持一致）
             NSLog(@"[NetworkManager] Token失效（GET），准备跳转登录页");
-            [self handleTokenExpired];
+            // 检查token是否为空，如果为空则不提示，直接跳转；如果token不为空但校验失败，提示并跳转
+            NSString *accessToken = [[UserManager sharedManager] getAccessToken];
+            NSString *errorMessage = (accessToken == nil || accessToken.length == 0) 
+                ? @"" 
+                : @"登录已过期，请重新登录";
+            [self handleTokenExpiredWithMessage:errorMessage];
             if (failure) {
-                NSError *err = [NSError errorWithDomain:@"TokenExpiredError" code:1 userInfo:@{NSLocalizedDescriptionKey: @"登录已过期，请重新登录"}];
+                NSError *err = [NSError errorWithDomain:@"TokenExpiredError" code:1 userInfo:@{NSLocalizedDescriptionKey: errorMessage}];
                 failure(err);
             }
         } else {
@@ -274,9 +291,15 @@
     // POST 请求使用 x-www-form-urlencoded 格式
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];
     
-    // 检查是否为登录或刷新token接口，设置Basic认证
+    // 检查是否为登录或刷新token接口，设置Basic认证；否则自动设置Bearer认证
     if ([url containsString:@"/login"] || [url containsString:@"/refresh/token"]) {
         [self setBasicAuth];
+    } else {
+        // 非登录/刷新token接口，自动设置Bearer认证
+        NSString *accessToken = [[UserManager sharedManager] getAccessToken];
+        if (accessToken && accessToken.length > 0) {
+            [self setBearerAuthWithToken:accessToken];
+        }
     }
     // 打印请求头
     NSDictionary *headersToLog = self.sessionManager.requestSerializer.HTTPRequestHeaders;
@@ -315,14 +338,19 @@
             success(responseObject);
         }
         else if (code == 1) {
-            // Token失效错误，需要跳转到登录页
-            NSLog(@"[NetworkManager] Token失效，准备跳转登录页");
-            [self handleTokenExpired];
+            // Token失效错误，需要跳转到登录页（与安卓版本保持一致）
+            NSLog(@"[NetworkManager] Token失效（POST），准备跳转登录页");
+            // 检查token是否为空，如果为空则不提示，直接跳转；如果token不为空但校验失败，提示并跳转
+            NSString *accessToken = [[UserManager sharedManager] getAccessToken];
+            NSString *errorMessage = (accessToken == nil || accessToken.length == 0) 
+                ? @"" 
+                : @"登录已过期，请重新登录";
+            [self handleTokenExpiredWithMessage:errorMessage];
             
             if (failure) {
                 NSError *error = [NSError errorWithDomain:@"TokenExpiredError" 
                                                      code:1 
-                                                 userInfo:@{NSLocalizedDescriptionKey: @"登录已过期，请重新登录"}];
+                                                 userInfo:@{NSLocalizedDescriptionKey: errorMessage}];
                 failure(error);
             }
         }
@@ -363,8 +391,20 @@
 #pragma mark - Token Expired Handling
 
 - (void)handleTokenExpired {
+    // 兼容旧方法，默认不提示
+    [self handleTokenExpiredWithMessage:@""];
+}
+
+- (void)handleTokenExpiredWithMessage:(NSString *)message {
     // 清除所有用户信息
     [[UserManager sharedManager] logout];
+    
+    // 如果有错误消息，显示提示（与安卓版本保持一致：token为空时不提示，token不为空但失效时提示）
+    if (message && message.length > 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [SVProgressHUD showErrorWithStatus:message];
+        });
+    }
     
     // 跳转到登录页
     dispatch_async(dispatch_get_main_queue(), ^{

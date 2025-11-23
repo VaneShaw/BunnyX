@@ -575,11 +575,18 @@
                                                 success:^(NSDictionary *tokenInfo) {
         NSLog(@"[LoginViewController] 快速登录成功，token信息: %@", tokenInfo);
         
-        // 保存token信息
+        // 打印快速登录接口返回的token信息
         NSString *accessToken = tokenInfo[@"access_token"];
         NSString *refreshToken = tokenInfo[@"refresh_token"];
         NSString *tokenType = tokenInfo[@"token_type"];
         NSNumber *expiresIn = tokenInfo[@"expires_in"];
+        
+        NSLog(@"[QuickLogin] ========== 快速登录接口返回的Token信息 ==========");
+        NSLog(@"[QuickLogin] access_token: %@", accessToken ?: @"(空)");
+        NSLog(@"[QuickLogin] refresh_token: %@", refreshToken ?: @"(空)");
+        NSLog(@"[QuickLogin] token_type: %@", tokenType ?: @"(空)");
+        NSLog(@"[QuickLogin] expires_in: %@ 秒", expiresIn ?: @"(空)");
+        NSLog(@"[QuickLogin] ==============================================");
         
         if (accessToken && refreshToken) {
             [[UserManager sharedManager] saveUserTokensWithAccessToken:accessToken
@@ -839,6 +846,14 @@
                 NSString *tokenType = data[@"token_type"] ?: @"Bearer";
                 NSNumber *expiresIn = data[@"expires_in"];
                 
+                // 打印Apple登录接口返回的token信息
+                NSLog(@"[AppleLogin] ========== Apple登录接口返回的Token信息 ==========");
+                NSLog(@"[AppleLogin] access_token: %@", accessToken ?: @"(空)");
+                NSLog(@"[AppleLogin] refresh_token: %@", refreshToken ?: @"(空)");
+                NSLog(@"[AppleLogin] token_type: %@", tokenType ?: @"(空)");
+                NSLog(@"[AppleLogin] expires_in: %@ 秒", expiresIn ?: @"(空)");
+                NSLog(@"[AppleLogin] ==============================================");
+                
                 if (accessToken && refreshToken) {
                     [[UserManager sharedManager] saveUserTokensWithAccessToken:accessToken
                                                                   refreshToken:refreshToken
@@ -847,6 +862,16 @@
                     
                     // 设置网络管理器的Bearer认证
                     [[NetworkManager sharedManager] setBearerAuthWithToken:accessToken];
+                    
+                    // 打印token存储位置信息
+                    NSLog(@"[AppleLogin] ========== Token存储位置信息 ==========");
+                    NSLog(@"[AppleLogin] Token存储位置: NSUserDefaults");
+                    NSLog(@"[AppleLogin] access_token存储key: BunnyxAccessToken");
+                    NSLog(@"[AppleLogin] refresh_token存储key: BunnyxRefreshToken");
+                    NSLog(@"[AppleLogin] token_type存储key: BunnyxTokenType");
+                    NSLog(@"[AppleLogin] 过期时间存储key: BunnyxTokenExpireTime");
+                    NSLog(@"[AppleLogin] Token保存成功: %@ %@", tokenType, accessToken);
+                    NSLog(@"[AppleLogin] ======================================");
                 }
             }
             

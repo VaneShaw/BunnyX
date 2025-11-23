@@ -91,8 +91,8 @@
     NSTimeInterval expireTime = [[NSUserDefaults standardUserDefaults] doubleForKey:@"BunnyxTokenExpireTime"];
     NSTimeInterval currentTime = [[NSDate date] timeIntervalSince1970];
     
-    // 提前5分钟判断为过期，避免临界时间问题
-    BOOL expired = (currentTime >= (expireTime - 300));
+    // 直接判断是否过期（与安卓版本保持一致）
+    BOOL expired = (currentTime >= expireTime);
     
     if (expired) {
         NSLog(@"[UserManager] Token已过期");
