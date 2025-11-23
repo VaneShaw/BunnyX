@@ -569,13 +569,7 @@
                               parameters:params
                                  success:^(id responseObject) {
         [SVProgressHUD dismiss];
-        NSInteger code = [responseObject[@"code"] integerValue];
-        if (code != 0) {
-            NSString *msg = responseObject[@"message"] ?: LocalString(@"充值失败");
-            [SVProgressHUD showErrorWithStatus:msg];
-            return;
-        }
-        
+        // NetworkManager已经在基类中处理了code != 0的情况并显示错误信息，这里不需要重复处理
         NSDictionary *data = responseObject[@"data"];
         if (data) {
             NSString *productId = data[@"product_id"];
@@ -593,7 +587,7 @@
         }
     } failure:^(NSError *error) {
         [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
+        // NetworkManager已经在基类中自动显示错误信息，这里不需要重复显示
     }];
 }
 

@@ -389,20 +389,16 @@
 - (void)checkAndShowFirstBuyDialog {
     // 如果本次app启动已经弹过弹窗，不再弹出
     if (self.hasShownDialogThisSession) {
-        BUNNYX_LOG(@"订阅弹窗：本次会话已弹过，跳过");
         return;
     }
     
     // 检查用户是否是VIP，如果是VIP就不弹窗
     if ([[UserInfoManager sharedManager] isVip]) {
-        BUNNYX_LOG(@"订阅弹窗：用户已是VIP，跳过");
         return;
     }
     
     // 检查是否是首次进入且firstBuy为true
     if (self.vipData && self.vipData.firstBuy && self.vipItems.count > 0) {
-        BUNNYX_LOG(@"订阅弹窗：满足显示条件，准备弹出 - firstBuy=YES, vipItems.count=%ld", (long)self.vipItems.count);
-        
         // 优先选择Year套餐
         VipItemModel *selectedItem = nil;
         for (VipItemModel *item in self.vipItems) {
@@ -414,9 +410,6 @@
         if (!selectedItem) {
             selectedItem = self.vipItems[0];
         }
-        
-        BUNNYX_LOG(@"订阅弹窗：选择套餐 - typeRemark=%@, payMoney=%.2f, rechargeId=%ld", 
-                   selectedItem.typeRemark ?: @"", selectedItem.payMoney, (long)selectedItem.rechargeId);
         
         // 弹出限时优惠弹窗
         [SubscribeDialog showWithPayMoney:[NSString stringWithFormat:@"%.2f", selectedItem.payMoney]
@@ -433,12 +426,6 @@
         self.hasShownDialogThisSession = YES;
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"SubscribeHasShownDialogThisSession"];
         [[NSUserDefaults standardUserDefaults] synchronize];
-        BUNNYX_LOG(@"订阅弹窗：已标记本次会话已弹过");
-    } else {
-        BUNNYX_LOG(@"订阅弹窗：不满足显示条件 - vipData=%@, firstBuy=%@, vipItems.count=%ld", 
-                   self.vipData ? @"存在" : @"nil",
-                   self.vipData.firstBuy ? @"YES" : @"NO", 
-                   (long)self.vipItems.count);
     }
 }
 
@@ -483,13 +470,7 @@
                               parameters:params
                                  success:^(id responseObject) {
         [SVProgressHUD dismiss];
-        NSInteger code = [responseObject[@"code"] integerValue];
-        if (code != 0) {
-            NSString *msg = responseObject[@"message"] ?: LocalString(@"订阅失败");
-            [SVProgressHUD showErrorWithStatus:msg];
-            return;
-        }
-        
+        // NetworkManager已经在基类中处理了code != 0的情况并显示错误信息，这里不需要重复处理
         NSDictionary *data = responseObject[@"data"];
         if (data) {
             NSString *productId = data[@"product_id"];
@@ -506,7 +487,7 @@
         }
     } failure:^(NSError *error) {
         [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"订阅失败")];
+        // NetworkManager已经在基类中自动显示错误信息，这里不需要重复显示
     }];
 }
 
