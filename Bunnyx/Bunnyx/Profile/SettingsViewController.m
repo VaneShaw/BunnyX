@@ -47,7 +47,7 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
         LocalString(@"用户协议"),
         LocalString(@"隐私政策"),
         LocalString(@"版本号"),
-        LocalString(@"注销账号")
+        LocalString(@"删除账号")
     ];
     
     [self setupLogoutButton];
@@ -285,10 +285,10 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
 
 // 显示删除账号确认对话框
 - (void)confirmDeleteAccount {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"确认注销")
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"确认删除")
                                                                    message:LocalString(@"此操作不可撤销，是否继续？")
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:LocalString(@"注销账号") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+    UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:LocalString(@"删除账号") style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
         [self performDeleteAccount];
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消") style:UIAlertActionStyleCancel handler:nil];

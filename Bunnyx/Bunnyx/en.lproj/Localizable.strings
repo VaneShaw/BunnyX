@@ -281,6 +281,6 @@
 // MARK: - Settings Page
 "语言" = "Language";
 "版本号" = "Version";
-"注销账号" = "Delete Account";
-"确认注销" = "Confirm Deletion";
+"删除账号" = "Delete Account";
+"确认删除" = "Confirm Deletion";
 "此操作不可撤销，是否继续？" = "This operation cannot be undone. Do you want to continue?";
