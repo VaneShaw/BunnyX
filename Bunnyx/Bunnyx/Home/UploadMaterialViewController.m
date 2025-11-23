@@ -406,8 +406,7 @@
     } failure:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             // 上传失败（uploadToS3的onError回调）
-            [SVProgressHUD dismiss];
-            [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: LocalString(@"图片上传失败")];
+            // 错误提示由 NetworkManager 自动显示
             BUNNYX_ERROR(@"图片上传失败: %@", error.localizedDescription);
         });
     }];
@@ -454,8 +453,7 @@
         });
     } failure:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [SVProgressHUD dismiss];
-            [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+            // 错误提示由 NetworkManager 自动显示
             BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
         });
     }];
@@ -549,7 +547,7 @@
             [SVProgressHUD showErrorWithStatus:errorMessage];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+        // 错误提示由 NetworkManager 自动显示
         BUNNYX_ERROR(@"提交生成任务失败: %@", error.localizedDescription);
     }];
 }

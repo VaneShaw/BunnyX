@@ -668,7 +668,6 @@
         NSLog(@"获取用户详细信息失败: %@", error);
         
         // 即使获取用户信息失败，也继续跳转到主界面
-        [SVProgressHUD dismiss];
         [self transitionToMainInterface];
     }];
 }

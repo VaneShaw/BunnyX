@@ -633,7 +633,6 @@
         NSLog(@"[LoginViewController] 获取用户详细信息失败: %@", error);
         
         // 即使获取用户信息失败，也跳转到首页
-        [SVProgressHUD dismiss];
         [self transitionToMainInterface];
     }];
 }
@@ -884,14 +883,7 @@
         }
     } failure:^(NSError *error) {
         NSLog(@"[LoginViewController] Apple登录接口请求失败: %@", error);
-        [SVProgressHUD dismiss];
-        // 显示原始错误信息
-        NSString *errorMessage = error.localizedDescription ?: error.localizedFailureReason;
-        if (errorMessage && errorMessage.length > 0) {
-            [SVProgressHUD showErrorWithStatus:errorMessage];
-        } else {
-            [SVProgressHUD showErrorWithStatus:LocalString(@"Apple登录失败")];
-        }
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 

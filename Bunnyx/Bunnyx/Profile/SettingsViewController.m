@@ -317,7 +317,6 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
             [self navigateToLoginPage];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
         // 失败也清理并回到登录
         [self clearUserData];
         [self navigateToLoginPage];
@@ -357,9 +356,7 @@ typedef NS_ENUM(NSInteger, SettingsRow) {
         // 接口调用成功，跳转到登录页面
         [self navigateToLoginPage];
     } failure:^(NSError *error) {
-        // 接口调用失败，只关闭加载提示，错误提示由 NetworkManager 自动显示
-        [SVProgressHUD dismiss];
-        
+        // 接口调用失败，错误提示由 NetworkManager 自动显示
         // 不进行后续操作，保持在当前页面
     }];
 }

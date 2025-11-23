@@ -369,8 +369,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -532,8 +531,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             [self presentViewController:alert animated:YES completion:nil];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -573,8 +571,8 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             [self proceedToUpload:materialId];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
         // 获取素材信息失败，直接继续上传流程
+        // 错误提示由 NetworkManager 自动显示
         [self proceedToUpload:materialId];
     }];
 }

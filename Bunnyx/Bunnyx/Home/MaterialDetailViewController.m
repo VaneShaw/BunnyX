@@ -300,8 +300,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [self updateUI];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"数据加载失败")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -624,8 +623,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
+        // 错误提示由 NetworkManager 自动显示   
     }];
 }
 
@@ -675,8 +673,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -744,8 +741,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [self presentViewController:alert animated:YES completion:nil];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -803,8 +799,8 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [self proceedToGenerate];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
         // 获取素材信息失败，直接继续生成流程
+        // 错误提示由 NetworkManager 自动显示
         [self proceedToGenerate];
     }];
 }
@@ -1075,8 +1071,7 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败")];
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD dismiss];
-        [SVProgressHUD showErrorWithStatus:LocalString(@"删除失败")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 

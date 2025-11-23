@@ -273,12 +273,8 @@
             });
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
         BUNNYX_ERROR(@"加载充值列表失败: %@", error.localizedDescription);
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [SVProgressHUD showErrorWithStatus:LocalString(@"网络错误")];
-        });
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
@@ -586,7 +582,6 @@
             [SVProgressHUD showErrorWithStatus:LocalString(@"充值失败")];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
         // NetworkManager已经在基类中自动显示错误信息，这里不需要重复显示
     }];
 }

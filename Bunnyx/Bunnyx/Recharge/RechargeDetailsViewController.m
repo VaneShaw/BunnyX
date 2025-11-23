@@ -302,16 +302,8 @@
         [self updateUI];
     } failure:^(NSError *error) {
         self.isLoading = NO;
-        [SVProgressHUD dismiss];
         [self endRefreshing];
         self.hasMoreData = NO;
-        
-        // 错误处理
-        if (isRefresh && self.records.count == 0) {
-            // 首次加载失败，显示错误提示
-            [SVProgressHUD showErrorWithStatus:LocalString(@"加载失败")];
-        }
-        
         [self updateUI];
     }];
 }

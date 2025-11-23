@@ -331,7 +331,7 @@ static NSString * const kMaterialCellId = @"kMaterialCellId";
             }
         }
     } failure:^(NSError * _Nonnull error) {
-        [SVProgressHUD showErrorWithStatus:LocalString(@"操作失败")];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 

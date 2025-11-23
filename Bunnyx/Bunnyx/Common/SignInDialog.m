@@ -557,10 +557,8 @@
         }
     }
                                   failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
         BUNNYX_ERROR(@"签到失败: %@", error);
-        // 失败时不关闭弹窗，只显示错误提示）
-        [SVProgressHUD showErrorWithStatus:LocalString(@"network_error") ?: @"网络错误"];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 

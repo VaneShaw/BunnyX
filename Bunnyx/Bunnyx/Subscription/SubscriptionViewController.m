@@ -486,7 +486,6 @@
             }
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
         // NetworkManager已经在基类中自动显示错误信息，这里不需要重复显示
     }];
 }

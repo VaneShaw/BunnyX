@@ -402,9 +402,7 @@ static const NSInteger kMaxImageCount = 3;
             [SVProgressHUD showErrorWithStatus:errorMsg];
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD dismiss];
-        NSString *errorMsg = [NSString stringWithFormat:LocalString(@"提交失败: %@"), error.localizedDescription];
-        [SVProgressHUD showErrorWithStatus:errorMsg];
+        // 错误提示由 NetworkManager 自动显示
     }];
 }
 
