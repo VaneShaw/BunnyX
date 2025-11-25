@@ -1,0 +1,5 @@
+"NSPhotoLibraryUsageDescription" = "We need access to your photo library to select images for generating materials.";
+"NSPhotoLibraryAddUsageDescription" = "We need to save generated photos and videos to your photo library.";
+"NSCameraUsageDescription" = "We need access to the camera to capture photos for generating materials.";
+"NSLocationWhenInUseUsageDescription" = "We use your location to provide location-based personalized content and services.";
+

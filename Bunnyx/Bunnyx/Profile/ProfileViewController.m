@@ -30,8 +30,8 @@
 
 // 顶部区域
 @property (nonatomic, strong) UIView *headerView;
-@property (nonatomic, strong) UIImageView *serviceImageView;
-@property (nonatomic, strong) UIImageView *settingsImageView;
+@property (nonatomic, strong) UIButton *serviceButton;
+@property (nonatomic, strong) UIButton *settingsButton;
 @property (nonatomic, strong) UIImageView *avatarImageView;
 @property (nonatomic, strong) UILabel *nicknameLabel;
 @property (nonatomic, strong) UILabel *userIdLabel;
@@ -116,31 +116,29 @@
     }];
     
     // 设置按钮
-    self.settingsImageView = [[UIImageView alloc] init];
-    self.settingsImageView.image = [UIImage imageNamed:@"icon_mine_set_default"];
-    self.settingsImageView.userInteractionEnabled = YES;
-    UITapGestureRecognizer *settingsTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onSettingsClick)];
-    [self.settingsImageView addGestureRecognizer:settingsTap];
-    [topButtonContainer addSubview:self.settingsImageView];
+    self.settingsButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.settingsButton setImage:[UIImage imageNamed:@"icon_mine_set_default"] forState:UIControlStateNormal];
+    self.settingsButton.accessibilityLabel = LocalString(@"设置");
+    [self.settingsButton addTarget:self action:@selector(onSettingsClick) forControlEvents:UIControlEventTouchUpInside];
+    [topButtonContainer addSubview:self.settingsButton];
     
-    [self.settingsImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+    [self.settingsButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.right.equalTo(topButtonContainer).offset(-16);
-        make.width.height.mas_equalTo(22);
-        make.top.offset(70);
+        make.width.height.mas_equalTo(23);
+        make.top.equalTo(topButtonContainer).offset(STATUS_BAR_HEIGHT + 8);
     }];
     
     // 服务按钮
-    self.serviceImageView = [[UIImageView alloc] init];
-    self.serviceImageView.image = [UIImage imageNamed:@"icon_mine_service_default"];
-    self.serviceImageView.userInteractionEnabled = YES;
-    UITapGestureRecognizer *serviceTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onServiceClick)];
-    [self.serviceImageView addGestureRecognizer:serviceTap];
-    [topButtonContainer addSubview:self.serviceImageView];
+    self.serviceButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.serviceButton setImage:[UIImage imageNamed:@"icon_mine_service_default"] forState:UIControlStateNormal];
+    self.serviceButton.accessibilityLabel = LocalString(@"客服");
+    [self.serviceButton addTarget:self action:@selector(onServiceClick) forControlEvents:UIControlEventTouchUpInside];
+    [topButtonContainer addSubview:self.serviceButton];
     
-    [self.serviceImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(self.settingsImageView.mas_left).offset(-8);
-        make.centerY.equalTo(self.settingsImageView.mas_centerY);
-        make.width.height.offset(25);
+    [self.serviceButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.right.equalTo(self.settingsButton.mas_left).offset(-12);
+        make.centerY.equalTo(self.settingsButton.mas_centerY);
+        make.width.height.mas_equalTo(23);
     }];
     
     // 用户信息区域
