@@ -190,6 +190,20 @@
     
     // Adjust SDK 需要在场景激活时调用（对应 Android 的 onResume）
     [Adjust trackSubsessionStart];
+    
+    // 延迟请求 IDFA 授权（确保 UI 完全准备好后再请求，ATT 弹窗需要在可见界面时显示）
+    // 只在首次激活时请求，避免重复请求
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            // 如果还没有获取到 IDFA，尝试再次请求授权
+            AdjustManager *adjustManager = [AdjustManager sharedManager];
+            if ([adjustManager isInitialized] && ![adjustManager getIDFA]) {
+                // 请求授权（如果状态是 NotDetermined 会弹窗）
+                [adjustManager requestIDFAAuthorizationIfNeeded];
+            }
+        });
+    });
 }
 
 

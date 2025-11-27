@@ -131,16 +131,12 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
 - (void)adjustAttributionChanged:(ADJAttribution *)attribution {
     self.currentAttribution = attribution;
     
-    BUNNYX_LOG(@"Adjust 归因变更: %@", attribution);
-    
     // 判断是否为Facebook引流
     BOOL isFromFB = [self isFacebookAttribution:attribution];
     self.facebookAttributionCache = @(isFromFB);
     
     // 保存到本地存储（重要：因为 Attribution 回调只在特定时机触发）
     [self saveFacebookAttributionToCache:isFromFB];
-    
-    BUNNYX_LOG(@"是否为Facebook引流: %@", isFromFB ? @"是" : @"否");
     
     // 获取到归因信息后，调用 getChannelByAdjust 接口
     if (attribution) {
@@ -154,8 +150,11 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
 #pragma mark - 初始化流程
 
 - (void)startInitProcess {
-    // 异步获取 IDFA
-    [self getIDFAAsync];
+    // 延迟获取 IDFA（确保 UI 完全准备好后再请求授权，ATT 弹窗需要在可见界面时显示）
+    // 延迟 1 秒，确保第一个 ViewController 已经显示
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self getIDFAAsync];
+    });
     
     // 延迟获取 adid 和归因信息（Adjust SDK 可能需要一些时间才能准备好）
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -179,16 +178,36 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
     
     // 注意：iOS 的 Adjust SDK 没有直接获取归因信息的方法
     // 归因信息只能通过回调获取，所以这里不做处理
-    BUNNYX_LOG(@"等待 Adjust 归因回调...");
 }
 
 - (void)getIDFAAsync {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        // 检查是否允许追踪
+    // 确保在主线程检查状态和弹窗（requestTrackingAuthorization 必须在主线程调用）
+    dispatch_async(dispatch_get_main_queue(), ^{
         if (@available(iOS 14.0, *)) {
             ATTrackingManagerAuthorizationStatus status = [ATTrackingManager trackingAuthorizationStatus];
-            if (status != ATTrackingManagerAuthorizationStatusAuthorized) {
-                BUNNYX_LOG(@"用户未授权追踪，无法获取 IDFA");
+            
+            if (status == ATTrackingManagerAuthorizationStatusNotDetermined) {
+                // 未请求过授权（首次安装或之前版本未请求过），主动弹窗请求用户同意
+                [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus newStatus) {
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        if (newStatus == ATTrackingManagerAuthorizationStatusAuthorized) {
+                            [self fetchIDFA];
+                        } else {
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self checkInitComplete];
+                            });
+                        }
+                    });
+                }];
+                return;
+            } else if (status == ATTrackingManagerAuthorizationStatusAuthorized) {
+                // 已授权，直接获取
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    [self fetchIDFA];
+                });
+                return;
+            } else {
+                // 已拒绝或受限，无法获取
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self checkInitComplete];
                 });
@@ -196,20 +215,27 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
             }
         }
         
-        // 获取 IDFA
-        NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-        if (idfa && idfa.length > 0 && ![idfa isEqualToString:@"00000000-0000-0000-0000-000000000000"]) {
-            self.idfa = idfa;
-            [self saveIDFAToCache:idfa];
-            
-            BUNNYX_LOG(@"获取 IDFA 成功: %@", idfa);
-        } else {
-            BUNNYX_LOG(@"获取 IDFA 失败或为空");
-        }
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self checkInitComplete];
+        // iOS 14 以下，直接获取
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [self fetchIDFA];
         });
+    });
+}
+
+- (void)fetchIDFA {
+    // 获取 IDFA
+    NSString *idfa = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
+    if (idfa && idfa.length > 0 && ![idfa isEqualToString:@"00000000-0000-0000-0000-000000000000"]) {
+        self.idfa = idfa;
+        [self saveIDFAToCache:idfa];
+        
+        BUNNYX_LOG(@"获取 IDFA 成功: %@", idfa);
+    } else {
+        BUNNYX_LOG(@"获取 IDFA 失败或为空");
+    }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self checkInitComplete];
     });
 }
 
@@ -274,8 +300,6 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
     
     NSString *attributionJson = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     
-    BUNNYX_LOG(@"调用 getChannelByAdjust，归因信息: %@", attributionJson);
-    
     // 调用接口
     NSDictionary *parameters = @{@"attribution": attributionJson ?: @""};
     
@@ -302,10 +326,6 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
             if (channel && channel.length > 0) {
                 self.channel = channel;
                 [self saveChannelToCache:channel];
-                
-                BUNNYX_LOG(@"获取 channel 成功: %@", channel);
-            } else {
-                BUNNYX_LOG(@"channel 为空");
             }
         }
         
@@ -346,7 +366,6 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
     // 如果是 open 事件，检查是否已经上报过
     if ([eventName isEqualToString:@"open"]) {
         if ([self hasReportedOpenEvent]) {
-            BUNNYX_LOG(@"open 事件已上报过，跳过重复上报");
             return;
         }
     }
@@ -356,15 +375,11 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
 }
 
 - (void)requestAddAdjustEvent:(NSString *)eventName {
-    BUNNYX_LOG(@"调用 addAdjustEvent，事件名称: %@", eventName);
-    
     NSDictionary *parameters = @{@"eventName": eventName ?: @""};
     
     [[NetworkManager sharedManager] GET:BUNNYX_API_SERVER_ADD_ADJUST_EVENT
                               parameters:parameters
                                  success:^(id responseObject) {
-        BUNNYX_LOG(@"addAdjustEvent 上报成功: %@", eventName);
-        
         // 如果是 open 事件，上报成功后保存标记
         if ([eventName isEqualToString:@"open"]) {
             [self saveOpenEventReported];
@@ -535,6 +550,16 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
         }
     }
     return self.idfa;
+}
+
+- (void)requestIDFAAuthorizationIfNeeded {
+    // 如果已经有 IDFA，不需要再次请求
+    if (self.idfa && self.idfa.length > 0) {
+        return;
+    }
+    
+    // 调用 getIDFAAsync 来请求授权（如果状态是 NotDetermined）
+    [self getIDFAAsync];
 }
 
 - (NSString *)getAdid {

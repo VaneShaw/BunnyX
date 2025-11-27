@@ -67,6 +67,12 @@ typedef void(^AdjustInitCompleteCallback)(void);
  */
 - (BOOL)isFacebookAttribution;
 
+/**
+ * 请求 IDFA 授权（如果状态为 NotDetermined 会弹窗）
+ * 建议在 UI 完全准备好后调用，例如在第一个 ViewController 的 viewDidAppear 中
+ */
+- (void)requestIDFAAuthorizationIfNeeded;
+
 @end
 
 NS_ASSUME_NONNULL_END
