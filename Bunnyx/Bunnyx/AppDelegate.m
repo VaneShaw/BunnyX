@@ -10,6 +10,8 @@
 #import "LaunchViewController.h"
 #import "Manager/Config/SVProgressHUDConfig.h"
 #import "PaymentExceptionHandler.h"
+#import "AdjustManager.h"
+#import <AdjustSdk/Adjust.h>
 #import <SVProgressHUD/SVProgressHUD.h>
 #import <SDWebImageWebPCoder/SDWebImageWebPCoder.h>
 #import <SDWebImage/SDWebImage.h>
@@ -52,6 +54,10 @@
     // 初始化支付异常处理（处理未完成的交易）
     // 注意：iOS 13+ 在 SceneDelegate 中也会初始化，但这里初始化不会重复（单例模式）
     [[PaymentExceptionHandler sharedHandler] initialize];
+    
+    // 初始化 Adjust SDK 和 Facebook SDK
+    // 注意：打开事件（eventName=open）会在 AdjustManager 初始化完成后自动通过 /server/addAdjustEvent 接口上报
+    [[AdjustManager sharedManager] initializeWithApplication:application];
     
     // 只在iOS 12及以下版本中设置启动页
     if (@available(iOS 13.0, *)) {
@@ -101,5 +107,16 @@
     // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
 }
 
+#pragma mark - Application Lifecycle (for Adjust SDK)
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    // Adjust SDK 需要在应用激活时调用（对应 Android 的 onResume）
+    [Adjust trackSubsessionStart];
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+    // Adjust SDK 需要在应用失活时调用（对应 Android 的 onPause）
+    [Adjust trackSubsessionEnd];
+}
 
 @end

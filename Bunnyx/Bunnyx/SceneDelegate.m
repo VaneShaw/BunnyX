@@ -14,6 +14,8 @@
 #import "AppConfigManager.h"
 #import "PaymentExceptionHandler.h"
 #import "SubscriptionViewController.h"
+#import "AdjustManager.h"
+#import <AdjustSdk/Adjust.h>
 
 @interface SceneDelegate ()
 
@@ -34,6 +36,13 @@
     
     // 初始化支付异常处理（处理未完成的交易）
     [[PaymentExceptionHandler sharedHandler] initialize];
+    
+    // 初始化 Adjust SDK 和 Facebook SDK（如果还没初始化）
+    // 注意：打开事件（eventName=open）会在 AdjustManager 初始化完成后自动通过 /server/addAdjustEvent 接口上报
+    if (![[AdjustManager sharedManager] isInitialized]) {
+        UIApplication *application = [UIApplication sharedApplication];
+        [[AdjustManager sharedManager] initializeWithApplication:application];
+    }
     
     // 创建窗口并设置启动页
     if ([scene isKindOfClass:[UIWindowScene class]]) {
@@ -178,6 +187,9 @@
 - (void)sceneDidBecomeActive:(UIScene *)scene {
     // Called when the scene has moved from an inactive state to an active state.
     // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    
+    // Adjust SDK 需要在场景激活时调用（对应 Android 的 onResume）
+    [Adjust trackSubsessionStart];
 }
 
 
@@ -198,7 +210,6 @@
     // Use this method to save data, release shared resources, and store enough scene-specific state information
     // to restore the scene back to its current state.
 }
-
 
 - (void)loadAppConfigAndNavigate {
     __weak typeof(self) weakSelf = self;

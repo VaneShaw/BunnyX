@@ -32,6 +32,8 @@
 
 // MARK: - 服务器相关接口
 #define BUNNYX_API_SERVER_GET_APP_CONFIG [NSString stringWithFormat:@"%@/server/getAppConfig", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_SERVER_GET_CHANNEL_BY_ADJUST [NSString stringWithFormat:@"%@/server/getChannelByAdjust", BUNNYX_API_BASE_URL]
+#define BUNNYX_API_SERVER_ADD_ADJUST_EVENT [NSString stringWithFormat:@"%@/server/addAdjustEvent", BUNNYX_API_BASE_URL]
 
 // MARK: - 素材广场相关接口
 #define BUNNYX_API_MATERIAL_TYPE_LIST [NSString stringWithFormat:@"%@/aitool/getMaterialTypeList", BUNNYX_API_BASE_URL]
@@ -196,5 +198,7 @@
 #define BUNNYX_HEADER_EQUIPMENT_BRAND @"Equipment-brand"
 #define BUNNYX_HEADER_VERSION_NAME @"versionName"
 #define BUNNYX_HEADER_VERSION_CODE @"versionCode"
+#define BUNNYX_HEADER_IDFA @"idfa"
+#define BUNNYX_HEADER_ADID @"adid"
 
 #endif /* BunnyxNetworkMacros_h */

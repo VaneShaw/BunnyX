@@ -38,6 +38,12 @@ target 'Bunnyx' do
   pod 'AWSS3'
   # JXPagingView - 用于实现嵌套滚动效果（类似CoordinatorLayout）
   pod 'JXPagingView/Pager'
+  
+  # Adjust SDK - 用于归因和事件追踪
+  pod 'Adjust'
+  
+  # Facebook Audience Network SDK - 用于广告
+  pod 'FBAudienceNetwork'
 end
 
 target 'BunnyxTests' do

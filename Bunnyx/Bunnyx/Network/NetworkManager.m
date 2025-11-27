@@ -11,6 +11,7 @@
 #import "DeviceIdentifierManager.h"
 #import "UserManager.h"
 #import "LanguageManager.h"
+#import "AdjustManager.h"
 
 @interface NetworkManager ()
 
@@ -79,12 +80,34 @@
     [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_DEVICE_ID];
     [serializer setValue:device.model ?: @"" forHTTPHeaderField:BUNNYX_HEADER_DEVICE_MODEL];
     [serializer setValue:BUNNYX_API_VERSION forHTTPHeaderField:BUNNYX_HEADER_API_VERSION];
-    [serializer setValue:BUNNYX_CHANNEL forHTTPHeaderField:BUNNYX_HEADER_CHANNEL];
     [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_EFFECTIVE_IMEI];
     [serializer setValue:@"Apple" forHTTPHeaderField:BUNNYX_HEADER_EQUIPMENT_BRAND];
     
+    // 添加 Adjust 相关请求头
+    AdjustManager *adjustManager = [AdjustManager sharedManager];
+    
+    // channel：从 AdjustManager 获取，如果为空则不添加
+    NSString *channel = [adjustManager getChannel];
+    if (channel && channel.length > 0) {
+        [serializer setValue:channel forHTTPHeaderField:BUNNYX_HEADER_CHANNEL];
+    }
+    // 注意：如果 channel 为空，则不添加 channel 请求头（根据需求文档）
+    
+    // idfa：从 AdjustManager 获取
+    NSString *idfa = [adjustManager getIDFA];
+    if (idfa && idfa.length > 0) {
+        [serializer setValue:idfa forHTTPHeaderField:BUNNYX_HEADER_IDFA];
+    }
+    
+    // adid：从 AdjustManager 获取
+    NSString *adid = [adjustManager getAdid];
+    if (adid && adid.length > 0) {
+        [serializer setValue:adid forHTTPHeaderField:BUNNYX_HEADER_ADID];
+    }
+    
     NSLog(@"[NetworkManager] 通用请求头:%@",[self getCurrentLanguageCode]);
     NSLog(@"[NetworkManager] 设备信息: %@", deviceInfo);
+    NSLog(@"[NetworkManager] Adjust信息 - channel: %@, idfa: %@, adid: %@", channel ?: @"", idfa ?: @"", adid ?: @"");
 }
 
 - (NSString *)getCurrentLanguageCode {
@@ -213,7 +236,12 @@
     // GET 请求的参数会作为 URL 查询参数发送
     
     // 检查是否为登录或刷新token接口，如果不是则自动设置Bearer认证
-    if (![url containsString:@"/login"] && ![url containsString:@"/refresh/token"]) {
+    // 注意：getChannelByAdjust 和 addAdjustEvent 接口未登录时调用，不需要 Authorization 头
+    BOOL isNoAuthApi = [url containsString:@"/getChannelByAdjust"] || 
+                       [url containsString:@"/addAdjustEvent"] ||
+                       [url containsString:@"/getAppConfig"];
+    
+    if (![url containsString:@"/login"] && ![url containsString:@"/refresh/token"] && !isNoAuthApi) {
         NSString *accessToken = [[UserManager sharedManager] getAccessToken];
         if (accessToken && accessToken.length > 0) {
             [self setBearerAuthWithToken:accessToken];
@@ -291,11 +319,16 @@
     // POST 请求使用 x-www-form-urlencoded 格式
     [self.sessionManager.requestSerializer setValue:BUNNYX_CONTENT_TYPE_FORM forHTTPHeaderField:BUNNYX_HEADER_CONTENT_TYPE];
     
-    // 检查是否为登录或刷新token接口，设置Basic认证；否则自动设置Bearer认证
+//VIP订阅发起（接口：/pay/buy/vip），服务端返回的失败信息要抛出来，不能直接提示“订阅失败”，顺带检查一下充值（/pay/recharge）发起是否一样。    // 检查是否为登录或刷新token接口，设置Basic认证；否则自动设置Bearer认证
+    // 注意：getChannelByAdjust 和 addAdjustEvent 接口未登录时调用，不需要 Authorization 头
+    BOOL isNoAuthApi = [url containsString:@"/getChannelByAdjust"] || 
+                       [url containsString:@"/addAdjustEvent"] ||
+                       [url containsString:@"/getAppConfig"];
+    
     if ([url containsString:@"/login"] || [url containsString:@"/refresh/token"]) {
         [self setBasicAuth];
-    } else {
-        // 非登录/刷新token接口，自动设置Bearer认证
+    } else if (!isNoAuthApi) {
+        // 非登录/刷新token接口，且不是无需认证的接口，自动设置Bearer认证
         NSString *accessToken = [[UserManager sharedManager] getAccessToken];
         if (accessToken && accessToken.length > 0) {
             [self setBearerAuthWithToken:accessToken];

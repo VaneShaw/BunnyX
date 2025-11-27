@@ -1,0 +1,23 @@
+/* 
+  InfoPlist.strings
+  Bunnyx
+  
+  Created by Assistant on 2025-01-30.
+  中文权限说明文件
+*/
+
+/* 照片库访问权限 - 读取 */
+"NSPhotoLibraryUsageDescription" = "允许 BunnyX 访问您的照片库，以便选择素材进行生成。";
+
+/* 照片库访问权限 - 保存 */
+"NSPhotoLibraryAddUsageDescription" = "允许 BunnyX 将生成的图片和视频保存到您的照片库。";
+
+/* 相机访问权限 */
+"NSCameraUsageDescription" = "允许 BunnyX 使用相机拍摄照片，用于 AI 生成。";
+
+/* 位置访问权限 */
+"NSLocationWhenInUseUsageDescription" = "允许 BunnyX 使用您的位置信息，以提供个性化的基于位置的内容。";
+
+/* 广告追踪权限 */
+"NSUserTrackingUsageDescription" = "允许 BunnyX 追踪您在其他应用和网站中的活动，以提供个性化广告并改进我们的服务。";
+

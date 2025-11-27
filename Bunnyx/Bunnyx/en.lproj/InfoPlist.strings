@@ -1,0 +1,23 @@
+/* 
+  InfoPlist.strings
+  Bunnyx
+  
+  Created by Assistant on 2025-01-30.
+  English permission descriptions file
+*/
+
+/* Photo Library Access Permission - Read */
+"NSPhotoLibraryUsageDescription" = "Allow BunnyX to read your photos to select materials for generation.";
+
+/* Photo Library Access Permission - Save */
+"NSPhotoLibraryAddUsageDescription" = "Allow BunnyX to save generated photos and videos to your library.";
+
+/* Camera Access Permission */
+"NSCameraUsageDescription" = "Allow BunnyX to capture photos with the camera for AI generation.";
+
+/* Location Access Permission */
+"NSLocationWhenInUseUsageDescription" = "Allow BunnyX to use your location for personalized, location-based content.";
+
+/* App Tracking Permission */
+"NSUserTrackingUsageDescription" = "Allow BunnyX to track your activity across other apps and websites to provide personalized ads and improve our services.";
+
