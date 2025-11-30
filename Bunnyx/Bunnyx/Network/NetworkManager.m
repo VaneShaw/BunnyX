@@ -105,7 +105,8 @@
         [serializer setValue:adid forHTTPHeaderField:BUNNYX_HEADER_ADID];
     }
     
-    NSLog(@"[NetworkManager] 通用请求头:%@",[self getCurrentLanguageCode]);
+    NSDictionary *headers = serializer.HTTPRequestHeaders;
+    NSLog(@"[NetworkManager] 通用请求头: %@", headers);
     NSLog(@"[NetworkManager] 设备信息: %@", deviceInfo);
     NSLog(@"[NetworkManager] Adjust信息 - channel: %@, idfa: %@, adid: %@", channel ?: @"", idfa ?: @"", adid ?: @"");
 }

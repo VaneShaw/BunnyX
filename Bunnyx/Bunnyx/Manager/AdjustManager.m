@@ -36,6 +36,8 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
 
 @property (nonatomic, assign) BOOL isInitialized;
 @property (nonatomic, assign) BOOL isInitComplete;
+@property (nonatomic, assign) BOOL hasCompletedIDFA; // idfa 是否已完成（无论是否获取到）
+@property (nonatomic, assign) BOOL hasCompletedAdid; // adid 是否已完成（无论是否获取到）
 @property (nonatomic, strong) NSString *channel;
 @property (nonatomic, strong) NSString *idfa;
 @property (nonatomic, strong) NSString *adid;
@@ -76,6 +78,11 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
     
     // 从本地存储加载数据
     [self loadCachedData];
+    
+    // 重置完成标志位
+    self.hasCompletedIDFA = NO;
+    self.hasCompletedAdid = NO;
+    self.isInitComplete = NO;
     
     // 初始化 Adjust SDK
     [self initAdjustSdk];
@@ -191,8 +198,28 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
                 [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus newStatus) {
                     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
                         if (newStatus == ATTrackingManagerAuthorizationStatusAuthorized) {
+                            // 用户同意，获取 IDFA 并标记流程完成
                             [self fetchIDFA];
+                        } else if (newStatus == ATTrackingManagerAuthorizationStatusDenied) {
+                            // 用户明确拒绝，标记 idfa 流程已完成
+                            self.hasCompletedIDFA = YES;
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self checkInitComplete];
+                            });
+                        } else if (newStatus == ATTrackingManagerAuthorizationStatusNotDetermined) {
+                            // 回调立即返回 NotDetermined，说明弹窗未显示（系统限制）
+                            // 用户没有做选择，但为了避免阻塞 open 事件，延迟一段时间后也认为流程完成
+                            // 延迟 3 秒，如果 adid 已完成，则也标记 idfa 流程完成
+//                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//                                // 再次检查，如果 adid 已完成，也认为 idfa 流程完成（系统限制导致无法弹窗）
+//                                if (self.hasCompletedAdid && !self.hasCompletedIDFA) {
+//                                    self.hasCompletedIDFA = YES;
+//                                    [self checkInitComplete];
+//                                }
+//                            });
                         } else {
+                            // Restricted 状态，标记流程已完成
+                            self.hasCompletedIDFA = YES;
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [self checkInitComplete];
                             });
@@ -207,7 +234,8 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
                 });
                 return;
             } else {
-                // 已拒绝或受限，无法获取
+                // 已拒绝或受限，无法获取，标记 idfa 流程已完成
+                self.hasCompletedIDFA = YES;
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self checkInitComplete];
                 });
@@ -234,6 +262,9 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
         BUNNYX_LOG(@"获取 IDFA 失败或为空");
     }
     
+    // 标记 idfa 流程已完成（无论是否获取到）
+    self.hasCompletedIDFA = YES;
+    
     dispatch_async(dispatch_get_main_queue(), ^{
         [self checkInitComplete];
     });
@@ -255,6 +286,14 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
         } else {
             BUNNYX_LOG(@"获取 adid 失败或为空");
         }
+        
+        // 标记 adid 流程已完成（无论是否获取到）
+        strongSelf.hasCompletedAdid = YES;
+        
+        // 获取 adid 后（无论成功还是失败），检查是否可以调用 open 事件
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [strongSelf checkInitComplete];
+        });
     }];
 }
 
@@ -342,14 +381,10 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
         return;
     }
     
-    // 检查必要数据是否已获取（至少尝试获取过）
-    // 注意：channel 可能为空，这是正常的
-    BOOL hasTriedGetChannel = self.currentAttribution != nil;
-    BOOL hasTriedGetIDFA = YES; // 已经尝试获取
-    BOOL hasTriedGetAdid = YES; // 已经尝试获取
-    
-    // 如果已经尝试获取所有数据，则认为初始化完成
-    if (hasTriedGetChannel && hasTriedGetIDFA && hasTriedGetAdid) {
+    // 根据需求 7.5：等 adid 有回调结果（有走回调，没有结果也行）
+    // idfa 也有走用户设置流程（无论是否同意）
+    // 上述两个步骤都完成之后再调用 server/addAdjustEvent 接口
+    if (self.hasCompletedIDFA && self.hasCompletedAdid) {
         self.isInitComplete = YES;
         
         // 调用 addAdjustEvent 上报打开事件（首次打开才调用）
