@@ -96,6 +96,8 @@
     }
     
     // 通知所有delegates
+    // 注意：PaymentExceptionHandler 会在重启时确保订单完成（即使跳过了重复处理）
+    // 业务层delegate（如 SubscriptionViewController）会在用户进入页面时处理订单完成
     for (id<ApplePayManagerDelegate> delegate in self.delegates) {
         if ([delegate respondsToSelector:@selector(applePayManager:didPurchaseSuccessWithTransaction:productId:)]) {
             [delegate applePayManager:self didPurchaseSuccessWithTransaction:transaction productId:productId];
@@ -217,7 +219,10 @@
             payment.applicationUsername = orderId;
             // 同时保存到临时映射中，以防 applicationUsername 丢失（iOS StoreKit 的已知问题）
             self.productIdToOrderIdMap[productId] = orderId;
-            BUNNYX_LOG(@"Set applicationUsername (orderId) to payment: %@, and saved to map", orderId);
+            // 在购买时就保存到持久化缓存（通过productId），防止用户杀掉应用导致订单丢失
+            // 注意：此时还没有transactionId，所以先用productId保存，等有transactionId后再更新
+            [[PaymentOrderCacheManager sharedManager] savePendingOrderWithProductId:productId orderSn:orderId];
+            BUNNYX_LOG(@"Set applicationUsername (orderId) to payment: %@, and saved to map and persistent cache", orderId);
         }
         [[SKPaymentQueue defaultQueue] addPayment:payment];
         
@@ -278,6 +283,13 @@
 - (void)finishTransaction:(SKPaymentTransaction *)transaction {
     [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
     BUNNYX_LOG(@"Finished transaction: %@", transaction.transactionIdentifier);
+}
+
+- (BOOL)isProcessingTransaction:(NSString *)transactionId {
+    if (!transactionId || transactionId.length == 0) {
+        return NO;
+    }
+    return [self.processingTransactionIds containsObject:transactionId];
 }
 
 - (void)destroy {
@@ -403,24 +415,38 @@
                     
                     // 如果仍然为空，尝试从缓存中获取（兼容旧逻辑和异常恢复场景）
                     if (!orderSn || orderSn.length == 0) {
+                        // 先尝试通过 transactionId 获取
                         if (transactionId.length > 0) {
                             orderSn = [[PaymentOrderCacheManager sharedManager] getOrderSnForTransactionId:transactionId];
                             if (orderSn && orderSn.length > 0) {
-                                BUNNYX_LOG(@"ApplePayManager: 从缓存获取订单号，transactionId: %@, orderSn: %@", transactionId, orderSn);
+                                BUNNYX_LOG(@"ApplePayManager: 从缓存获取订单号（通过transactionId），transactionId: %@, orderSn: %@", transactionId, orderSn);
                                 // 从缓存获取的，不需要再次保存（已经存在，业务层验证成功后会清除）
                                 needSaveToCache = NO;
+                            }
+                        }
+                        // 如果还是为空，尝试通过 productId 获取（购买时保存的）
+                        if ((!orderSn || orderSn.length == 0) && productId && productId.length > 0) {
+                            orderSn = [[PaymentOrderCacheManager sharedManager] getOrderSnForProductId:productId];
+                            if (orderSn && orderSn.length > 0) {
+                                BUNNYX_LOG(@"ApplePayManager: 从缓存获取订单号（通过productId），productId: %@, orderSn: %@", productId, orderSn);
+                                needSaveToCache = YES; // 从productId缓存获取的，需要更新为transactionId映射
                             } else {
-                                BUNNYX_LOG(@"ApplePayManager: 未找到订单号，transactionId: %@，将使用空字符串", transactionId);
+                                BUNNYX_LOG(@"ApplePayManager: 未找到订单号，transactionId: %@, productId: %@，将使用空字符串", transactionId, productId);
                             }
                         }
                     }
                     
-                    // 如果获取到订单号且有 transactionId，且不是从缓存获取的，保存到持久化缓存（用于异常恢复场景）
-                    // 注意：必须在 paymentQueue:updatedTransactions: 中保存，因为购买时还没有 transactionId
-                    // 注意：如果是从缓存获取的，不需要再次保存，业务层验证成功后会清除缓存
-                    if (needSaveToCache && orderSn && orderSn.length > 0 && transactionId.length > 0) {
-                        [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transactionId orderSn:orderSn];
-                        BUNNYX_LOG(@"ApplePayManager: 保存订单号到持久化缓存，transactionId: %@, orderSn: %@", transactionId, orderSn);
+                    // 如果获取到订单号且有 transactionId，保存到持久化缓存（通过transactionId）
+                    // 这样可以更新之前通过productId保存的映射，同时清除productId的缓存
+                    if (orderSn && orderSn.length > 0 && transactionId.length > 0) {
+                        if (needSaveToCache) {
+                            [[PaymentOrderCacheManager sharedManager] savePendingOrderWithTransactionId:transactionId orderSn:orderSn];
+                            BUNNYX_LOG(@"ApplePayManager: 保存订单号到持久化缓存（通过transactionId），transactionId: %@, orderSn: %@", transactionId, orderSn);
+                        }
+                        // 清除productId的缓存（因为已经有transactionId了）
+                        if (productId && productId.length > 0) {
+                            [[PaymentOrderCacheManager sharedManager] clearPendingOrderForProductId:productId];
+                        }
                     }
                     
                     // 验证收据（传递订单号）

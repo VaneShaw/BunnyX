@@ -62,10 +62,31 @@
         return;
     }
     
+    // 检查 ApplePayManager 是否正在处理此交易（避免重复调用接口）
+    // 如果 ApplePayManager 正在处理，说明它会调用验证接口，PaymentExceptionHandler 不需要再处理
+    // 注意：这里检查的是"正在处理"，如果 ApplePayManager 已经处理完成（成功或失败），
+    // processingTransactionIds 会被移除，此时 PaymentExceptionHandler 可以作为兜底处理
+    if (transactionId.length > 0 && [manager isProcessingTransaction:transactionId]) {
+        BUNNYX_LOG(@"PaymentExceptionHandler: Transaction %@ is being processed by ApplePayManager, skip exception handling to avoid duplicate API call", transactionId);
+        // 即使跳过了异常恢复处理，也要确保订单完成（调用 finishTransaction）
+        // 因为重启时业务层delegate可能还没添加，需要确保订单流程闭环
+        [manager finishTransaction:transaction];
+        // 清除缓存的订单信息
+        [[PaymentOrderCacheManager sharedManager] clearPendingOrderForTransactionId:transactionId];
+        return;
+    }
+    
+    // 检查缓存中是否有订单号（只有缓存中有订单号时才需要异常恢复处理）
+    NSString *orderSn = [[PaymentOrderCacheManager sharedManager] getOrderSnForTransactionId:transactionId];
+    if (!orderSn || orderSn.length == 0) {
+        BUNNYX_LOG(@"PaymentExceptionHandler: Transaction %@ has no cached orderSn, skip exception handling", transactionId);
+        return;
+    }
+    
     // 标记为正在处理
     [self.processingTransactions addObject:transactionId];
     
-    BUNNYX_LOG(@"PaymentExceptionHandler: Detected unfinished transaction: %@, productId: %@", transactionId, productId);
+    BUNNYX_LOG(@"PaymentExceptionHandler: Detected unfinished transaction: %@, productId: %@, orderSn: %@", transactionId, productId, orderSn);
     
     // 处理未完成的交易
     [self handleUnfinishedTransaction:transaction];

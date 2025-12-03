@@ -86,6 +86,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param transaction 交易对象
 - (void)finishTransaction:(SKPaymentTransaction *)transaction;
 
+/// 检查某个交易是否正在处理中（用于避免重复处理）
+/// @param transactionId 交易ID
+/// @return 是否正在处理
+- (BOOL)isProcessingTransaction:(NSString *)transactionId;
+
 /// 销毁管理器
 - (void)destroy;
 
