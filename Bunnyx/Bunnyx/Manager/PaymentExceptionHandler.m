@@ -186,14 +186,29 @@
         return;
     }
     
-    // 检查StoreKit的未完成交易队列
-    // 注意：iOS的StoreKit会自动回调未完成的交易，这里主要是作为兜底逻辑
-    // 如果StoreKit已经回调了，会在didPurchaseSuccessWithTransaction中处理
-    // 如果没有回调，我们需要等待StoreKit的回调，因为iOS需要transaction对象才能获取收据
+    BUNNYX_LOG(@"PaymentExceptionHandler: 检测到有缓存的订单，开始主动检测未完成的交易");
     
-    BUNNYX_LOG(@"PaymentExceptionHandler: 检测到有缓存的订单，等待StoreKit回调未完成的交易");
-    // iOS的StoreKit会自动处理未完成的交易，我们已经在initialize中设置了delegate
-    // 所以这里只需要记录日志即可，实际的恢复会在didPurchaseSuccessWithTransaction中完成
+    // 确保 ApplePayManager 已经初始化并添加为 observer
+    ApplePayManager *applePayManager = [ApplePayManager sharedManager];
+    if (!applePayManager.isInitialized) {
+        BUNNYX_LOG(@"PaymentExceptionHandler: ApplePayManager 未初始化，先初始化");
+        [applePayManager initializeWithDelegate:self];
+        // 初始化时会添加 observer，StoreKit 会自动回调未完成的交易
+    } else {
+        // 确保 PaymentExceptionHandler 是 delegate
+        [applePayManager addDelegate:self];
+        
+        // 如果 ApplePayManager 已经初始化，StoreKit 可能已经回调过了
+        // 但是，如果交易还没有被 finish，StoreKit 会在某些情况下再次回调
+        // 为了确保能够检测到未完成的交易，我们尝试通过 restoreCompletedTransactions 触发检测
+        // 注意：restoreCompletedTransactions 主要用于恢复已完成的购买，但可能会触发 StoreKit 重新检查未完成的交易
+        BUNNYX_LOG(@"PaymentExceptionHandler: ApplePayManager 已初始化，尝试通过 restoreCompletedTransactions 触发 StoreKit 重新检查未完成的交易");
+        [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
+    }
+    
+    // 注意：实际的恢复处理会在 didPurchaseSuccessWithTransaction 中完成
+    // StoreKit 会在适当时机自动回调未完成的交易给 ApplePayManager
+    // ApplePayManager 会通过 delegate 通知 PaymentExceptionHandler
 }
 
 @end

@@ -16,8 +16,11 @@
 #import "AppConfigModel.h"
 #import "NewAppInfo.h"
 #import "BunnyxMacros.h"
+#import "PaymentExceptionHandler.h"
 
-@interface MainTabBarController ()
+@interface MainTabBarController () <UITabBarControllerDelegate>
+
+@property (nonatomic, assign) NSInteger previousSelectedIndex;
 
 @end
 
@@ -31,6 +34,10 @@
     
     // 创建视图控制器
     [self setupViewControllers];
+    
+    // 设置delegate以监听tab切换
+    self.delegate = self;
+    self.previousSelectedIndex = 0;
     
     // 检查版本更新和签到弹窗（checkVersionUpdateAndMaybeShowSign）
     [self checkVersionUpdateAndMaybeShowSign];
@@ -172,6 +179,23 @@
 - (void)requestSignInfoAndMaybeShow {
     // 调用SignInDialog.show，内部会请求数据并判断是否显示）
     [SignInDialog show];
+}
+
+#pragma mark - UITabBarControllerDelegate
+
+- (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
+    // 检查是否从订阅页（index 2）切换到我的页面（index 3）
+    if (self.previousSelectedIndex == 2 && tabBarController.selectedIndex == 3) {
+        // 调用内购检测（与启动时一样）
+        // initialize 会确保 PaymentExceptionHandler 是 ApplePayManager 的 delegate
+        // checkAndRecoverPendingOrder 会检查本地缓存是否有待恢复的订单
+        // 如果 ApplePayManager 已初始化，StoreKit 会在有未完成交易时自动回调
+        [[PaymentExceptionHandler sharedHandler] initialize];
+        [[PaymentExceptionHandler sharedHandler] checkAndRecoverPendingOrder];
+    }
+    
+    // 更新previousSelectedIndex
+    self.previousSelectedIndex = tabBarController.selectedIndex;
 }
 
 @end

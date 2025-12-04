@@ -24,6 +24,7 @@
 #import "ContactUsViewController.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import "HostEnvironmentSwitchViewController.h"
+#import "PaymentExceptionHandler.h"
 
 // MARK: - ProfileViewController
 @interface ProfileViewController () <JXPagerViewDelegate, JXPagerMainTableViewGestureDelegate>
@@ -63,6 +64,9 @@
 @property (nonatomic, assign) NSInteger avatarTapCount;
 @property (nonatomic, strong) NSTimer *avatarTapTimer;
 
+// 标记是否从充值页面返回
+@property (nonatomic, assign) BOOL shouldCheckPaymentAfterRecharge;
+
 @end
 
 @implementation ProfileViewController
@@ -83,6 +87,17 @@
     
     // 每次进入页面都刷新用户信息
     [self refreshUserInfo];
+    
+    // 如果从充值页面返回，调用内购检测
+    if (self.shouldCheckPaymentAfterRecharge) {
+        self.shouldCheckPaymentAfterRecharge = NO;
+        // 调用内购检测（与启动时一样）
+        // initialize 会确保 PaymentExceptionHandler 是 ApplePayManager 的 delegate
+        // checkAndRecoverPendingOrder 会检查本地缓存是否有待恢复的订单
+        // 如果 ApplePayManager 已初始化，StoreKit 会在有未完成交易时自动回调
+        [[PaymentExceptionHandler sharedHandler] initialize];
+        [[PaymentExceptionHandler sharedHandler] checkAndRecoverPendingOrder];
+    }
 }
 
 #pragma mark - UI Setup
@@ -589,6 +604,9 @@
 }
 
 - (void)onCoinsClick {
+    // 设置标记，表示即将进入充值页面
+    self.shouldCheckPaymentAfterRecharge = YES;
+    
     RechargeViewController *rechargeVC = [[RechargeViewController alloc] init];
     rechargeVC.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:rechargeVC animated:YES];

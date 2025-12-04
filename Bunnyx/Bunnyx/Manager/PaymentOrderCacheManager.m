@@ -192,7 +192,8 @@ static NSTimeInterval const kCacheValidTime = 7 * 24 * 60 * 60; // 7天
 
 - (BOOL)hasPendingOrder {
     [self cleanExpiredOrders];
-    return self.pendingOrders.count > 0;
+    // 检查是否有通过 transactionId 或 productId 保存的待恢复订单
+    return self.pendingOrders.count > 0 || self.pendingOrdersByProductId.count > 0;
 }
 
 - (void)cleanExpiredOrders {
