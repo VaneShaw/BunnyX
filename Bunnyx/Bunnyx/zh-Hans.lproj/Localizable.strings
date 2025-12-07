@@ -256,6 +256,9 @@
 "sign_failed" = "签到失败";
 "sign_success_title" = "签到成功";
 "sign_ok" = "确定";
+"get_coins_success_title" = "获得金币成功";
+"watch_ads_for_more_coins" = "看广告获取更多金币";
+"watch_ads_and_get_coins_for_free" = "看广告免费获取金币\n(%ld次)";
 "network_error" = "网络错误";
 
 // MARK: - 登录页面

@@ -62,6 +62,7 @@
         @"privacyPolicyUrl": @"privacy_policy_url",
         @"subscribeVipTips": @"subscribe_vip_tips",
         @"vipDiscountTips": @"vip_discount_tips",
+        @"admobAppId": @"admobAppId",
         @"latestAppInfo": @"new_app_info"
     };
 }

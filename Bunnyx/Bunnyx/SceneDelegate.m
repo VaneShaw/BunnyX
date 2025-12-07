@@ -16,6 +16,7 @@
 #import "SubscriptionViewController.h"
 #import "AdjustManager.h"
 #import <AdjustSdk/Adjust.h>
+#import "AdMobManager.h"
 
 @interface SceneDelegate ()
 
@@ -106,6 +107,20 @@
     
     // 设置用户认证
     [self setupUserAuthentication];
+    
+    // 展示开屏广告（登录后）
+    [self showSplashAdIfNeeded];
+}
+
+- (void)showSplashAdIfNeeded {
+    // 延迟一点展示，确保界面已经显示
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [[AdMobManager sharedManager] showSplashAdWithSuccess:^{
+            BUNNYX_LOG(@"开屏广告展示完成");
+        } failure:^(NSError *error) {
+            BUNNYX_LOG(@"开屏广告展示失败或未配置: %@", error.localizedDescription);
+        }];
+    });
 }
 
 - (void)setupUserAuthentication {
@@ -228,10 +243,32 @@
 - (void)loadAppConfigAndNavigate {
     __weak typeof(self) weakSelf = self;
     [[AppConfigManager sharedManager] getAppConfigWithForceRefresh:YES success:^(AppConfigModel *configModel) {
+        // 初始化AdMob SDK（如果还没初始化）
+        [weakSelf initializeAdMobIfNeeded];
         [weakSelf scheduleNavigationAfterDelay:1.0];
     } failure:^(NSError *error) {
+        // 即使获取配置失败，也初始化AdMob
+        [self initializeAdMobIfNeeded];
         [weakSelf scheduleNavigationAfterDelay:1.5];
     }];
+}
+
+- (void)initializeAdMobIfNeeded {
+    // 直接使用本地配置的AdMob应用ID
+    NSString *admobAppId = BUNNYX_ADMOB_APP_ID;
+    if (!BUNNYX_IS_EMPTY_STRING(admobAppId)) {
+        // 初始化AdMob SDK
+        [[AdMobManager sharedManager] initializeWithAppId:admobAppId];
+        
+        // 加载广告配置
+        [[AdMobManager sharedManager] loadAdConfigWithSuccess:^(NSArray<AdMobConfigModel *> *configs) {
+            BUNNYX_LOG(@"AdMob配置加载成功，共%lu个配置", (unsigned long)configs.count);
+        } failure:^(NSError *error) {
+            BUNNYX_ERROR(@"AdMob配置加载失败: %@", error.localizedDescription);
+        }];
+    } else {
+        BUNNYX_LOG(@"未配置AdMob App ID，跳过初始化");
+    }
 }
 
 - (void)scheduleNavigationAfterDelay:(NSTimeInterval)delay {

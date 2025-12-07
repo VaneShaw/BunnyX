@@ -44,6 +44,9 @@ target 'Bunnyx' do
   
   # Facebook Audience Network SDK - 用于广告
   pod 'FBAudienceNetwork'
+  
+  # Google AdMob SDK - 用于广告
+  pod 'Google-Mobile-Ads-SDK'
 end
 
 target 'BunnyxTests' do

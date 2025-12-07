@@ -20,6 +20,8 @@
 #import <StoreKit/StoreKit.h>
 #import <objc/runtime.h>
 #import "PaymentOrderCacheManager.h"
+#import "AdMobManager.h"
+#import "SignSuccessDialog.h"
 
 @interface RechargeViewController () <ApplePayManagerDelegate>
 
@@ -39,6 +41,8 @@
 
 // 购买按钮
 @property (nonatomic, strong) GradientButton *buyButton;
+// 看广告按钮
+@property (nonatomic, strong) GradientButton *watchAdButton;
 
 // 数据
 @property (nonatomic, strong) NSArray<RechargeItemModel *> *rechargeList;
@@ -73,6 +77,11 @@
     
     // 更新余额显示
     [self updateBalance];
+    
+    // 更新看广告按钮状态
+    if (self.watchAdButton) {
+        [self updateWatchAdButtonState];
+    }
 }
 
 #pragma mark - UI Setup
@@ -86,12 +95,15 @@
     
     // 设置余额显示
     [self setupBalanceView];
-    
+    // 设置充值套餐容器（在购买按钮之后，可以依赖购买按钮的约束）
+    [self setupPackagesContainer];
     // 先设置购买按钮（用于约束参考）
     [self setupBuyButton];
     
-    // 设置充值套餐容器（在购买按钮之后，可以依赖购买按钮的约束）
-    [self setupPackagesContainer];
+    // 设置看广告按钮
+    [self setupWatchAdButton];
+    
+   
 }
 
 - (void)setupApplePay {
@@ -206,7 +218,7 @@
     [self.scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.balanceView.mas_bottom).offset(30); // marginTop 30dp
         make.left.right.equalTo(self.view);
-        make.bottom.equalTo(self.buyButton.mas_top).offset(-20); // marginBottom 20dp
+        make.height.offset(270);
     }];
     
     self.packagesContainerView = [[UIView alloc] init];
@@ -230,8 +242,98 @@
     
     [self.buyButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
-        make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-MARGIN_20);
+        make.top.equalTo(self.scrollView.mas_bottom).offset(40);
         make.height.mas_equalTo(50);
+    }];
+}
+
+- (void)setupWatchAdButton {
+    // 检查是否有充值广告配置
+    AdMobConfigModel *adConfig = [[AdMobManager sharedManager] getConfigForPlacement:AdMobPlacementRecharge adType:AdMobTypeRewarded];
+    if (!adConfig || BUNNYX_IS_EMPTY_STRING(adConfig.adUnitId)) {
+        return;
+    }
+    
+    // 检查剩余次数并创建按钮（样式和InsufficientBalanceDialog中的看广告按钮一样）
+    [[AdMobManager sharedManager] getLeftRewardCountForPlacement:AdMobPlacementRecharge success:^(NSInteger leftCount) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // 渐变颜色：如果剩余次数为0则颜色#EAEDE4且不可点击，否则#87FBFF-#E8FCC5
+            BOOL isEnabled = leftCount > 0;
+            UIColor *startColor = isEnabled ? HEX_COLOR(0x87FBFF) : HEX_COLOR(0xEAEDE4);
+            UIColor *endColor = isEnabled ? HEX_COLOR(0xE8FCC5) : HEX_COLOR(0xEAEDE4);
+            
+            // 分两行显示：第一行 "Watch ads and get coins"，第二行 "for free(3 times)"
+            NSString *buttonTitle = [NSString stringWithFormat:LocalString(@"watch_ads_and_get_coins_for_free") ?: @"Watch ads and get coins\nfor free(%ld times)", (long)leftCount];
+            
+            self.watchAdButton = [GradientButton buttonWithTitle:buttonTitle
+                                                       startColor:startColor
+                                                         endColor:endColor];
+            // 长宽高圆角都跟buy按钮一样
+            self.watchAdButton.cornerRadius = self.buyButton.cornerRadius;
+            self.watchAdButton.buttonHeight = 50; // 和buy按钮一样的高度
+            [self.watchAdButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal];
+            self.watchAdButton.titleLabel.font = FONT(17);
+            self.watchAdButton.titleLabel.numberOfLines = 0;
+            self.watchAdButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+            self.watchAdButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+            self.watchAdButton.enabled = isEnabled;
+            [self.watchAdButton addTarget:self action:@selector(watchAdButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+            [self.view addSubview:self.watchAdButton];
+            
+            [self.watchAdButton mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.left.right.equalTo(self.view).insets(UIEdgeInsetsMake(0, MARGIN_20, 0, MARGIN_20));
+                make.bottom.equalTo(self.view.mas_safeAreaLayoutGuideBottom).offset(-MARGIN_20);
+                make.height.mas_equalTo(50); // 和buy按钮一样的高度
+            }];
+            
+            // 更新购买按钮约束
+            [self.buyButton mas_updateConstraints:^(MASConstraintMaker *make) {
+                make.bottom.equalTo(self.watchAdButton.mas_top).offset(-MARGIN_15);
+            }];
+        });
+    } failure:^(NSError *error) {
+        // 获取次数失败，不显示看广告按钮
+    }];
+}
+
+- (void)updateWatchAdButtonState {
+    [[AdMobManager sharedManager] getLeftRewardCountForPlacement:AdMobPlacementRecharge success:^(NSInteger leftCount) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (!self.watchAdButton) {
+                return;
+            }
+            
+            // 更新按钮状态和样式（和InsufficientBalanceDialog中的看广告按钮一样）
+            BOOL isEnabled = leftCount > 0;
+            UIColor *startColor = isEnabled ? HEX_COLOR(0x87FBFF) : HEX_COLOR(0xEAEDE4);
+            UIColor *endColor = isEnabled ? HEX_COLOR(0xE8FCC5) : HEX_COLOR(0xEAEDE4);
+            
+            self.watchAdButton.gradientStartColor = startColor;
+            self.watchAdButton.gradientEndColor = endColor;
+            self.watchAdButton.enabled = isEnabled;
+            
+            // 更新标题显示剩余次数
+            NSString *buttonTitle = [NSString stringWithFormat:LocalString(@"watch_ads_and_get_coins_for_free") ?: @"Watch ads and get coins\nfor free(%ld times)", (long)leftCount];
+            [self.watchAdButton setTitle:buttonTitle forState:UIControlStateNormal];
+        });
+    } failure:^(NSError *error) {
+        // 获取次数失败，保持按钮可用
+    }];
+}
+
+- (void)watchAdButtonTapped {
+    [[AdMobManager sharedManager] showRewardedAdForPlacement:AdMobPlacementRecharge
+                                                       success:^(NSInteger coins) {
+        // 奖励发放成功，更新用户信息和余额显示
+        [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self updateBalance];
+                [self updateWatchAdButtonState];
+                [SignSuccessDialog showWithReward:coins title:LocalString(@"get_coins_success_title") ?: @"Get Coins successfully"];
+            });
+        } failure:nil];
+    } failure:^(NSError *error) {
+        BUNNYX_LOG(@"展示激励广告失败: %@", error.localizedDescription);
     }];
 }
 

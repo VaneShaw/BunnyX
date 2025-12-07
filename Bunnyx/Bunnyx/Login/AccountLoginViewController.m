@@ -16,6 +16,7 @@
 #import "BrowserViewController.h"
 #import "AppConfigManager.h"
 #import "LanguageManager.h"
+#import "AdMobManager.h"
 
 @interface AccountLoginViewController ()
 
@@ -694,10 +695,27 @@
         // 淡入淡出动画
         [UIView transitionWithView:window duration:0.5 options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
             window.rootViewController = mainTabBarController;
-        } completion:nil];
+        } completion:^(BOOL finished) {
+            // 展示开屏广告（登录后）
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [[AdMobManager sharedManager] showSplashAdWithSuccess:^{
+                    BUNNYX_LOG(@"开屏广告展示完成");
+                } failure:^(NSError *error) {
+                    BUNNYX_LOG(@"开屏广告展示失败或未配置: %@", error.localizedDescription);
+                }];
+            });
+        }];
     } else {
         // 如果没有找到window，直接设置
         [UIApplication sharedApplication].delegate.window.rootViewController = mainTabBarController;
+        // 展示开屏广告
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [[AdMobManager sharedManager] showSplashAdWithSuccess:^{
+                BUNNYX_LOG(@"开屏广告展示完成");
+            } failure:^(NSError *error) {
+                BUNNYX_LOG(@"开屏广告展示失败或未配置: %@", error.localizedDescription);
+            }];
+        });
     }
 }
 

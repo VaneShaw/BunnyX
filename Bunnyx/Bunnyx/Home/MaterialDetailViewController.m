@@ -23,6 +23,9 @@
 #import "RechargeViewController.h"
 #import "MainTabBarController.h"
 #import "UploadingViewController.h"
+#import "AdMobManager.h"
+#import "SignSuccessDialog.h"
+#import "InsufficientBalanceDialog.h"
 
 // 通知名称：刷新首页列表
 NSString *const kRefreshMaterialListNotification = @"RefreshMaterialListNotification";
@@ -724,21 +727,55 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
             // 余额足够，检查VIP权限（checkVipAndGenerate）
             [self checkVipAndGenerate];
         } else {
-            // 余额不足，提醒去充值（showRechargeDialog）
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:LocalString(@"金币不足")
-                                                                           message:LocalString(@"您的金币不足，是否前往充值？")
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            UIAlertAction *rechargeAction = [UIAlertAction actionWithTitle:LocalString(@"去充值")
-                                                                     style:UIAlertActionStyleDefault
-                                                                   handler:^(UIAlertAction * _Nonnull action) {
-                [self navigateToRecharge];
-            }];
-            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:LocalString(@"取消")
-                                                                   style:UIAlertActionStyleCancel
-                                                                 handler:nil];
-            [alert addAction:rechargeAction];
-            [alert addAction:cancelAction];
-            [self presentViewController:alert animated:YES completion:nil];
+            // 余额不足，提醒去充值（使用自定义弹窗）
+            NSString *title = LocalString(@"您的金币不足，是否前往充值？") ?: @"您的金币不足，是否前往充值？";
+            
+            // 检查是否有充值广告配置
+            AdMobConfigModel *adConfig = [[AdMobManager sharedManager] getConfigForPlacement:AdMobPlacementRecharge adType:AdMobTypeRewarded];
+            BOOL canShowAd = adConfig && !BUNNYX_IS_EMPTY_STRING(adConfig.adUnitId);
+            
+            if (canShowAd) {
+                // 检查是否可以展示广告（次数未用完）
+                [[AdMobManager sharedManager] getLeftRewardCountForPlacement:AdMobPlacementRecharge success:^(NSInteger leftCount) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        // 有广告配置，显示看广告按钮和bg_topup_2背景图，即使leftCount为0也显示
+                        [InsufficientBalanceDialog showWithTitle:title
+                                                       canShowAd:YES
+                                                       leftCount:leftCount
+                                                      cancelBlock:^{
+                            // 取消按钮，不做任何操作
+                        } confirmBlock:^{
+                            [self navigateToRecharge];
+                        } watchAdBlock:^{
+                            [self showRewardedAdForRecharge];
+                        }];
+                    });
+                } failure:^(NSError *error) {
+                    // 获取次数失败，但有广告配置，仍然显示看广告按钮（leftCount设为0，按钮不可点击）
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [InsufficientBalanceDialog showWithTitle:title
+                                                       canShowAd:YES
+                                                       leftCount:0
+                                                      cancelBlock:^{
+                            // 取消按钮，不做任何操作
+                        } confirmBlock:^{
+                            [self navigateToRecharge];
+                        } watchAdBlock:^{
+                            [self showRewardedAdForRecharge];
+                        }];
+                    });
+                }];
+            } else {
+                // 没有广告配置，不显示看广告按钮，使用bg_topup背景图
+                [InsufficientBalanceDialog showWithTitle:title
+                                               canShowAd:NO
+                                               leftCount:0
+                                              cancelBlock:^{
+                    // 取消按钮，不做任何操作
+                } confirmBlock:^{
+                    [self navigateToRecharge];
+                } watchAdBlock:nil];
+            }
         }
     } failure:^(NSError *error) {
         // 错误提示由 NetworkManager 自动显示
@@ -1072,6 +1109,21 @@ NSString *const kMaterialReportedNotification = @"MaterialReportedNotification";
         }
     } failure:^(NSError * _Nonnull error) {
         // 错误提示由 NetworkManager 自动显示
+    }];
+}
+
+#pragma mark - AdMob Rewarded Ad
+
+- (void)showRewardedAdForRecharge {
+    [[AdMobManager sharedManager] showRewardedAdForPlacement:AdMobPlacementRecharge
+                                                       success:^(NSInteger coins) {
+        // 奖励发放成功，更新用户信息并显示获得奖励弹窗
+        [[UserInfoManager sharedManager] refreshCurrentUserInfoWithSuccess:^(UserInfoModel *userInfo) {
+            [SignSuccessDialog showWithReward:coins title:LocalString(@"get_coins_success_title") ?: @"Get Coins successfully"];
+            // 不再重新检查余额，避免再次弹出余额不足弹窗
+        } failure:nil];
+    } failure:^(NSError *error) {
+        BUNNYX_LOG(@"展示激励广告失败: %@", error.localizedDescription);
     }];
 }
 

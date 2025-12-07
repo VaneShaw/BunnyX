@@ -17,6 +17,8 @@
 #import <SDWebImage/SDWebImage.h>
 #import "FirebaseCore.h"
 #import "SubscriptionViewController.h"
+#import "AdMobManager.h"
+
 @interface AppDelegate ()
 
 @end
@@ -87,7 +89,30 @@
     
     [FIRApp configure];
     
+    // 初始化AdMob SDK（在获取到配置后）
+    [self initializeAdMobIfNeeded];
+    
     return YES;
+}
+
+#pragma mark - AdMob初始化
+
+- (void)initializeAdMobIfNeeded {
+    // 直接使用本地配置的AdMob应用ID
+    NSString *admobAppId = BUNNYX_ADMOB_APP_ID;
+    if (!BUNNYX_IS_EMPTY_STRING(admobAppId)) {
+        // 初始化AdMob SDK
+        [[AdMobManager sharedManager] initializeWithAppId:admobAppId];
+        
+        // 加载广告配置
+        [[AdMobManager sharedManager] loadAdConfigWithSuccess:^(NSArray<AdMobConfigModel *> *configs) {
+            BUNNYX_LOG(@"AdMob配置加载成功，共%lu个配置", (unsigned long)configs.count);
+        } failure:^(NSError *error) {
+            BUNNYX_ERROR(@"AdMob配置加载失败: %@", error.localizedDescription);
+        }];
+    } else {
+        BUNNYX_LOG(@"未配置AdMob App ID，跳过初始化");
+    }
 }
 
 

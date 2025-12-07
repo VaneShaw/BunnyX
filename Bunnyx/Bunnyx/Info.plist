@@ -51,5 +51,7 @@
 	<string>614e99e6bc1b2dd4f9b6c0af138370c6</string>
 	<key>FacebookDisplayName</key>
 	<string>BunnyX</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-4370817004487731~3987357791</string>
 </dict>
 </plist>

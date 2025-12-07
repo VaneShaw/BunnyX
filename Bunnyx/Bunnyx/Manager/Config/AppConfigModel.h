@@ -205,6 +205,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// VIP折扣提示
 @property (nonatomic, strong) NSString *vipDiscountTips;
 
+/// AdMob应用ID
+@property (nonatomic, strong) NSString *admobAppId;
+
 /// 新版本信息（new_app_info）
 @property (nonatomic, strong) NewAppInfo *latestAppInfo;
 

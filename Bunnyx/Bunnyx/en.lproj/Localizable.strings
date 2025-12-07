@@ -256,6 +256,9 @@
 "sign_failed" = "Sign in failed";
 "sign_success_title" = "Sign in successful";
 "sign_ok" = "OK";
+"get_coins_success_title" = "Get Coins successfully";
+"watch_ads_for_more_coins" = "Watch ads for more coins";
+"watch_ads_and_get_coins_for_free" = "Watch ads and get coins\nfor free(%ld times)";
 "network_error" = "Network error";
 
 // MARK: - Login Page

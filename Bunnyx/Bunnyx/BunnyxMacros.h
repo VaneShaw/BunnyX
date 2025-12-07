@@ -140,6 +140,9 @@
 #define BUNNYX_NETWORK_TIMEOUT 30.0
 // BUNNYX_REQUEST_TIMEOUT 已在 BunnyxNetworkMacros.h 中定义
 
+// MARK: - AdMob相关宏
+#define BUNNYX_ADMOB_APP_ID @"ca-app-pub-4370817004487731~3987357791"
+
 // MARK: - 分页相关宏
 #define BUNNYX_PAGE_SIZE 20
 #define BUNNYX_DEFAULT_PAGE 1
