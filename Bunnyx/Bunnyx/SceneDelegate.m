@@ -80,6 +80,16 @@
         [launchViewController setLogoImage:logoImage];
     }
     
+    // 设置完成回调：广告播放完成或超时后，执行后续导航逻辑
+    __weak typeof(self) weakSelf = self;
+    [launchViewController setCompletionBlock:^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf) {
+            NSLog(@"[SceneDelegate] 开屏页完成，开始检查用户登录状态");
+            [strongSelf checkUserLoginStatusAndNavigate];
+        }
+    }];
+    
     self.window.rootViewController = launchViewController;
     NSLog(@"[SceneDelegate] 启动页设置完成");
 }
@@ -108,19 +118,7 @@
     // 设置用户认证
     [self setupUserAuthentication];
     
-    // 展示开屏广告（登录后）
-    [self showSplashAdIfNeeded];
-}
-
-- (void)showSplashAdIfNeeded {
-    // 延迟一点展示，确保界面已经显示
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [[AdMobManager sharedManager] showSplashAdWithSuccess:^{
-            BUNNYX_LOG(@"开屏广告展示完成");
-        } failure:^(NSError *error) {
-            BUNNYX_LOG(@"开屏广告展示失败或未配置: %@", error.localizedDescription);
-        }];
-    });
+    // 注意：开屏广告已在LaunchViewController中处理，这里不再展示
 }
 
 - (void)setupUserAuthentication {
@@ -245,11 +243,11 @@
     [[AppConfigManager sharedManager] getAppConfigWithForceRefresh:YES success:^(AppConfigModel *configModel) {
         // 初始化AdMob SDK（如果还没初始化）
         [weakSelf initializeAdMobIfNeeded];
-        [weakSelf scheduleNavigationAfterDelay:1.0];
+        // 注意：不再调用scheduleNavigationAfterDelay，导航逻辑由LaunchViewController的完成回调触发
     } failure:^(NSError *error) {
         // 即使获取配置失败，也初始化AdMob
         [self initializeAdMobIfNeeded];
-        [weakSelf scheduleNavigationAfterDelay:1.5];
+        // 注意：不再调用scheduleNavigationAfterDelay，导航逻辑由LaunchViewController的完成回调触发
     }];
 }
 
@@ -271,14 +269,12 @@
     }
 }
 
+// 注意：scheduleNavigationAfterDelay方法已不再使用
+// 导航逻辑现在由LaunchViewController的完成回调触发
+// 保留此方法以防其他地方调用，但实际不会执行导航
 - (void)scheduleNavigationAfterDelay:(NSTimeInterval)delay {
-    if (self.hasScheduledNavigation) {
-        return;
-    }
-    self.hasScheduledNavigation = YES;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self checkUserLoginStatusAndNavigate];
-    });
+    // 此方法已废弃，导航逻辑由LaunchViewController的完成回调触发
+    NSLog(@"[SceneDelegate] scheduleNavigationAfterDelay已废弃，导航逻辑由LaunchViewController的完成回调触发");
 }
 
 @end

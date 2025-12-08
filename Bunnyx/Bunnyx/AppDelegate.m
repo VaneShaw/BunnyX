@@ -18,6 +18,8 @@
 #import "FirebaseCore.h"
 #import "SubscriptionViewController.h"
 #import "AdMobManager.h"
+#import "UserManager.h"
+#import "LoginViewController.h"
 
 @interface AppDelegate ()
 
@@ -79,6 +81,16 @@
         if (logoImage) {
             [launchViewController setLogoImage:logoImage];
         }
+        
+        // 设置完成回调：广告播放完成或超时后，执行后续导航逻辑
+        __weak typeof(self) weakSelf = self;
+        [launchViewController setCompletionBlock:^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (strongSelf) {
+                NSLog(@"[AppDelegate] 开屏页完成，开始检查用户登录状态");
+                [strongSelf checkUserLoginStatusAndNavigate];
+            }
+        }];
         
         // 设置根视图控制器为启动页
         self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
@@ -142,6 +154,38 @@
 - (void)applicationWillResignActive:(UIApplication *)application {
     // Adjust SDK 需要在应用失活时调用（对应 Android 的 onPause）
     [Adjust trackSubsessionEnd];
+}
+
+#pragma mark - iOS 12及以下版本的导航逻辑
+
+- (void)checkUserLoginStatusAndNavigate {
+    NSLog(@"[AppDelegate] 检查用户登录状态");
+    BOOL isLoggedIn = [[UserManager sharedManager] isUserLoggedIn];
+    NSLog(@"[AppDelegate] 用户登录状态: %@", isLoggedIn ? @"已登录" : @"未登录");
+    
+    if (isLoggedIn) {
+        // 已登录，跳转到主页
+        NSLog(@"[AppDelegate] 跳转到主页");
+        [self navigateToMainInterface];
+    } else {
+        // 未登录，跳转到登录页
+        NSLog(@"[AppDelegate] 跳转到登录页");
+        [self navigateToLoginPage];
+    }
+}
+
+- (void)navigateToMainInterface {
+    // 创建主界面
+    MainTabBarController *mainTabBarController = [[MainTabBarController alloc] init];
+    self.window.rootViewController = mainTabBarController;
+    
+    // 注意：开屏广告已在LaunchViewController中处理，这里不再展示
+}
+
+- (void)navigateToLoginPage {
+    // 创建登录页面
+    LoginViewController *loginViewController = [[LoginViewController alloc] init];
+    self.window.rootViewController = loginViewController;
 }
 
 @end

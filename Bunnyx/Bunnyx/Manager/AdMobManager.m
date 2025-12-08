@@ -29,6 +29,10 @@
 @property (nonatomic, assign) BOOL isLoadingAppOpenAd; // 是否正在加载开屏广告
 @property (nonatomic, assign) BOOL isLoadingRewardedAd; // 是否正在加载激励广告
 @property (nonatomic, assign) BOOL isShowingAppOpenAd; // 是否正在展示开屏广告
+@property (nonatomic, assign) BOOL isLoadingAdConfig; // 是否正在加载广告配置
+@property (nonatomic, strong) NSMutableArray<AdMobConfigSuccessBlock> *pendingConfigSuccessBlocks; // 等待配置加载完成的成功回调队列
+@property (nonatomic, strong) NSMutableArray<AdMobConfigFailureBlock> *pendingConfigFailureBlocks; // 等待配置加载完成的失败回调队列
+@property (nonatomic, assign) BOOL hasLoadedConfig; // 是否已经加载过配置（用于判断是否可以直接返回）
 
 @end
 
@@ -51,6 +55,10 @@
         self.isLoadingAppOpenAd = NO;
         self.isLoadingRewardedAd = NO;
         self.isShowingAppOpenAd = NO;
+        self.isLoadingAdConfig = NO;
+        self.pendingConfigSuccessBlocks = [NSMutableArray array];
+        self.pendingConfigFailureBlocks = [NSMutableArray array];
+        self.hasLoadedConfig = NO;
     }
     return self;
 }
@@ -79,15 +87,67 @@
 
 #pragma mark - 配置管理
 
+/**
+ * 加载广告配置（防重复请求机制）
+ * 
+ * 防重复机制说明：
+ * 1. 如果配置已加载完成，直接返回缓存的配置（避免重复请求）
+ * 2. 如果正在加载中，将回调加入等待队列（多个调用者共享同一个请求）
+ * 3. 如果还没开始加载，开始加载并将回调加入队列
+ * 
+ * 这样可以确保：
+ * - AppDelegate、SceneDelegate、LaunchViewController 等多个地方调用时，只会发起一次网络请求
+ * - 所有调用者都能收到配置加载完成的通知
+ */
 - (void)loadAdConfigWithSuccess:(AdMobConfigSuccessBlock)success
                          failure:(AdMobConfigFailureBlock)failure {
+    // 如果已经加载过配置，直接返回缓存的配置
+    if (self.hasLoadedConfig && self.currentConfigs.count > 0) {
+        BUNNYX_LOG(@"使用已加载的AdMob配置，共%lu个配置", (unsigned long)self.currentConfigs.count);
+        if (success) {
+            success(self.currentConfigs);
+        }
+        return;
+    }
+    
+    // 如果正在加载配置，将回调加入等待队列
+    if (self.isLoadingAdConfig) {
+        BUNNYX_LOG(@"AdMob配置正在加载中，将回调加入等待队列");
+        if (success) {
+            [self.pendingConfigSuccessBlocks addObject:[success copy]];
+        }
+        if (failure) {
+            [self.pendingConfigFailureBlocks addObject:[failure copy]];
+        }
+        return;
+    }
+    
+    // 开始加载配置
+    self.isLoadingAdConfig = YES;
+    
+    // 将当前回调加入队列（第一个请求）
+    if (success) {
+        [self.pendingConfigSuccessBlocks addObject:[success copy]];
+    }
+    if (failure) {
+        [self.pendingConfigFailureBlocks addObject:[failure copy]];
+    }
+    
     NSString *url = [NSString stringWithFormat:@"%@/user/admob/getConfig", BUNNYX_API_BASE_URL];
     
     BUNNYX_LOG(@"请求AdMob配置: %@", url);
     
+    __weak typeof(self) weakSelf = self;
     [[NetworkManager sharedManager] GET:url
                                parameters:nil
                                   success:^(id responseObject) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+        
+        strongSelf.isLoadingAdConfig = NO;
+        
         if ([responseObject isKindOfClass:[NSDictionary class]]) {
             NSDictionary *response = (NSDictionary *)responseObject;
             NSInteger code = [response[@"code"] integerValue];
@@ -104,42 +164,89 @@
                             }
                         }
                     }
-                    self.currentConfigs = [configs copy];
+                    strongSelf.currentConfigs = [configs copy];
+                    strongSelf.hasLoadedConfig = YES;
                     BUNNYX_LOG(@"AdMob配置加载成功，共%lu个配置", (unsigned long)configs.count);
                     
                     // 配置加载成功后，预加载开屏广告和激励广告
-                    [self preloadAppOpenAdIfNeeded];
-                    [self preloadRewardedAdsIfNeeded];
+                    [strongSelf preloadAppOpenAdIfNeeded];
+                    [strongSelf preloadRewardedAdsIfNeeded];
                     
-                    if (success) {
-                        success(self.currentConfigs);
+                    // 执行所有等待的成功回调
+                    NSArray<AdMobConfigSuccessBlock> *successBlocks = [strongSelf.pendingConfigSuccessBlocks copy];
+                    [strongSelf.pendingConfigSuccessBlocks removeAllObjects];
+                    [strongSelf.pendingConfigFailureBlocks removeAllObjects];
+                    
+                    for (AdMobConfigSuccessBlock successBlock in successBlocks) {
+                        if (successBlock) {
+                            successBlock(strongSelf.currentConfigs);
+                        }
                     }
                 } else {
-                    self.currentConfigs = @[];
+                    strongSelf.currentConfigs = @[];
+                    strongSelf.hasLoadedConfig = YES;
                     BUNNYX_LOG(@"AdMob配置数据格式错误，返回空配置");
-                    if (success) {
-                        success(@[]);
+                    
+                    // 执行所有等待的成功回调（即使数据格式错误，也返回空配置）
+                    NSArray<AdMobConfigSuccessBlock> *successBlocks = [strongSelf.pendingConfigSuccessBlocks copy];
+                    [strongSelf.pendingConfigSuccessBlocks removeAllObjects];
+                    [strongSelf.pendingConfigFailureBlocks removeAllObjects];
+                    
+                    for (AdMobConfigSuccessBlock successBlock in successBlocks) {
+                        if (successBlock) {
+                            successBlock(@[]);
+                        }
                     }
                 }
             } else {
                 NSString *message = response[@"message"] ?: @"获取广告配置失败";
                 NSError *error = [NSError errorWithDomain:@"AdMobError" code:code userInfo:@{NSLocalizedDescriptionKey: message}];
                 BUNNYX_ERROR(@"获取AdMob配置失败: %@", message);
-                if (failure) {
-                    failure(error);
+                
+                // 执行所有等待的失败回调
+                NSArray<AdMobConfigFailureBlock> *failureBlocks = [strongSelf.pendingConfigFailureBlocks copy];
+                [strongSelf.pendingConfigSuccessBlocks removeAllObjects];
+                [strongSelf.pendingConfigFailureBlocks removeAllObjects];
+                
+                for (AdMobConfigFailureBlock failureBlock in failureBlocks) {
+                    if (failureBlock) {
+                        failureBlock(error);
+                    }
                 }
             }
         } else {
             NSError *error = [NSError errorWithDomain:@"AdMobError" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"响应格式错误"}];
             BUNNYX_ERROR(@"AdMob配置响应格式错误");
-            if (failure) {
-                failure(error);
+            
+            // 执行所有等待的失败回调
+            NSArray<AdMobConfigFailureBlock> *failureBlocks = [strongSelf.pendingConfigFailureBlocks copy];
+            [strongSelf.pendingConfigSuccessBlocks removeAllObjects];
+            [strongSelf.pendingConfigFailureBlocks removeAllObjects];
+            
+            for (AdMobConfigFailureBlock failureBlock in failureBlocks) {
+                if (failureBlock) {
+                    failureBlock(error);
+                }
             }
         }
     } failure:^(NSError *error) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+        
+        strongSelf.isLoadingAdConfig = NO;
         BUNNYX_ERROR(@"获取AdMob配置失败: %@", error.localizedDescription);
-        if (failure) {
-            failure(error);
+        
+        // 执行所有等待的失败回调
+        NSArray<AdMobConfigFailureBlock> *failureBlocks = [strongSelf.pendingConfigFailureBlocks copy];
+        [strongSelf.pendingConfigSuccessBlocks removeAllObjects];
+        [strongSelf.pendingConfigFailureBlocks removeAllObjects];
+        
+        for (AdMobConfigFailureBlock failureBlock in failureBlocks) {
+            if (failureBlock) {
+                failureBlock(error);
+            }
         }
     }];
 }

@@ -182,6 +182,24 @@ static NSMutableArray<SignSuccessDialog *> *s_allDialogs = nil;
         make.top.equalTo(self.coinImageView.mas_bottom).offset(6);
     }];
     
+    // OK按钮（渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，marginHorizontal 16dp，marginTop 16dp）
+    self.okButton = [GradientButton buttonWithTitle:LocalString(@"sign_ok") ?: @"OK"
+                                           startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
+                                             endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
+    self.okButton.cornerRadius = 20; // 20dp
+    self.okButton.buttonHeight = 48; // 48dp
+    [self.okButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
+    self.okButton.titleLabel.font = BOLD_FONT(16); // 16sp bold
+    [self.okButton addTarget:self action:@selector(okButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self.containerView addSubview:self.okButton];
+    
+    [self.okButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.containerView).offset(16);
+        make.right.equalTo(self.containerView).offset(-16);
+        make.top.equalTo(self.rewardLabel.mas_bottom).offset(16);
+        make.height.mas_equalTo(44);
+    }];
+    
     // 看广告按钮（只有签到成功时显示）
     if (self.showWatchAdButton) {
         AdMobConfigModel *adConfig = [[AdMobManager sharedManager] getConfigForPlacement:AdMobPlacementSignIn adType:AdMobTypeRewarded];
@@ -200,34 +218,11 @@ static NSMutableArray<SignSuccessDialog *> *s_allDialogs = nil;
             [self.watchAdButton mas_makeConstraints:^(MASConstraintMaker *make) {
                 make.left.equalTo(self.containerView).offset(16);
                 make.right.equalTo(self.containerView).offset(-16);
-                make.top.equalTo(self.rewardLabel.mas_bottom).offset(16);
-                make.height.mas_equalTo(44);
+                make.top.equalTo(self.okButton.mas_bottom).offset(12);
+                make.height.mas_equalTo(48);
             }];
         }
     }
-    
-    // OK按钮（渐变背景#0AEA6F到#1CB3C1，圆角20dp，高度48dp，marginHorizontal 16dp，marginTop 16dp）
-    self.okButton = [GradientButton buttonWithTitle:LocalString(@"sign_ok") ?: @"OK"
-                                           startColor:HEX_COLOR(0x0AEA6F) // #0AEA6F
-                                             endColor:HEX_COLOR(0x1CB3C1)]; // #1CB3C1
-    self.okButton.cornerRadius = 20; // 20dp
-    self.okButton.buttonHeight = 48; // 48dp
-    [self.okButton setTitleColor:HEX_COLOR(0x333333) forState:UIControlStateNormal]; // @color/black3
-    self.okButton.titleLabel.font = BOLD_FONT(16); // 16sp bold
-    [self.okButton addTarget:self action:@selector(okButtonTapped) forControlEvents:UIControlEventTouchUpInside];
-    [self.containerView addSubview:self.okButton];
-    
-    [self.okButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.containerView).offset(16);
-        make.right.equalTo(self.containerView).offset(-16);
-        if (self.watchAdButton) {
-            make.top.equalTo(self.watchAdButton.mas_bottom).offset(12);
-        } else {
-            make.top.equalTo(self.rewardLabel.mas_bottom).offset(16);
-        }
-        make.height.mas_equalTo(48);
-        make.bottom.equalTo(self.containerView).offset(-20);
-    }];
     
     // 更新容器高度以适应新按钮
     if (self.watchAdButton) {
