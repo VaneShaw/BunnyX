@@ -59,6 +59,12 @@
     // 注意：iOS 13+ 在 SceneDelegate 中也会初始化，但这里初始化不会重复（单例模式）
     [[PaymentExceptionHandler sharedHandler] initialize];
     
+    // 初始化 Firebase（必须在所有其他初始化之前）
+    [FIRApp configure];
+    
+    // 检查Firebase初始化状态
+    [self checkFirebaseInitialization];
+    
     // 初始化 Adjust SDK 和 Facebook SDK
     // 注意：打开事件（eventName=open）会在 AdjustManager 初始化完成后自动通过 /server/addAdjustEvent 接口上报
     [[AdjustManager sharedManager] initializeWithApplication:application];
@@ -66,6 +72,8 @@
     // 只在iOS 12及以下版本中设置启动页
     if (@available(iOS 13.0, *)) {
         // iOS 13+ 由 SceneDelegate 处理
+        // 初始化AdMob SDK（在获取到配置后）
+        [self initializeAdMobIfNeeded];
         return YES;
     } else {
         // iOS 12 及以下版本
@@ -99,12 +107,40 @@
     
     }
     
-    [FIRApp configure];
-    
     // 初始化AdMob SDK（在获取到配置后）
     [self initializeAdMobIfNeeded];
     
     return YES;
+}
+
+#pragma mark - Firebase初始化检查
+
+/**
+ * 检查Firebase SDK是否已成功初始化
+ * 
+ * Firebase SDK的[FIRApp configure]方法是同步的，没有提供回调。
+ * 但可以通过检查[FIRApp defaultApp]是否为nil来判断初始化状态。
+ * 
+ * @return YES表示Firebase已初始化，NO表示未初始化
+ */
+- (BOOL)isFirebaseInitialized {
+    FIRApp *defaultApp = [FIRApp defaultApp];
+    return defaultApp != nil;
+}
+
+/**
+ * 检查并记录Firebase初始化状态
+ */
+- (void)checkFirebaseInitialization {
+    if ([self isFirebaseInitialized]) {
+        FIRApp *defaultApp = [FIRApp defaultApp];
+        NSLog(@"[AppDelegate] ✅ Firebase SDK初始化成功");
+        NSLog(@"[AppDelegate] Firebase App名称: %@", defaultApp.name);
+        NSLog(@"[AppDelegate] Firebase Project ID: %@", defaultApp.options.projectID);
+        NSLog(@"[AppDelegate] Firebase Analytics启用状态: %@", defaultApp.isDataCollectionDefaultEnabled ? @"已启用" : @"已禁用");
+    } else {
+        NSLog(@"[AppDelegate] ❌ Firebase SDK初始化失败或未初始化");
+    }
 }
 
 #pragma mark - AdMob初始化
