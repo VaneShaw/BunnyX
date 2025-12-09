@@ -161,6 +161,7 @@
 				10D2792C2EA68CF50052E919 /* Resources */,
 				50DA4383F6D4CB2276FBB940 /* [CP] Copy Pods Resources */,
 				45AEAF32436E34E04DCFCFB6 /* [CP] Embed Pods Frameworks */,
+				CFF8221E195A476B86A18FD8 /* [Firebase] Upload dSYM to Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -390,6 +391,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		CFF8221E195A476B86A18FD8 /* [Firebase] Upload dSYM to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"${PROJECT_DIR}/Bunnyx/GoogleService-Info.plist",
+				"${TARGET_BUILD_DIR}/${EXECUTABLE_PATH}",
+			);
+			name = "[Firebase] Upload dSYM to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ -f \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}\" ]; then\n    echo \"🔥 [Firebase Crashlytics] Uploading dSYM...\"\n    \"${PODS_ROOT}/FirebaseCrashlytics/upload-symbols\" -gsp \"${PROJECT_DIR}/Bunnyx/GoogleService-Info.plist\" -p ios \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}\"\n    echo \"✅ [Firebase Crashlytics] dSYM upload completed\"\nelse\n    echo \"⚠️  [Firebase Crashlytics] dSYM file not found, skipping upload (this is normal for simulator builds)\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
