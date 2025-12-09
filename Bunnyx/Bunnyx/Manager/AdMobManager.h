@@ -63,6 +63,14 @@ typedef void(^AdMobShowFailureBlock)(NSError *error);
                          failure:(AdMobConfigFailureBlock)failure;
 
 /**
+ * 强制重新加载广告配置（忽略缓存）
+ * @param success 成功回调
+ * @param failure 失败回调
+ */
+- (void)reloadAdConfigWithSuccess:(AdMobConfigSuccessBlock)success
+                           failure:(AdMobConfigFailureBlock)failure;
+
+/**
  * 获取指定广告位的配置
  * @param placement 广告位
  * @param adType 广告类型

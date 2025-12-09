@@ -667,6 +667,13 @@
     }
     
     // 注意：开屏广告已在LaunchViewController中处理，登录后不再展示
+    
+    // 登录成功后，刷新广告配置
+    [[AdMobManager sharedManager] reloadAdConfigWithSuccess:^(NSArray<AdMobConfigModel *> *configs) {
+        NSLog(@"[LoginViewController] 登录后刷新广告配置成功，共%lu个配置", (unsigned long)configs.count);
+    } failure:^(NSError *error) {
+        NSLog(@"[LoginViewController] 登录后刷新广告配置失败: %@", error.localizedDescription);
+    }];
 }
 
 #pragma mark - Apple Sign In（performGoogleLogin）

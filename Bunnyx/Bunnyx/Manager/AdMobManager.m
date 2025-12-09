@@ -12,6 +12,7 @@
 #import "BunnyxMacros.h"
 #import <SVProgressHUD/SVProgressHUD.h>
 #import "SignSuccessDialog.h"
+#import "UserManager.h"
 
 @interface AdMobManager () <GADFullScreenContentDelegate>
 
@@ -101,6 +102,17 @@
  */
 - (void)loadAdConfigWithSuccess:(AdMobConfigSuccessBlock)success
                          failure:(AdMobConfigFailureBlock)failure {
+    // 检查用户登录状态，未登录时不调用广告配置接口
+    BOOL isLoggedIn = [[UserManager sharedManager] isUserLoggedIn];
+    if (!isLoggedIn) {
+        BUNNYX_LOG(@"用户未登录，跳过广告配置加载");
+        if (failure) {
+            NSError *error = [NSError errorWithDomain:@"AdMobError" code:-1 userInfo:@{NSLocalizedDescriptionKey: @"用户未登录"}];
+            failure(error);
+        }
+        return;
+    }
+    
     // 如果已经加载过配置，直接返回缓存的配置
     if (self.hasLoadedConfig && self.currentConfigs.count > 0) {
         BUNNYX_LOG(@"使用已加载的AdMob配置，共%lu个配置", (unsigned long)self.currentConfigs.count);
@@ -258,6 +270,26 @@
         }
     }
     return nil;
+}
+
+/**
+ * 强制重新加载广告配置（忽略缓存）
+ * 用于网络恢复后重新获取配置
+ */
+- (void)reloadAdConfigWithSuccess:(AdMobConfigSuccessBlock)success
+                          failure:(AdMobConfigFailureBlock)failure {
+    BUNNYX_LOG(@"强制重新加载广告配置（忽略缓存）");
+    
+    // 清除所有状态，确保强制重新加载
+    self.hasLoadedConfig = NO;
+    self.isLoadingAdConfig = NO;
+    
+    // 清空等待队列（避免旧的回调干扰）
+    [self.pendingConfigSuccessBlocks removeAllObjects];
+    [self.pendingConfigFailureBlocks removeAllObjects];
+    
+    // 调用正常的加载方法（因为hasLoadedConfig和isLoadingAdConfig已清除，会立即重新请求）
+    [self loadAdConfigWithSuccess:success failure:failure];
 }
 
 #pragma mark - 开屏广告

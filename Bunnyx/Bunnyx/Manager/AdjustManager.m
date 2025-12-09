@@ -158,8 +158,8 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
 
 - (void)startInitProcess {
     // 延迟获取 IDFA（确保 UI 完全准备好后再请求授权，ATT 弹窗需要在可见界面时显示）
-    // 延迟 1 秒，确保第一个 ViewController 已经显示
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    // 延迟 2 秒，确保启动页或登录页已经完全显示并稳定（避免UI切换时弹窗无法显示）
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self getIDFAAsync];
     });
     
@@ -207,16 +207,41 @@ static NSString *const FACEBOOK_APP_SECRET = @"614e99e6bc1b2dd4f9b6c0af138370c6"
                                 [self checkInitComplete];
                             });
                         } else if (newStatus == ATTrackingManagerAuthorizationStatusNotDetermined) {
-                            // 回调立即返回 NotDetermined，说明弹窗未显示（系统限制）
-                            // 用户没有做选择，但为了避免阻塞 open 事件，延迟一段时间后也认为流程完成
-                            // 延迟 3 秒，如果 adid 已完成，则也标记 idfa 流程完成
-//                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//                                // 再次检查，如果 adid 已完成，也认为 idfa 流程完成（系统限制导致无法弹窗）
-//                                if (self.hasCompletedAdid && !self.hasCompletedIDFA) {
-//                                    self.hasCompletedIDFA = YES;
-//                                    [self checkInitComplete];
-//                                }
-//                            });
+                            // 回调立即返回 NotDetermined，说明弹窗未显示（可能是UI未准备好或系统限制）
+                            // 延迟重试，确保UI稳定后再请求
+                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                // 再次检查状态，如果仍然是 NotDetermined，尝试再次请求
+                                ATTrackingManagerAuthorizationStatus retryStatus = [ATTrackingManager trackingAuthorizationStatus];
+                                if (retryStatus == ATTrackingManagerAuthorizationStatusNotDetermined) {
+                                    // UI应该已经稳定，再次尝试请求授权
+                                    [ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus finalStatus) {
+                                        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                                            if (finalStatus == ATTrackingManagerAuthorizationStatusAuthorized) {
+                                                [self fetchIDFA];
+                                            } else {
+                                                // 无论什么状态，都标记流程完成
+                                                self.hasCompletedIDFA = YES;
+                                                dispatch_async(dispatch_get_main_queue(), ^{
+                                                    [self checkInitComplete];
+                                                });
+                                            }
+                                        });
+                                    }];
+                                } else {
+                                    // 状态已改变，按新状态处理
+                                    if (retryStatus == ATTrackingManagerAuthorizationStatusAuthorized) {
+                                        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                                            [self fetchIDFA];
+                                        });
+                                    } else {
+                                        // 已拒绝或受限，标记流程完成
+                                        self.hasCompletedIDFA = YES;
+                                        dispatch_async(dispatch_get_main_queue(), ^{
+                                            [self checkInitComplete];
+                                        });
+                                    }
+                                }
+                            });
                         } else {
                             // Restricted 状态，标记流程已完成
                             self.hasCompletedIDFA = YES;

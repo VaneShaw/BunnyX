@@ -10,6 +10,7 @@
 #import <Masonry/Masonry.h>
 #import "AdMobManager.h"
 #import "BunnyxMacros.h"
+#import "UserManager.h"
 
 @interface LaunchViewController ()
 
@@ -183,6 +184,14 @@
 }
 
 - (void)ensureAdConfigLoadedAndShowAd {
+    // 检查用户登录状态，未登录时不调用广告配置接口
+    BOOL isLoggedIn = [[UserManager sharedManager] isUserLoggedIn];
+    if (!isLoggedIn) {
+        NSLog(@"[LaunchViewController] 用户未登录，跳过广告配置加载，直接进入app");
+        [self completeLaunchFlow];
+        return;
+    }
+    
     // 先检查当前是否已有配置
     AdMobConfigModel *config = [[AdMobManager sharedManager] getConfigForPlacement:AdMobPlacementSplash adType:AdMobTypeSplash];
     

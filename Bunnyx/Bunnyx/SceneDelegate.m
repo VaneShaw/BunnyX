@@ -167,6 +167,16 @@
     if (loginClass) {
         UIViewController *loginViewController = [[loginClass alloc] init];
         self.window.rootViewController = loginViewController;
+        
+        // 登录页显示后，延迟请求 IDFA 授权（确保UI完全稳定）
+        // 如果之前没有成功请求，这里会再次尝试
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            AdjustManager *adjustManager = [AdjustManager sharedManager];
+            if ([adjustManager isInitialized] && ![adjustManager getIDFA]) {
+                // 请求授权（如果状态是 NotDetermined 会弹窗）
+                [adjustManager requestIDFAAuthorizationIfNeeded];
+            }
+        });
     } else {
         // 如果没有找到LoginViewController，显示启动页
         [self showLaunchScreen];
@@ -258,12 +268,18 @@
         // 初始化AdMob SDK
         [[AdMobManager sharedManager] initializeWithAppId:admobAppId];
         
-        // 加载广告配置
-        [[AdMobManager sharedManager] loadAdConfigWithSuccess:^(NSArray<AdMobConfigModel *> *configs) {
-            BUNNYX_LOG(@"AdMob配置加载成功，共%lu个配置", (unsigned long)configs.count);
-        } failure:^(NSError *error) {
-            BUNNYX_ERROR(@"AdMob配置加载失败: %@", error.localizedDescription);
-        }];
+        // 只在已登录时加载广告配置
+        BOOL isLoggedIn = [[UserManager sharedManager] isUserLoggedIn];
+        if (isLoggedIn) {
+            BUNNYX_LOG(@"用户已登录，开始加载AdMob配置");
+            [[AdMobManager sharedManager] loadAdConfigWithSuccess:^(NSArray<AdMobConfigModel *> *configs) {
+                BUNNYX_LOG(@"AdMob配置加载成功，共%lu个配置", (unsigned long)configs.count);
+            } failure:^(NSError *error) {
+                BUNNYX_ERROR(@"AdMob配置加载失败: %@", error.localizedDescription);
+            }];
+        } else {
+            BUNNYX_LOG(@"用户未登录，跳过AdMob配置加载");
+        }
     } else {
         BUNNYX_LOG(@"未配置AdMob App ID，跳过初始化");
     }
