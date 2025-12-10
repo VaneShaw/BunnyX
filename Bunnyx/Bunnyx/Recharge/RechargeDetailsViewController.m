@@ -67,13 +67,17 @@
             model.state = [self safeStringFromDict:dict forKey:@"state"];
             model.remarks = [self safeStringFromDict:dict forKey:@"remarks"];
             
-            // 时间戳处理（addTime 是时间戳）
+            // 时间处理（addTime 可能是时间戳或压缩格式 yyyyMMddHHmmss）
             id addTimeValue = dict[@"addTime"];
+            NSString *addTimeString = @"";
             if (addTimeValue && addTimeValue != [NSNull null]) {
                 if ([addTimeValue isKindOfClass:[NSNumber class]]) {
-                    model.addTime = [addTimeValue doubleValue];
+                    NSNumber *numValue = (NSNumber *)addTimeValue;
+                    addTimeString = [numValue stringValue];
+                    model.addTime = [numValue doubleValue];
                 } else if ([addTimeValue isKindOfClass:[NSString class]]) {
-                    model.addTime = [addTimeValue doubleValue];
+                    addTimeString = (NSString *)addTimeValue;
+                    model.addTime = [addTimeString doubleValue];
                 }
             }
             
@@ -94,8 +98,19 @@
                 model.paymentMethod = [self safeStringFromDict:dict forKey:@"payment_method"];
             }
             
-            // 时间格式化处理（使用 addTime 时间戳）
-            if (model.addTime > 0) {
+            // 时间格式化处理
+            // 优先处理压缩格式：yyyyMMddHHmmss (例如：20251207140425)
+            if (addTimeString.length == 14 && [addTimeString rangeOfCharacterFromSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]].location == NSNotFound) {
+                // 14位纯数字，格式为 yyyyMMddHHmmss
+                NSString *year = [addTimeString substringWithRange:NSMakeRange(0, 4)];
+                NSString *month = [addTimeString substringWithRange:NSMakeRange(4, 2)];
+                NSString *day = [addTimeString substringWithRange:NSMakeRange(6, 2)];
+                NSString *hour = [addTimeString substringWithRange:NSMakeRange(8, 2)];
+                NSString *minute = [addTimeString substringWithRange:NSMakeRange(10, 2)];
+                NSString *second = [addTimeString substringWithRange:NSMakeRange(12, 2)];
+                model.createTime = [NSString stringWithFormat:@"%@-%@-%@ %@:%@:%@", year, month, day, hour, minute, second];
+            } else if (model.addTime > 0) {
+                // 处理时间戳格式
                 NSDate *date = [NSDate dateWithTimeIntervalSince1970:model.addTime / 1000.0]; // 时间戳可能是毫秒
                 if (model.addTime < 10000000000) {
                     // 秒级时间戳
