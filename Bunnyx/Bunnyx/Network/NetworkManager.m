@@ -82,6 +82,7 @@
     [serializer setValue:BUNNYX_API_VERSION forHTTPHeaderField:BUNNYX_HEADER_API_VERSION];
     [serializer setValue:deviceId forHTTPHeaderField:BUNNYX_HEADER_EFFECTIVE_IMEI];
     [serializer setValue:@"Apple" forHTTPHeaderField:BUNNYX_HEADER_EQUIPMENT_BRAND];
+    [serializer setValue:@"bunnyx" forHTTPHeaderField:@"Package-Name"];
     
     // 添加 Adjust 相关请求头
     AdjustManager *adjustManager = [AdjustManager sharedManager];
