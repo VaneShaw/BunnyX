@@ -29,7 +29,7 @@ Objective-C / UIKit 客户端工程，涵盖首页与素材流、登录与账号
 - **网络**：`NetworkManager` + `HostEnvironmentManager`（多环境）
 - **国际化**：`BXLocalization` / `LanguageManager`
 - **统计与广告**：Adjust、Google AdMob（以工程配置为准）
-- **崩溃监控**：Firebase Crashlytics（参见仓库内说明文档）
+- **崩溃监控**：Firebase Crashlytics（参见 `FIREBASE_CRASHLYTICS_SETUP.md`）
 
 **系统要求**：iOS **15.6+**（以 Xcode 工程 `IPHONEOS_DEPLOYMENT_TARGET` 为准）
 
@@ -38,19 +38,19 @@ Objective-C / UIKit 客户端工程，涵盖首页与素材流、登录与账号
 ## 仓库结构（节选）
 
 ```
-Bunnyx/
-├── Bunnyx/                 # 业务源码
-├── Bunnyx/Network/         # 网络层与 API 宏
-├── Bunnyx/Model/
-├── Bunnyx/Manager/
-└── Bunnyx.xcodeproj
+仓库根目录/
+├── README.md                  # GitHub 首页默认展示
+├── Bunnyx.xcodeproj
+├── Bunnyx/                    # 业务源码（AppDelegate、Network、Model…）
+├── Podfile
+└── …
 ```
 
 ---
 
 ## 本地构建
 
-1. 使用 **Xcode** 打开 `Bunnyx.xcodeproj`。
+1. 使用 **Xcode** 打开 **`Bunnyx.xcodeproj`**（与 `Podfile` 同级）。
 2. 选择目标设备或模拟器，编译运行。
 3. Crashlytics / 广告等能力请按 `FIREBASE_CRASHLYTICS_SETUP.md` 等文档配置，**勿将密钥提交到公开仓库**。
 
@@ -69,3 +69,7 @@ Bunnyx/
 - 若 README 与当前分支不一致，以代码与 App Store 说明为准。
 
 ---
+
+## License
+
+如需开源，请在此补充协议并与合规确认。
